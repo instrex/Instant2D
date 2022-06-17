@@ -5,10 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Utils {
-    public interface IResettable {
-        void Reset();
-    }
-
     public class Pool<T> where T: new() {
         readonly Queue<T> _items;
         readonly int _initialCapacity;

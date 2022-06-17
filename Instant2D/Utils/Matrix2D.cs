@@ -152,9 +152,8 @@ namespace Instant2D.Utils {
 		/// <returns>The rotation <see cref="Matrix2D"/> around Z axis.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D CreateRotation(float radians) {
-			Matrix2D result;
-			CreateRotation(radians, out result);
-			return result;
+            CreateRotation(radians, out Matrix2D result);
+            return result;
 		}
 
 
@@ -184,9 +183,8 @@ namespace Instant2D.Utils {
 		/// <returns>The scaling <see cref="Matrix2D"/>.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D CreateScale(float scale) {
-			Matrix2D result;
-			CreateScale(scale, scale, out result);
-			return result;
+            CreateScale(scale, scale, out Matrix2D result);
+            return result;
 		}
 
 
@@ -209,9 +207,8 @@ namespace Instant2D.Utils {
 		/// <returns>The scaling <see cref="Matrix2D"/>.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D CreateScale(float xScale, float yScale) {
-			Matrix2D result;
-			CreateScale(xScale, yScale, out result);
-			return result;
+            CreateScale(xScale, yScale, out Matrix2D result);
+            return result;
 		}
 
 
@@ -241,9 +238,8 @@ namespace Instant2D.Utils {
 		/// <returns>The scaling <see cref="Matrix2D"/>.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D CreateScale(Vector2 scale) {
-			Matrix2D result;
-			CreateScale(ref scale, out result);
-			return result;
+            CreateScale(ref scale, out Matrix2D result);
+            return result;
 		}
 
 
@@ -273,9 +269,8 @@ namespace Instant2D.Utils {
 		/// <returns>The translation <see cref="Matrix2D"/>.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D CreateTranslation(float xPosition, float yPosition) {
-			Matrix2D result;
-			CreateTranslation(xPosition, yPosition, out result);
-			return result;
+            CreateTranslation(xPosition, yPosition, out Matrix2D result);
+            return result;
 		}
 
 
@@ -304,9 +299,8 @@ namespace Instant2D.Utils {
 		/// <returns>The translation <see cref="Matrix2D"/>.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D CreateTranslation(Vector2 position) {
-			Matrix2D result;
-			CreateTranslation(ref position, out result);
-			return result;
+            CreateTranslation(ref position, out Matrix2D result);
+            return result;
 		}
 
 
@@ -358,14 +352,14 @@ namespace Instant2D.Utils {
 		/// <returns>The result of dividing the matrix.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D Divide(Matrix2D matrix1, Matrix2D matrix2) {
-			matrix1.M11 = matrix1.M11 / matrix2.M11;
-			matrix1.M12 = matrix1.M12 / matrix2.M12;
+			matrix1.M11 /= matrix2.M11;
+			matrix1.M12 /= matrix2.M12;
 
-			matrix1.M21 = matrix1.M21 / matrix2.M21;
-			matrix1.M22 = matrix1.M22 / matrix2.M22;
+			matrix1.M21 /= matrix2.M21;
+			matrix1.M22 /= matrix2.M22;
 
-			matrix1.M31 = matrix1.M31 / matrix2.M31;
-			matrix1.M32 = matrix1.M32 / matrix2.M32;
+			matrix1.M31 /= matrix2.M31;
+			matrix1.M32 /= matrix2.M32;
 			return matrix1;
 		}
 
@@ -398,14 +392,14 @@ namespace Instant2D.Utils {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D Divide(Matrix2D matrix1, float divider) {
 			float num = 1f / divider;
-			matrix1.M11 = matrix1.M11 * num;
-			matrix1.M12 = matrix1.M12 * num;
+			matrix1.M11 *= num;
+			matrix1.M12 *= num;
 
-			matrix1.M21 = matrix1.M21 * num;
-			matrix1.M22 = matrix1.M22 * num;
+			matrix1.M21 *= num;
+			matrix1.M22 *= num;
 
-			matrix1.M31 = matrix1.M31 * num;
-			matrix1.M32 = matrix1.M32 * num;
+			matrix1.M31 *= num;
+			matrix1.M32 *= num;
 
 			return matrix1;
 		}
@@ -440,14 +434,14 @@ namespace Instant2D.Utils {
 		/// <returns>>The result of linear interpolation of the specified matrixes.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D Lerp(Matrix2D matrix1, Matrix2D matrix2, float amount) {
-			matrix1.M11 = matrix1.M11 + ((matrix2.M11 - matrix1.M11) * amount);
-			matrix1.M12 = matrix1.M12 + ((matrix2.M12 - matrix1.M12) * amount);
+			matrix1.M11 += ((matrix2.M11 - matrix1.M11) * amount);
+			matrix1.M12 += ((matrix2.M12 - matrix1.M12) * amount);
 
-			matrix1.M21 = matrix1.M21 + ((matrix2.M21 - matrix1.M21) * amount);
-			matrix1.M22 = matrix1.M22 + ((matrix2.M22 - matrix1.M22) * amount);
+			matrix1.M21 += ((matrix2.M21 - matrix1.M21) * amount);
+			matrix1.M22 += ((matrix2.M22 - matrix1.M22) * amount);
 
-			matrix1.M31 = matrix1.M31 + ((matrix2.M31 - matrix1.M31) * amount);
-			matrix1.M32 = matrix1.M32 + ((matrix2.M32 - matrix1.M32) * amount);
+			matrix1.M31 += ((matrix2.M31 - matrix1.M31) * amount);
+			matrix1.M32 += ((matrix2.M32 - matrix1.M32) * amount);
 			return matrix1;
 		}
 
@@ -576,14 +570,14 @@ namespace Instant2D.Utils {
 		/// <returns>Sum of the matrixes.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D operator +(Matrix2D matrix1, Matrix2D matrix2) {
-			matrix1.M11 = matrix1.M11 + matrix2.M11;
-			matrix1.M12 = matrix1.M12 + matrix2.M12;
+			matrix1.M11 += matrix2.M11;
+			matrix1.M12 += matrix2.M12;
 
-			matrix1.M21 = matrix1.M21 + matrix2.M21;
-			matrix1.M22 = matrix1.M22 + matrix2.M22;
+			matrix1.M21 += matrix2.M21;
+			matrix1.M22 += matrix2.M22;
 
-			matrix1.M31 = matrix1.M31 + matrix2.M31;
-			matrix1.M32 = matrix1.M32 + matrix2.M32;
+			matrix1.M31 += matrix2.M31;
+			matrix1.M32 += matrix2.M32;
 			return matrix1;
 		}
 
@@ -596,14 +590,14 @@ namespace Instant2D.Utils {
 		/// <returns>The result of dividing the matrixes.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D operator /(Matrix2D matrix1, Matrix2D matrix2) {
-			matrix1.M11 = matrix1.M11 / matrix2.M11;
-			matrix1.M12 = matrix1.M12 / matrix2.M12;
+			matrix1.M11 /= matrix2.M11;
+			matrix1.M12 /= matrix2.M12;
 
-			matrix1.M21 = matrix1.M21 / matrix2.M21;
-			matrix1.M22 = matrix1.M22 / matrix2.M22;
+			matrix1.M21 /= matrix2.M21;
+			matrix1.M22 /= matrix2.M22;
 
-			matrix1.M31 = matrix1.M31 / matrix2.M31;
-			matrix1.M32 = matrix1.M32 / matrix2.M32;
+			matrix1.M31 /= matrix2.M31;
+			matrix1.M32 /= matrix2.M32;
 			return matrix1;
 		}
 
@@ -617,14 +611,14 @@ namespace Instant2D.Utils {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D operator /(Matrix2D matrix, float divider) {
 			float num = 1f / divider;
-			matrix.M11 = matrix.M11 * num;
-			matrix.M12 = matrix.M12 * num;
+			matrix.M11 *= num;
+			matrix.M12 *= num;
 
-			matrix.M21 = matrix.M21 * num;
-			matrix.M22 = matrix.M22 * num;
+			matrix.M21 *= num;
+			matrix.M22 *= num;
 
-			matrix.M31 = matrix.M31 * num;
-			matrix.M32 = matrix.M32 * num;
+			matrix.M31 *= num;
+			matrix.M32 *= num;
 			return matrix;
 		}
 
@@ -708,14 +702,14 @@ namespace Instant2D.Utils {
 		/// <returns>Result of the matrix multiplication with a scalar.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D operator *(Matrix2D matrix, float scaleFactor) {
-			matrix.M11 = matrix.M11 * scaleFactor;
-			matrix.M12 = matrix.M12 * scaleFactor;
+			matrix.M11 *= scaleFactor;
+			matrix.M12 *= scaleFactor;
 
-			matrix.M21 = matrix.M21 * scaleFactor;
-			matrix.M22 = matrix.M22 * scaleFactor;
+			matrix.M21 *= scaleFactor;
+			matrix.M22 *= scaleFactor;
 
-			matrix.M31 = matrix.M31 * scaleFactor;
-			matrix.M32 = matrix.M32 * scaleFactor;
+			matrix.M31 *= scaleFactor;
+			matrix.M32 *= scaleFactor;
 			return matrix;
 		}
 
@@ -728,14 +722,14 @@ namespace Instant2D.Utils {
 		/// <returns>Result of the matrix subtraction.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D operator -(Matrix2D matrix1, Matrix2D matrix2) {
-			matrix1.M11 = matrix1.M11 - matrix2.M11;
-			matrix1.M12 = matrix1.M12 - matrix2.M12;
+			matrix1.M11 -= matrix2.M11;
+			matrix1.M12 -= matrix2.M12;
 
-			matrix1.M21 = matrix1.M21 - matrix2.M21;
-			matrix1.M22 = matrix1.M22 - matrix2.M22;
+			matrix1.M21 -= matrix2.M21;
+			matrix1.M22 -= matrix2.M22;
 
-			matrix1.M31 = matrix1.M31 - matrix2.M31;
-			matrix1.M32 = matrix1.M32 - matrix2.M32;
+			matrix1.M31 -= matrix2.M31;
+			matrix1.M32 -= matrix2.M32;
 			return matrix1;
 		}
 
@@ -767,14 +761,14 @@ namespace Instant2D.Utils {
 		/// <returns>The result of the matrix subtraction.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D Subtract(Matrix2D matrix1, Matrix2D matrix2) {
-			matrix1.M11 = matrix1.M11 - matrix2.M11;
-			matrix1.M12 = matrix1.M12 - matrix2.M12;
+			matrix1.M11 -= matrix2.M11;
+			matrix1.M12 -= matrix2.M12;
 
-			matrix1.M21 = matrix1.M21 - matrix2.M21;
-			matrix1.M22 = matrix1.M22 - matrix2.M22;
+			matrix1.M21 -= matrix2.M21;
+			matrix1.M22 -= matrix2.M22;
 
-			matrix1.M31 = matrix1.M31 - matrix2.M31;
-			matrix1.M32 = matrix1.M32 - matrix2.M32;
+			matrix1.M31 -= matrix2.M31;
+			matrix1.M32 -= matrix2.M32;
 			return matrix1;
 		}
 
@@ -805,9 +799,8 @@ namespace Instant2D.Utils {
 		/// <returns>The new <see cref="Matrix2D"/> which contains the transposing result.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Matrix2D Transpose(Matrix2D matrix) {
-			Matrix2D ret;
-			Transpose(ref matrix, out ret);
-			return ret;
+            Transpose(ref matrix, out Matrix2D ret);
+            return ret;
 		}
 
 
@@ -869,8 +862,8 @@ namespace Instant2D.Utils {
 		/// <param name="obj">The <see cref="Object"/> to compare.</param>
 		/// <returns><c>true</c> if the instances are equal; <c>false</c> otherwise.</returns>
 		public override bool Equals(object obj) {
-			if (obj is Matrix2D)
-				return Equals((Matrix2D)obj);
+			if (obj is Matrix2D matrix)
+				return Equals(matrix);
 
 			return false;
 		}

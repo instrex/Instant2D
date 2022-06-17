@@ -1,7 +1,9 @@
 ﻿using Instant2D;
+using Instant2D.Assets.Sprites;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Newtonsoft.Json;
 
 namespace TestGame
 {
@@ -33,6 +35,9 @@ namespace TestGame
             texture = Content.Load<Texture2D>("pixel");
             manpng = Content.Load<Texture2D>("man");
             // TODO: use this.Content to load your game content here
+
+            var obj = JsonConvert.DeserializeObject<SpriteManifest>(@"C:\Users\instrex\Desktop\instant2d\sprite_manifest_demo.jsonc", new SpriteManifest.Converter());
+
         }
 
         Transform trans = new() { Position = new Vector2(50), Scale = new Vector2(2, 1) };
@@ -81,6 +86,12 @@ namespace TestGame
 
             if (state.IsKeyDown(Keys.X))
                 manHatTrans.LocalRotation -= 0.1f;
+
+            if (state.IsKeyDown(Keys.T))
+                manHatTrans.LocalScale += new Vector2(0.1f);
+
+            if (state.IsKeyDown(Keys.Y))
+                manHatTrans.LocalScale -= new Vector2(0.1f);
 
             if (state.IsKeyDown(Keys.Right))
                 manBackpackTrans.LocalPosition += new Vector2(2, 0);
