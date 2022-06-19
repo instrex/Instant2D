@@ -31,7 +31,7 @@ namespace Instant2D.Assets.Loaders {
         /// </summary>
         public DevSpriteLoader SetSpritesheetMode(int maxSpritesheetSize = 2048) {
             if (!System.Numerics.BitOperations.IsPow2(maxSpritesheetSize)) {
-                InstantGame.Instance.Logger.Warning($"Spritesheet size should prefferably be power of 2, {maxSpritesheetSize}x{maxSpritesheetSize} was provided instead.");
+                InstantGame.Instance.Logger.Warning($"Spritesheet size should preferably be power of 2, {maxSpritesheetSize}x{maxSpritesheetSize} was provided instead.");
             }
 
             _mode = LoaderMode.GenerateSpritesheet;
@@ -123,23 +123,31 @@ namespace Instant2D.Assets.Loaders {
         }
 
         public void LoadOnDemand(LazyAsset asset) {
-            // load the sprite animation on-demand
-            if (asset is LazyAsset<SpriteAnimation> animation) {
-                throw new NotImplementedException();
+            _loadedTextures ??= new(64);
+
+            using var fileStream = TitleContainer.OpenStream(Path.Combine(SPRITES_PATH, asset.Key + ".png"));
+
+            // open the stream for asset data retrieval
+            var tex = Texture2D.FromStream(InstantGame.Instance.GraphicsDevice, fileStream);
+            _loadedTextures.Add(tex);
+
+            // proccess the spritedef and load the sprite back to the asset
+            var sprites = ProcessSpriteDef(SpriteDefinitions[asset.Key], tex, new(0, 0, tex.Width, tex.Height), out var animationDef);
+
+            // if asset is a sprite, simply return it
+            if (asset is LazyAsset<Sprite> spriteAsset) {
+                spriteAsset.Content = sprites.FirstOrDefault();
+                return;
             }
 
-            // load the sprite
-            if (asset is LazyAsset<Sprite> sprite) {
-                _loadedTextures ??= new(64);
+            // load the sprite animation on-demand
+            if (asset is LazyAsset<SpriteAnimation> animationAsset) {
+                if (animationDef is not SpriteAnimation anim) {
+                    InstantGame.Instance.Logger.Error($"Couldn't load animation '{asset.Key}', skipping.");
+                    return;
+                }
 
-                // open the stream for asset data retrieval
-                using var fileStream = TitleContainer.OpenStream(Path.Combine(SPRITES_PATH, sprite.Key + ".png"));
-                var tex = Texture2D.FromStream(InstantGame.Instance.GraphicsDevice, fileStream);
-                _loadedTextures.Add(tex);
-
-                // proccess the spritedef and load the sprite back to the asset
-                var sprites = ProcessSpriteDef(SpriteDefinitions[asset.Key], tex, new(0, 0, tex.Width, tex.Height), out _);
-                sprite.Content = sprites.FirstOrDefault();
+                animationAsset.Content = anim;
             }
         }
 

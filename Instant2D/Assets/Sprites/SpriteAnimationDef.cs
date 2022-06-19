@@ -1,6 +1,10 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Instant2D.Utils.Serialization;
+using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 
 namespace Instant2D.Assets.Sprites {
     public struct AnimationEvent {
@@ -22,30 +26,38 @@ namespace Instant2D.Assets.Sprites {
         public class Converter : JsonConverter<AnimationEvent> {
             public override AnimationEvent ReadJson(JsonReader reader, Type objectType, AnimationEvent existingValue, bool hasExistingValue, JsonSerializer serializer) {
                 try {
-                    var frame = reader.ReadAsInt32().Value;
-                    reader.Read();
+                    serializer.Converters.Add(new ObjectArrayConverter());
 
-                    var args = serializer.Deserialize<object[]>(reader);
-                    for (var i = 0; i < args.Length; i++) {
-                        // replace float[2] with Vector2's
-                        if (args[i] is float[] floatArr && floatArr.Length == 2)
-                            args[i] = new Vector2(floatArr[0], floatArr[1]);
+                    var items = serializer.Deserialize<object[]>(reader);
 
-                        // replace int[2] with Vector2's
-                        if (args[i] is int[] intArr && intArr.Length == 2)
-                            args[i] = new Vector2(intArr[0], intArr[1]);
+                    // read frame number
+                    if (items[0] is not int frame) {
+                        throw new ArgumentException($"Expected event's frame number as first item.");
                     }
 
-                    reader.Read();
+                    // pre-process the arguments
+                    for (var i = 2; i < items.Length; i++) {
+
+                        // replace some args with vectors
+                        if (items[i] is object[] untypedArray && untypedArray.Length == 2) {
+                            // replace int[2] with Vector2's
+                            if (untypedArray[0] is int x && untypedArray[1] is int y)
+                                items[i] = new Vector2(x, y);
+
+                            // replace float[2] with Vector2's
+                            if (untypedArray[0] is float fx && untypedArray[1] is float fy)
+                                items[i] = new Vector2(fx, fy);
+                        }
+                    }
 
                     return new() {
                         frame = frame,
-                        key = args[0] as string,
-                        args = args[1..]
+                        key = items[1] as string,
+                        args = items[2..]
                     };
 
                 } catch (Exception ex) {
-                    throw new InvalidOperationException("Couldn't parse AnimationEvent.", ex);
+                    throw new InvalidOperationException($"Couldn't parse AnimationEvent: {ex.Message}", ex);
                 }
             }
 

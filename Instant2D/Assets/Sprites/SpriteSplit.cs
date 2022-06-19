@@ -1,6 +1,8 @@
 ﻿using Instant2D.Utils;
+using Instant2D.Utils.Serialization;
 using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,9 +28,28 @@ namespace Instant2D.Assets.Sprites {
     }
 
     public struct ManualSplitItem {
+        [JsonConverter(typeof(RectangleConverter))]
         public Rectangle rect;
+
+        [JsonConverter(typeof(SpriteOrigin.Converter))]
         public SpriteOrigin origin;
         public string key;
+
+        public class Converter : JsonConverter<ManualSplitItem> {
+            public override ManualSplitItem ReadJson(JsonReader reader, Type objectType, ManualSplitItem existingValue, bool hasExistingValue, JsonSerializer serializer) {
+                // inline rect definition
+                if (reader.TokenType == JsonToken.StartArray) {
+                    var rect = serializer.Deserialize<Rectangle>(reader);
+                    return new ManualSplitItem { rect = rect };
+                }
+
+                return JToken.ReadFrom(reader).ToObject<ManualSplitItem>();
+            }
+
+            public override void WriteJson(JsonWriter writer, ManualSplitItem value, JsonSerializer serializer) {
+                throw new NotImplementedException();
+            }
+        }
     }
 
     public struct SpriteSplit {

@@ -98,19 +98,16 @@ namespace Instant2D.Assets.Loaders {
             }
         }
 
-        protected static Point GetOrigin(in SpriteDef def, Rectangle sourceRect, in SpriteDef? parent = default) => (def.origin.type switch {
-            SpriteOriginType.Absolute => def.origin.value,
-            SpriteOriginType.Normalized => new Vector2(sourceRect.Width, sourceRect.Height) * def.origin.value,
-
-            // get parent origin
-            SpriteOriginType.Default when parent is SpriteDef parentDef => GetOrigin(parentDef, sourceRect).ToVector2(),
-
-            // get origin from manifest
-            SpriteOriginType.Default when def.manifest is SpriteManifest manifest => 
-                manifest.DefaultOrigin * new Vector2(sourceRect.Width, sourceRect.Height),
-
-            _ => new Vector2(0.5f) * new Vector2(sourceRect.Width, sourceRect.Height)
-        }).RoundToPoint();
+        protected static Vector2 GetOrigin(SpriteOrigin origin, Rectangle sourceRect, SpriteManifest manifest = default, SpriteOrigin? parent = default) {
+            var size = new Vector2(sourceRect.Width, sourceRect.Height);
+            return origin.type switch {
+                SpriteOriginType.Absolute => origin.value,
+                SpriteOriginType.Normalized => size * origin.value,
+                SpriteOriginType.Default when parent is not null => GetOrigin(parent.Value, sourceRect, manifest),
+                SpriteOriginType.Default when manifest is not null => size * manifest.DefaultOrigin,
+                _ => size * new Vector2(0.5f),
+            };
+        } 
 
         /// <summary>
         /// Attempts to get all asset information that may be produced by provided <see cref="SpriteDef"/>.
@@ -161,7 +158,6 @@ namespace Instant2D.Assets.Loaders {
                     }
 
                     break;
-
             }
 
             return result;
@@ -181,16 +177,23 @@ namespace Instant2D.Assets.Loaders {
             _spriteBuffer.Clear();
             switch (def.split.type) {
                 case SpriteSplitOptions.None:
-                    _spriteBuffer.Add(new Sprite(texture, sourceRect, GetOrigin(def, sourceRect), def.key));
+                    _spriteBuffer.Add(new Sprite(texture, sourceRect, GetOrigin(def.origin, sourceRect, def.manifest), def.key));
                     break;
 
                 case SpriteSplitOptions.Manual:
-                    if (def.animation == null) {
-                        // if animation is null, we add the spritesheet as its own sprite
-                        _spriteBuffer.Add(new Sprite(texture, sourceRect, GetOrigin(def, sourceRect), def.key));
+                    // since order for manual sprites cannot be defined,
+                    // we just ignore animations and warn the user about it
+                    if (def.animation != null) {
+                        InstantGame.Instance.Logger.Warning($"Sprite '{def.key}' with custom 'split' cannot have animation, adding as a spritesheet.");
                     }
 
-                    InstantGame.Instance.Logger.Warning($"Sprites with manual split option are currently not supported: '{def.key}'");
+                    // add all rects
+                    _spriteBuffer.Add(new Sprite(texture, sourceRect, GetOrigin(def.origin, sourceRect, def.manifest), def.key));
+                    for (var i = 0; i < def.split.manual.Length; i++) {
+                        var split = def.split.manual[i];
+                        var frameRect = new Rectangle(sourceRect.X + split.rect.X, sourceRect.Y + split.rect.Y, split.rect.Width, split.rect.Height);
+                        _spriteBuffer.Add(new Sprite(texture, frameRect, GetOrigin(split.origin, frameRect, def.manifest, def.origin), def.FormatFrameKey(split.key)));
+                    }
 
                     break;
 
@@ -198,7 +201,7 @@ namespace Instant2D.Assets.Loaders {
                 case SpriteSplitOptions.ByCount:
                     if (def.animation == null) {
                         // if animation is null, we add the spritesheet as its own sprite
-                        _spriteBuffer.Add(new Sprite(texture, sourceRect, GetOrigin(def, sourceRect), def.key));
+                        _spriteBuffer.Add(new Sprite(texture, sourceRect, GetOrigin(def.origin, sourceRect, def.manifest), def.key));
                     }
 
                     // prepare frame data for parsing
@@ -208,7 +211,7 @@ namespace Instant2D.Assets.Loaders {
                     for (var x = sourceRect.X; x < sourceRect.Right; x += width) {
                         for (var y = sourceRect.Y; y < sourceRect.Bottom; y += height) {
                             var frameRect = new Rectangle(x, y, width, height);
-                            _spriteBuffer.Add(new Sprite(texture, frameRect, GetOrigin(def, frameRect), def.FormatFrameKey(frameIndex++.ToString())));
+                            _spriteBuffer.Add(new Sprite(texture, frameRect, GetOrigin(def.origin, sourceRect, def.manifest), def.FormatFrameKey(frameIndex++.ToString())));
                         }
                     }
 

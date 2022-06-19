@@ -11,9 +11,10 @@ namespace Instant2D.Core {
     public abstract class InstantGame : Game {
         public static InstantGame Instance { get; private set; }
 
-        public InstantGame() {
-            new GraphicsDeviceManager(this);
+        public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
+        public InstantGame() {
+            GraphicsDeviceManager = new GraphicsDeviceManager(this);
             Instance = this;
         }
 

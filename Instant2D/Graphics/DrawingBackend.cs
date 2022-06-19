@@ -24,9 +24,10 @@ namespace Instant2D {
         public abstract void Push(in Material material);
 
         /// <summary>
-        /// Ends current batch and flushes all the drawn stuff.
+        /// Ends current batch and flushes all the drawn stuff. <br/>
+        /// If <paramref name="endCompletely"/> is set, the batch will not be restarted.
         /// </summary>
-        public abstract void Pop();
+        public abstract void Pop(bool endCompletely = false);
 
         /// <inheritdoc cref="Draw(in Sprite, Vector2, Color, float, Vector2)"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

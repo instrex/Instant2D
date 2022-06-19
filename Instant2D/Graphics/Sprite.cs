@@ -16,22 +16,22 @@ namespace Instant2D {
         public Rectangle SourceRect { get; init; }
         public string Key { get; init; }
 
-        readonly Point _origin;
+        readonly Vector2 _origin;
 
         /// <summary>
         /// Direct access to sprite's origin.
         /// </summary>
-        public Point Origin { 
+        public Vector2 Origin { 
             get => _origin;
-            init => _origin = value;
+            init => _origin = value.Round();
         }
 
         /// <summary>
         /// Access to normalized origin, uses values ranging [0.0 - 1.0]
         /// </summary>
         public Vector2 NormalizedOrigin {
-            get => _origin.ToVector2();
-            init => Origin = (new Vector2(SourceRect.Width, SourceRect.Height) * value).RoundToPoint();
+            get => _origin;
+            init => Origin = new Vector2(SourceRect.Width, SourceRect.Height) * value;
         }
 
         /// <summary>
@@ -46,12 +46,12 @@ namespace Instant2D {
             _origin = new(Texture.Width / 2, Texture.Height / 2);
         }
 
-        public Sprite(Texture2D texture, Rectangle sourceRect, Point origin, string key = default) {
+        public Sprite(Texture2D texture, Rectangle sourceRect, Vector2 origin, string key = default) {
             Texture = texture;
             SourceRect = sourceRect;
             Key = key;
 
-            _origin = origin;
+            _origin = origin.Round();
         }
 
         public override string ToString() => $"{SourceRect}, {Origin}";

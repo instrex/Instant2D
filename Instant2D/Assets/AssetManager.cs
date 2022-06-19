@@ -43,7 +43,7 @@ namespace Instant2D {
                 // run all loaders in order, saving assets
                 foreach (var asset in loader.Load(this, progress)) {
                     _assets.Add(asset.Key, asset);
-                    InstantGame.Instance.Logger.Info($"+ {asset.ToString()} '{asset.Key}'");
+                    InstantGame.Instance.Logger.Info($"+ {asset} '{asset.Key}'");
                 }
             }
 

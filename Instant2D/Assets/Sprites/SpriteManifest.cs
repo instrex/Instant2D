@@ -13,6 +13,7 @@ namespace Instant2D.Assets.Sprites {
     /// <summary>
     /// A class that houses all the sprite information you've defined in 'sprites/*' asset folder.
     /// </summary>
+    [JsonConverter(typeof(Converter))]
     public class SpriteManifest {
         public const string DEFAULT_FRAME_FORMAT = "{0}_{1}";
 
@@ -45,6 +46,7 @@ namespace Instant2D.Assets.Sprites {
                 serializer.Converters.Add(new AnimationEvent.Converter());
                 serializer.Converters.Add(new SpriteOrigin.Converter());
                 serializer.Converters.Add(new SpriteSplit.Converter());
+                serializer.Converters.Add(new ManualSplitItem.Converter());
                 
                 // skip '{'
                 reader.Read();

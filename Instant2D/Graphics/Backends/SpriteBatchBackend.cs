@@ -32,20 +32,28 @@ namespace Instant2D.Graphics {
                 sprite.SourceRect,
                 color,
                 rotation,
-                sprite.Origin.ToVector2(),
+                sprite.Origin,
                 scale,
                 spriteEffects,
                 0
             );
         }
 
-        public override void Pop() {
+        public override void Pop(bool endCompletely = false) {
             if (_batchDepth == 0) {
                 throw new InvalidOperationException("Cannot Pop the batch: it didn't begin.");
             }
 
-            // end the spritebatch
             _spriteBatch.End();
+
+            if (endCompletely) {
+                _materials.Clear();
+                _batchDepth = 0;
+
+                return;
+            }
+
+            // restart the batch if ending wasn't requested
             _materials.Pop();
             _batchDepth--;
 

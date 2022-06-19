@@ -16,17 +16,15 @@ namespace Instant2D.TestGame {
         protected override void SetupSystems() {
             AddSystem<AssetManager>(assets => {
                 assets.AddLoader<DevSpriteLoader>()
-                    .SetSpritesheetMode();
+                    .SetSpritesheetMode()
+                    ;
             });
 
             AddSystem<GraphicsManager>();
         }
 
-        SpriteBatch sb;
         protected override void LoadContent() {
             base.LoadContent();
-
-            sb = new SpriteBatch(GraphicsDevice);
         }
 
         protected override void Draw(GameTime gameTime) {
