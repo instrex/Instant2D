@@ -22,7 +22,7 @@ namespace Instant2D.Assets.Sprites {
 
     public struct SpriteOrigin {
         public SpriteOriginType type;
-        public Vector2 origin;
+        public Vector2 value;
 
         public class Converter : JsonConverter<SpriteOrigin> {
             public override SpriteOrigin ReadJson(JsonReader reader, Type objectType, SpriteOrigin existingValue, bool hasExistingValue, JsonSerializer serializer) {
@@ -45,7 +45,7 @@ namespace Instant2D.Assets.Sprites {
 
                     return new() {
                         type = type,
-                        origin = origin
+                        value = origin
                     };
 
                 } catch (Exception ex) {

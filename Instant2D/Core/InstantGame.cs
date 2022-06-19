@@ -11,6 +11,12 @@ namespace Instant2D.Core {
     public abstract class InstantGame : Game {
         public static InstantGame Instance { get; private set; }
 
+        public InstantGame() {
+            new GraphicsDeviceManager(this);
+
+            Instance = this;
+        }
+
         Logger _logger;
         public Logger Logger {
             get {
@@ -36,10 +42,13 @@ namespace Instant2D.Core {
         protected override void Initialize() {
             base.Initialize();
 
-            SetupSystems();
+            IsMouseVisible = true;
+        }
 
-            // set the singleton
-            Instance = this;
+        protected override void LoadContent() {
+            base.LoadContent();
+
+            SetupSystems();
             foreach (var system in _subSystems) {
                 system.Initialize();
             }

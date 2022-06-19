@@ -38,7 +38,7 @@ namespace Instant2D {
         /// Initializes <see cref="SourceRect"/> to <paramref name="texture"/>'s size and <see cref="Origin"/> to center.
         /// </summary>
         /// <param name="texture"></param>
-        public Sprite(Texture2D texture, string key = "") {
+        public Sprite(Texture2D texture, string key = default) {
             Texture = texture;
             SourceRect = new(0, 0, Texture.Width, Texture.Height);
             Key = key;
@@ -46,7 +46,7 @@ namespace Instant2D {
             _origin = new(Texture.Width / 2, Texture.Height / 2);
         }
 
-        public Sprite(Texture2D texture, Rectangle sourceRect, Point origin, string key = "") {
+        public Sprite(Texture2D texture, Rectangle sourceRect, Point origin, string key = default) {
             Texture = texture;
             SourceRect = sourceRect;
             Key = key;

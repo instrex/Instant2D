@@ -8,6 +8,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D {
+    /// <summary>
+    /// Represents position, scale and rotation as well as object hierarchy. 
+    /// Thank you, Nez!
+    /// </summary>
     public class Transform : IResettable {
         [Flags]
         enum DirtyFlags {

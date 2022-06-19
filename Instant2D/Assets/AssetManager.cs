@@ -8,33 +8,42 @@ using System.Threading.Tasks;
 
 namespace Instant2D {
     public class AssetManager : SubSystem {
+        public static AssetManager Instance { get; set; }
+
         readonly List<(int order, IAssetLoader)> _loaders = new();
         readonly Dictionary<string, Asset> _assets = new();
         bool _assetsLoaded;
 
-        public void AddLoader<T>(int order = 0) where T: IAssetLoader, new() {
+        public T AddLoader<T>(int order = 0) where T: IAssetLoader, new() {
             if (_assetsLoaded) {
-                throw new InvalidOperationException("Cannot add loaders after the assets has been loaded...");
+                throw new InvalidOperationException("Cannot add loaders after the assets has been loaded.");
             }
 
-            _loaders.Add((order, new T()));
+            var loader = new T();
+            _loaders.Add((order, loader));
+
+            return loader;
         }
 
         public void AddLoader(int order, Func<IEnumerable<Asset>> loader) {
             if (_assetsLoaded) {
-                throw new InvalidOperationException("Cannot add loaders after the assets has been loaded...");
+                throw new InvalidOperationException("Cannot add loaders after the assets has been loaded.");
             }
 
             _loaders.Add((order, new IAssetLoader.DefaultLoader { loader = loader }));
         }
 
         public override void Initialize() {
+            Instance = this;
+
+            // load assets
             var progress = new LoadingProgress();
             _loaders.Sort((a, b) => a.order.CompareTo(b.order));
             foreach (var (_, loader) in _loaders) {
                 // run all loaders in order, saving assets
                 foreach (var asset in loader.Load(this, progress)) {
                     _assets.Add(asset.Key, asset);
+                    InstantGame.Instance.Logger.Info($"+ {asset.ToString()} '{asset.Key}'");
                 }
             }
 
@@ -55,7 +64,7 @@ namespace Instant2D {
         /// </summary>
         public T Get<T>(string key) {
             if (_assets.TryGetValue(key, out var asset)) {
-                if (asset is not Asset<T> typedAsset)
+                if (asset is not IAssetContainer<T> typedAsset)
                     throw new InvalidOperationException($"Cannot get asset '{key}' with type '{typeof(T).Name}', as its actual type is '{asset.GetType().Name}'.");
 
                 return typedAsset.Content;

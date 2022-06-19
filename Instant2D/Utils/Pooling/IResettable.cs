@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D.Core.Interfaces {
-    public interface IScene<T> {
-        void AddEntity(T entity);
+namespace Instant2D.Utils {
+    public interface IResettable {
+        void Reset();
     }
 }

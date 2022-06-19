@@ -4,8 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D {
-    public interface IResettable {
-        void Reset();
+namespace Instant2D.EC {
+    public class Entity {
+
+    }
+
+    public class Component {
+
     }
 }

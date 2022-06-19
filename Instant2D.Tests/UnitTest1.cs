@@ -55,12 +55,12 @@ namespace Instant2D.Tests {
             Assert.IsTrue(c.manual[0] is ManualSplitItem { 
                 key: "X",
                 origin.type: SpriteOriginType.Absolute
-            } x && x.rect == new Rectangle(1, 2, 3, 4) && x.origin.origin == new Vector2(1, 2));
+            } x && x.rect == new Rectangle(1, 2, 3, 4) && x.origin.value == new Vector2(1, 2));
 
             Assert.IsTrue(c.manual[1] is ManualSplitItem {
                 key: "Y",
                 origin: { type: SpriteOriginType.Normalized }
-            } y && y.rect == new Rectangle(1, 2, 3, 4) && y.origin.origin == new Vector2(0.5f, 0.5f));
+            } y && y.rect == new Rectangle(1, 2, 3, 4) && y.origin.value == new Vector2(0.5f, 0.5f));
 
             var ev = JsonConvert.DeserializeObject<AnimationEvent>(@"[1, [""event"", 5, [1, 2, 3], ""argument""]]",
                 new SpriteOrigin.Converter(),

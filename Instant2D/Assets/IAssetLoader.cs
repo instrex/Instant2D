@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 
 namespace Instant2D.Assets {
-    public class Asset {
-        public string Key { get; init; }
+    public interface ILazyAssetLoader {
+        /// <summary>
+        /// Load the asset on-demand.
+        /// </summary>
+        /// <param name="asset"></param>
+        void LoadOnDemand(LazyAsset asset);
     }
 
-    public class Asset<T> : Asset {
-        public T Content { get; init; }
-    }
 
     public interface IAssetLoader {
         /// <summary>

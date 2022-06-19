@@ -14,17 +14,22 @@ namespace Instant2D.Assets.Sprites {
     /// A class that houses all the sprite information you've defined in 'sprites/*' asset folder.
     /// </summary>
     public class SpriteManifest {
+        public const string DEFAULT_FRAME_FORMAT = "{0}_{1}";
+
         /// <summary>
-        /// Default origin used for sprites that don't override it. Defaults to [0, 0].
+        /// Default origin used for sprites that don't override it. Defaults to [0.5, 0.5].
         /// </summary>
-        [JsonProperty("$default_origin")]
-        public Vector2 DefaultOrigin { get; set; }
+        public Vector2 DefaultOrigin { get; set; } = new(0.5f);
 
         /// <summary>
         /// Naming format used for sprites with multiple frames. Defaults to '{0}_{1}'.
         /// </summary>
-        [JsonProperty("$frame_format")]
-        public string FrameFormat { get; set; } = "{0}_{1}";
+        public string FrameFormat { get; set; } = DEFAULT_FRAME_FORMAT;
+
+        /// <summary>
+        /// Name of the manifest file.
+        /// </summary>
+        public string Name { get; set; }
 
         /// <summary>
         /// All of the definitions explicitly defined in this manifest.

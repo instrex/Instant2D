@@ -12,7 +12,7 @@ namespace RectpackSharp
         /// A value that can be used to identify this <see cref="PackingRectangle"/>. This value is
         /// never touched by the rectangle packing algorithm.
         /// </summary>
-        public int Id;
+        public object Tag;
 
         /// <summary>A value used internally by the packing algorithm for sorting rectangles.</summary>
         public uint SortKey;
@@ -65,13 +65,13 @@ namespace RectpackSharp
         /// <summary>
         /// Creates a <see cref="PackingRectangle"/> with the specified values.
         /// </summary>
-        public PackingRectangle(uint x, uint y, uint width, uint height, int id = 0)
+        public PackingRectangle(uint x, uint y, uint width, uint height, object tag = default)
         {
             X = x;
             Y = y;
             Width = width;
             Height = height;
-            Id = id;
+            Tag = tag;
             SortKey = 0;
         }
 
@@ -129,18 +129,18 @@ namespace RectpackSharp
 
         public override string ToString()
         {
-            return string.Concat("{ X=", X.ToString(), ", Y=", Y.ToString(), ", Width=", Width.ToString() + ", Height=", Height.ToString(), ", Id=", Id.ToString(), " }");
+            return string.Concat("{ X=", X.ToString(), ", Y=", Y.ToString(), ", Width=", Width.ToString() + ", Height=", Height.ToString(), ", Id=", Tag.ToString(), " }");
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(X, Y, Width, Height, Id);
+            return HashCode.Combine(X, Y, Width, Height, Tag);
         }
 
         public bool Equals(PackingRectangle other)
         {
             return X == other.X && Y == other.Y && Width == other.Width
-                && Height == other.Height && Id == other.Id;
+                && Height == other.Height && Tag == other.Tag;
         }
 
         public override bool Equals(object obj)

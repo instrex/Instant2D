@@ -7,20 +7,20 @@ using System.Threading.Tasks;
 
 namespace Instant2D.Graphics {
     /// <summary>
-    /// Wrapper for values used during sprite drawing.
+    /// Wrapper for values used during rendering.
     /// </summary>
-    public class Material {
-        public BlendState BlendState { get; set; }
-        public RasterizerState RasterizerState { get; set; }
-        public SamplerState SamplerState { get; set; }
-        public Effect Effect { get; set; }
+    public readonly struct Material {
+        public BlendState BlendState { get; init; }
+        public RasterizerState RasterizerState { get; init; }
+        public SamplerState SamplerState { get; init; }
+        public DepthStencilState DepthStencilState { get; init; }
+        public Effect Effect { get; init; }
 
         /// <summary>
         /// Default <see cref="Material"/> used when nothing has been provided.
         /// </summary>
         public static readonly Material Default = new() {
             BlendState = BlendState.NonPremultiplied,
-            RasterizerState = RasterizerState.CullNone,
             SamplerState = SamplerState.PointClamp,
         };
     }
