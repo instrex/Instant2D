@@ -1,6 +1,9 @@
 ﻿using Instant2D.Assets.Sprites;
 
 namespace Instant2D {
+    /// <summary>
+    /// Collection of sprites with optional events array.
+    /// </summary>
     public readonly struct SpriteAnimation {
         public string Key { get; init; }
 

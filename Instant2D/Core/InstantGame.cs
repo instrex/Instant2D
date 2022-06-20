@@ -15,6 +15,8 @@ namespace Instant2D.Core {
 
         public InstantGame() {
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
+
+            IsMouseVisible = true;
             Instance = this;
         }
 
@@ -29,39 +31,59 @@ namespace Instant2D.Core {
         }
 
         readonly List<SubSystem> _subSystems = new(16);
+        readonly List<SubSystem> _updatableSystems = new(16);
         public InstantGame AddSystem<T>(Action<T> initializer = default) where T: SubSystem, new() {
-            var instance = new T();
+            var instance = new T { Game = this };
             initializer?.Invoke(instance);
             _subSystems.Add(instance);
-            _subSystems.Sort();
 
             return this;
         }
 
+        internal void UpdateSystem(SubSystem system) {
+            _updatableSystems.Add(system);
+        }
+
+        /// <summary>
+        /// Setup all of the systems in there using <see cref="AddSystem{T}(Action{T})"/>.
+        /// </summary>
         protected virtual void SetupSystems() { }
 
         protected override void Initialize() {
             base.Initialize();
 
-            IsMouseVisible = true;
+            
         }
 
         protected override void LoadContent() {
             base.LoadContent();
 
+            AddSystem<TimeManager>();
+
             SetupSystems();
+
+            // initialize systems in order of definition
             foreach (var system in _subSystems) {
                 system.Initialize();
             }
+
+            // then, sort them for later update tasks
+            _subSystems.Sort();
         }
-    }
 
-    public class TestGame : InstantGame {
-        protected override void SetupSystems() {
-            AddSystem<AssetManager>(assets => {
-                
-            });
+        protected override void Update(GameTime gameTime) {
+            base.Update(gameTime);
 
+            // update the subsystems
+            for (var i = _updatableSystems.Count - 1; i >= 0; i--) {
+                var system = _updatableSystems[i];
+                system.Update(gameTime);
+
+                // remove the system if it's no longer updatable
+                if (!system.ShouldUpdate) {
+                    _updatableSystems.RemoveAt(i);
+                }
+            }
         }
     }
 }

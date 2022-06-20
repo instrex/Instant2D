@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\libs\FNA\FNA.Core.csproj" />
+    <ProjectReference Include="..\FNA\FNA.Core.csproj" />
   </ItemGroup>
 
 </Project>

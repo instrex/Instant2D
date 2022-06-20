@@ -8,20 +8,29 @@ using Instant2D;
 
 namespace Instant2D.Graphics {
     /// <summary>
-    /// Implementation of <see cref="DrawingBackend"/> using FNA's <see cref="SpriteBatch"/>. 
+    /// Implementation of <see cref="IDrawingBackend"/> using FNA's <see cref="SpriteBatch"/>. 
     /// Probably needs to be replaced with something more performant. (later)
     /// </summary>
-    public class SpriteBatchBackend : DrawingBackend, IDisposable {
+    public class SpriteBatchBackend : IDrawingBackend, IDisposable {
+        readonly struct BatchState {
+            public Material Material { get; init; }
+            public Matrix Transform { get; init; }
+
+            public void Deconstruct(out Material material, out Matrix transform) {
+                transform = Transform;
+                material = Material;
+            }
+        }
+
         readonly SpriteBatch _spriteBatch;
-        readonly Stack<Material> _materials = new(6);
-        Matrix _finalMatrix = Matrix.Identity;
+        readonly Stack<BatchState> _states = new(6);
         int _batchDepth;
 
         public SpriteBatchBackend() {
             _spriteBatch = new SpriteBatch(InstantGame.Instance.GraphicsDevice);
         }
 
-        public override void Draw(in Sprite sprite, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects spriteEffects = SpriteEffects.None) {
+        public void Draw(in Sprite sprite, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects spriteEffects = SpriteEffects.None) {
             if (_batchDepth == 0) {
                 throw new InvalidOperationException("Cannot Draw: the batch didn't begin.");
             }
@@ -39,43 +48,46 @@ namespace Instant2D.Graphics {
             );
         }
 
-        public override void Pop(bool endCompletely = false) {
+        public void Pop(bool endCompletely = false) {
             if (_batchDepth == 0) {
                 throw new InvalidOperationException("Cannot Pop the batch: it didn't begin.");
             }
 
             _spriteBatch.End();
-
             if (endCompletely) {
-                _materials.Clear();
+                _states.Clear();
                 _batchDepth = 0;
 
                 return;
             }
 
             // restart the batch if ending wasn't requested
-            _materials.Pop();
+            _states.Pop();
             _batchDepth--;
 
             // retrieve previous batch
             if (_batchDepth > 0) {
-                var material = _materials.Peek();
+                var (material, transform) = _states.Peek();
                 _spriteBatch.Begin(material.Effect != null ? SpriteSortMode.Immediate : SpriteSortMode.Deferred, material.BlendState,
-                    material.SamplerState, material.DepthStencilState, material.RasterizerState, material.Effect, _finalMatrix);
+                    material.SamplerState, material.DepthStencilState, material.RasterizerState, material.Effect, transform);
             }
         }
 
-        public override void Push(in Material material) {
+        public void Push(in Material material, Matrix transformMatrix = default) {
             if (_batchDepth > 0) {
                 _spriteBatch.End();
             }
 
+            if (transformMatrix == default) {
+                transformMatrix = _batchDepth > 0 ? _states.Peek().Transform : Matrix.Identity;
+            }
+
             // apply material's properties
             _spriteBatch.Begin(material.Effect != null ? SpriteSortMode.Immediate : SpriteSortMode.Deferred, material.BlendState,
-                material.SamplerState, material.DepthStencilState, material.RasterizerState, material.Effect, _finalMatrix);
+                material.SamplerState, material.DepthStencilState, material.RasterizerState, material.Effect, transformMatrix);
 
-            // push the material
-            _materials.Push(material);
+            // push the state
+            _states.Push(new BatchState { Material = material, Transform = transformMatrix });
             _batchDepth++;
         }
 

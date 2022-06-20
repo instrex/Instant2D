@@ -15,12 +15,12 @@ namespace Instant2D.Graphics {
         /// <summary>
         /// Backend used for all drawing operations in the game.
         /// </summary>
-        public DrawingBackend Backend { get; private set; }
+        public IDrawingBackend Backend { get; private set; }
 
         /// <summary>
         /// Sets the <see cref="Backend"/> property.
         /// </summary>
-        public void SetBackend<T>() where T: DrawingBackend, new() {
+        public void SetBackend<T>() where T: IDrawingBackend, new() {
             Backend = new T();
         }
 
@@ -28,7 +28,7 @@ namespace Instant2D.Graphics {
             Instance = this;
 
             if (Backend == null) {
-                InstantGame.Instance.Logger.Warning("No GraphicsManager backend specified, setting to SpriteBatchBackend...");
+                InstantGame.Instance.Logger.Warning("No GraphicsManager backend specified, defaulting to SpriteBatchBackend...");
                 SetBackend<SpriteBatchBackend>();
             }
         }
