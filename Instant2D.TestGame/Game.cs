@@ -46,6 +46,12 @@ namespace Instant2D.TestGame {
                 }
             }
 
+            public float Scale {
+                set {
+                    _matrix *= Matrix2D.CreateScale(value);
+                }
+            }
+
             public Matrix2D TransformMatrix => _matrix;
 
             public Vector2 ScreenToWorldPosition(Vector2 screenPosition) {
@@ -62,6 +68,7 @@ namespace Instant2D.TestGame {
             base.Draw(gameTime);
 
             _funnyCamera.Position = new Vector2(MathF.Sin(TimeManager.TotalTime) * 12, MathF.Cos(TimeManager.TotalTime * 2) * 12);
+            _funnyCamera.Scale = 1f + 0.75f * MathF.Sin(TimeManager.TotalTime * 5);
 
             GraphicsDevice.Clear(Color.Red);
             
