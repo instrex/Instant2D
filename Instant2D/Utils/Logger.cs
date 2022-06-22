@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Instant2D.Core;
+using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Utils {
-    public class Logger : IDisposable {
+    public class Logger : SubSystem, IDisposable {
         public enum Severity {
             Info,
             Warning,
@@ -36,7 +38,18 @@ namespace Instant2D.Utils {
         void Write(string message) {
             Console.Write(message);
             _writer.Write(message);
-            _writer.Flush();
+        }
+
+        public override void Initialize() {
+            ShouldUpdate = true;
+            Game._logger = this;
+        }
+
+        public override void Update(GameTime time) {
+            // flush the filestream every 2 seconds
+            if (TimeManager.FrameCount % 120 == 0) {
+                _writer.Flush();
+            }
         }
 
         public void Info(object message) => Write($"[{DateTime.Now}] {message} \n");

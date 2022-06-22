@@ -14,30 +14,38 @@ namespace Instant2D.Core {
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
         public InstantGame() {
-            GraphicsDeviceManager = new GraphicsDeviceManager(this);
-
-            IsMouseVisible = true;
             Instance = this;
+
+            GraphicsDeviceManager = new GraphicsDeviceManager(this);
+            IsMouseVisible = true;
         }
 
-        Logger _logger;
+        internal Logger _logger;
         public Logger Logger {
             get {
                 if (_logger == null)
-                    _logger = new();
+                    _logger = AddSystem<Logger>();
 
                 return _logger;
             }
         }
 
+        bool _initialized;
+
         readonly List<SubSystem> _subSystems = new(16);
         readonly List<SubSystem> _updatableSystems = new(16);
-        public InstantGame AddSystem<T>(Action<T> initializer = default) where T: SubSystem, new() {
+        public T AddSystem<T>(Action<T> initializer = default) where T: SubSystem, new() {
             var instance = new T { Game = this };
             initializer?.Invoke(instance);
             _subSystems.Add(instance);
 
-            return this;
+            // if the game has already been initialized,
+            // initialize this system as well
+            if (_initialized) {
+                instance.Initialize();
+            }
+
+            return instance;
         }
 
         internal void UpdateSystem(SubSystem system) {
@@ -69,6 +77,7 @@ namespace Instant2D.Core {
 
             // then, sort them for later update tasks
             _subSystems.Sort();
+            _initialized = true;
         }
 
         protected override void Update(GameTime gameTime) {

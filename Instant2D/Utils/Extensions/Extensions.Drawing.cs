@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace Instant2D {
     public static partial class Extensions {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Draw(this IDrawingBackend drawing, in Sprite sprite, Vector2 position, Color color, float rotation = 0f, float scale = 0f, SpriteEffects spriteEffects = SpriteEffects.None) =>
+        public static void Draw(this IDrawingBackend drawing, in Sprite sprite, Vector2 position, Color color, float rotation = 0f, float scale = 1f, SpriteEffects spriteEffects = SpriteEffects.None) =>
             drawing.Draw(sprite, position, color, rotation, new Vector2(scale), spriteEffects);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

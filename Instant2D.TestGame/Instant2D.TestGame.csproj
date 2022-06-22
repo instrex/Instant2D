@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="fnalibs" Version="21.7.0" />
+    <PackageReference Include="NVorbis" Version="0.10.4" />
   </ItemGroup>
 
   <ItemGroup>

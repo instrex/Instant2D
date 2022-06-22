@@ -74,7 +74,7 @@ namespace Instant2D.TestGame {
             
             var drawing = GraphicsManager.Instance.Backend;
 
-            drawing.Push(Material.Default, _funnyCamera.TransformMatrix);
+            drawing.Push(Material.Default);
 
             var logo = AssetManager.Instance.Get<Sprite>("logo");
             drawing.Draw(

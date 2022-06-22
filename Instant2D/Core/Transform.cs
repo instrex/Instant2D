@@ -15,7 +15,7 @@ namespace Instant2D {
     /// </summary>
     public class Transform : IResettable {
         [Flags]
-        enum DirtyFlags {
+        public enum ComponentType {
             Clean = 0,
             Position = 1, 
             Scale = 2,
@@ -32,7 +32,7 @@ namespace Instant2D {
         Matrix2D _localTransform, _worldTransform = Matrix2D.Identity;
         Matrix2D _translationMatrix, _rotationMatrix, _scaleMatrix;
         Matrix2D _worldToLocalTransform = Matrix2D.Identity;
-        DirtyFlags _matricesDirty, _localMatricesDirty;
+        ComponentType _matricesDirty, _localMatricesDirty;
 
         bool _worldToLocalDirty;
         public Matrix2D WorldToLocalTransform {
@@ -66,9 +66,11 @@ namespace Instant2D {
                 if (_parent != null)
                     Position = Vector2.Zero;
 
-                MarkDirty(DirtyFlags.Position);
+                MarkDirty(ComponentType.Position);
             }
         }
+
+        public IReadOnlyList<Transform> Children => _children;
 
         #region Components
 
@@ -98,8 +100,8 @@ namespace Instant2D {
                     return;
 
                 _localPosition = value;
-                _localMatricesDirty = DirtyFlags.All;
-                MarkDirty(DirtyFlags.Position);
+                _localMatricesDirty = ComponentType.All;
+                MarkDirty(ComponentType.Position);
             }
         }
 
@@ -123,8 +125,8 @@ namespace Instant2D {
 
             set {
                 _localRotation = value;
-                _localMatricesDirty = DirtyFlags.All;
-                MarkDirty(DirtyFlags.Rotation);
+                _localMatricesDirty = ComponentType.All;
+                MarkDirty(ComponentType.Rotation);
             }
         }
 
@@ -149,8 +151,8 @@ namespace Instant2D {
             }
             set {
                 _localScale = value;
-                _localMatricesDirty = DirtyFlags.All;
-                MarkDirty(DirtyFlags.Scale);
+                _localMatricesDirty = ComponentType.All;
+                MarkDirty(ComponentType.Scale);
             }
         }
 
@@ -158,24 +160,24 @@ namespace Instant2D {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void CalculateTransform() {
-            if (_matricesDirty == DirtyFlags.Clean)
+            if (_matricesDirty == ComponentType.Clean)
                 return;
 
             _parent?.CalculateTransform();
-            if (_localMatricesDirty != DirtyFlags.Clean) {
-                if ((_localMatricesDirty & DirtyFlags.Position) != 0) {
+            if (_localMatricesDirty != ComponentType.Clean) {
+                if ((_localMatricesDirty & ComponentType.Position) != 0) {
                     Matrix2D.CreateTranslation(_localPosition.X, _localPosition.Y, out _translationMatrix);
-                    _localMatricesDirty &= ~DirtyFlags.Position;
+                    _localMatricesDirty &= ~ComponentType.Position;
                 }
 
-                if ((_localMatricesDirty & DirtyFlags.Rotation) != 0) {
+                if ((_localMatricesDirty & ComponentType.Rotation) != 0) {
                     Matrix2D.CreateRotation(_localRotation, out _rotationMatrix);
-                    _localMatricesDirty &= ~DirtyFlags.Rotation;
+                    _localMatricesDirty &= ~ComponentType.Rotation;
                 }
 
-                if ((_localMatricesDirty & DirtyFlags.Scale) != 0) {
+                if ((_localMatricesDirty & ComponentType.Scale) != 0) {
                     Matrix2D.CreateScale(_localScale.X, _localScale.Y, out _scaleMatrix);
-                    _localMatricesDirty &= ~DirtyFlags.Scale;
+                    _localMatricesDirty &= ~ComponentType.Scale;
                 }
 
                 Matrix2D.Multiply(ref _scaleMatrix, ref _rotationMatrix, out _localTransform);
@@ -200,7 +202,7 @@ namespace Instant2D {
             }
 
             _worldToLocalDirty = true;
-            _matricesDirty = DirtyFlags.Clean;
+            _matricesDirty = ComponentType.Clean;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -212,7 +214,7 @@ namespace Instant2D {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void MarkDirty(DirtyFlags flags = DirtyFlags.All) {
+        void MarkDirty(ComponentType flags = ComponentType.All) {
             _matricesDirty |= flags;
             for (var i = 0; i < _children.Count; i++) {
                 _children[i].MarkDirty(flags);
