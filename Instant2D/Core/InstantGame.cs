@@ -48,6 +48,21 @@ namespace Instant2D.Core {
             return instance;
         }
 
+        /// <summary>
+        /// Attempts to get a system.
+        /// </summary>
+        public bool TryGetSystem<T>(out T system) where T: SubSystem {
+            for (var i = 0; i < _subSystems.Count; i++) {
+                if (_subSystems[i] is T foundSystem) {
+                    system = foundSystem;
+                    return true;
+                }
+            }
+
+            system = default;
+            return false;
+        }
+
         internal void UpdateSystem(SubSystem system) {
             _updatableSystems.Add(system);
         }
@@ -71,7 +86,7 @@ namespace Instant2D.Core {
             SetupSystems();
 
             // initialize systems in order of definition
-            foreach (var system in _subSystems) {
+            foreach (var system in _subSystems.ToList()) {
                 system.Initialize();
             }
 

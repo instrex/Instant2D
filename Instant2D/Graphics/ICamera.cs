@@ -17,6 +17,11 @@ namespace Instant2D.Graphics {
         Matrix2D TransformMatrix { get; }
 
         /// <summary>
+        /// The rectangle used for object culling, pass <see cref="RectangleF.Empty"/> to disable.
+        /// </summary>
+        RectangleF Bounds { get; }
+
+        /// <summary>
         /// Transform world position to screen coordinates.
         /// </summary>
         Vector2 WorldToScreenPosition(Vector2 worldPosition);

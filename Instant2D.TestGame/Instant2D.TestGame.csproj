@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Platforms>x64</Platforms>
 	<DefineConstants>FNA</DefineConstants>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

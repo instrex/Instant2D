@@ -2,7 +2,6 @@
 using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC {
@@ -78,7 +77,7 @@ namespace Instant2D.EC {
         SceneRenderLayer _layer;
 
         // those are internal so I can acces them easier inside SceneLayers
-        internal Material _material;
+        internal Material? _material;
         internal float _depth;
         internal int _z;
 
@@ -86,7 +85,7 @@ namespace Instant2D.EC {
         /// Material which this component will set before calling <see cref="Draw"/>.
         /// </summary>
         public Material Material { 
-            get => _material; 
+            get => _material ?? Material.Default; 
             set {
                 // if material's the same, no need to reassign it
                 if (_material == value)
@@ -111,12 +110,12 @@ namespace Instant2D.EC {
 
                 // remove the object from the previous layer
                 // (if it exists)
-                _layer?._objects.Remove(this);
+                _layer?.Objects.Remove(this);
                 _layer = value;
 
                 if (_layer != null) {
                     // add the object and update the order
-                    _layer._objects.Add(this);
+                    _layer.Objects.Add(this);
                     _layer._orderDirty = true;
                 }
             }
@@ -166,7 +165,14 @@ namespace Instant2D.EC {
             get => new(Entity.Transform.Position + new Vector2(-32), new(64));
         }
 
-
+        /// <summary>
+        /// Compares two renderable components based on:
+        /// <list type="number">
+        /// <item><see cref="Z"/> index</item>
+        /// <item><see cref="Depth"/></item>
+        /// <item>Equality of <see cref="Material"/></item>
+        /// </list>
+        /// </summary>
         public int CompareTo(RenderableComponent other) {
             var z = _z.CompareTo(other._z);
 
@@ -186,42 +192,11 @@ namespace Instant2D.EC {
             return _material.GetHashCode().CompareTo(other._material.GetHashCode());
         }
 
-
         /// <summary>
         /// The drawing function. Note that before this, <see cref="IDrawingBackend.Push(in Material, Microsoft.Xna.Framework.Matrix)"/>
         /// is called with <see cref="Material"/> and <see cref="ICamera.TransformMatrix"/>. <br/>
         /// Use Push/Pop functions if you happen to need to change the Material mid-rendering.
         /// </summary>
         public abstract void Draw(IDrawingBackend drawing, ICamera camera);
-    }
-
-    /// <summary>
-    /// A batch of <see cref="RenderableComponent"/>s used to better organize rendering and entity sorting.
-    /// </summary>
-    public class SceneRenderLayer {
-        internal List<RenderableComponent> _objects = new(128);
-        internal bool _orderDirty;
-    }
-
-    public interface IRenderableComponent : IComparable<IRenderableComponent> {
-        int IComparable<IRenderableComponent>.CompareTo(IRenderableComponent obj) {
-            return 0;
-        }
-
-        /// <summary>
-        /// The material this component will use when rendering.
-        /// </summary>
-        Material Material { get; }
-
-        /// <summary>
-        /// Space and location that this component occupies. Used for culling.
-        /// </summary>
-        /// <remarks> NOTE: return <see cref="RectangleF.Empty"/> to disable culling. </remarks>
-        RectangleF Bounds { get; }
-
-        /// <summary>
-        /// The drawing function.
-        /// </summary>
-        void Draw(IDrawingBackend drawing, ICamera camera);
     }
 }

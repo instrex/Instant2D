@@ -171,6 +171,12 @@ namespace Instant2D.EC {
             if (_shouldDestroy) {
                 // notify components of death and detach
                 for (var i = 0; i < _components.Count; i++) {
+                    // null out RenderLayers so that renderable components
+                    // are detached from them
+                    if (_components[i] is RenderableComponent render) {
+                        render.RenderLayer = null;
+                    }
+
                     _components[i].OnRemovedFromEntity();
                     _components[i].Entity = null;
                 }
