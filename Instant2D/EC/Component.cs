@@ -14,7 +14,7 @@ namespace Instant2D.EC {
             get; internal set;
         }
 
-        bool _isActive;
+        bool _isActive = true;
 
         /// <summary>
         /// While true, <see cref="IUpdatableComponent.Update"/> will be run.
@@ -61,6 +61,11 @@ namespace Instant2D.EC {
         /// </summary>
         public virtual void OnDisabled() { }
 
+        /// <summary>
+        /// Is called each time <see cref="Entity.Transform"/> is updated.
+        /// </summary>
+        public virtual void OnTransformUpdated(Transform.ComponentType components) { }
+
         #endregion
     }
 
@@ -80,6 +85,8 @@ namespace Instant2D.EC {
         internal Material? _material;
         internal float _depth;
         internal int _z;
+
+        public Color Color = Color.White;
 
         /// <summary>
         /// Material which this component will set before calling <see cref="Draw"/>.

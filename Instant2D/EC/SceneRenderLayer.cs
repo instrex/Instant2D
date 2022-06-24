@@ -1,4 +1,5 @@
 ﻿using Instant2D.Graphics;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -14,15 +15,28 @@ namespace Instant2D.EC {
         /// </summary>
         protected internal List<RenderableComponent> Objects = new(128);
 
+        /// <summary>
+        /// An identifier of this Layer.
+        /// </summary>
+        public string Name {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get; init; 
+        }
+
         internal RenderTarget2D _renderTarget;
         internal bool _orderDirty;
+        internal Scene _scene;
         Material _currentMaterial;
-        Scene _scene;
 
         /// <summary>
         /// The camera this layer uses. If it's <see langword="null"/>, Scene's camera will be used.
         /// </summary>
         public ICamera Camera;
+
+        /// <summary>
+        /// A color which the RenderTarget will be cleared to. Defaults to <see cref="Color.Transparent"/>.
+        /// </summary>
+        public Color BackgroundColor = Color.Transparent;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void InternalDraw() {

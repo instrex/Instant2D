@@ -1,4 +1,5 @@
-﻿using Instant2D.Utils;
+﻿using Instant2D.EC;
+using Instant2D.Utils;
 using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
 using System;
@@ -22,6 +23,11 @@ namespace Instant2D {
             Rotation = 4,
             All = Position | Scale | Rotation
         }
+
+        /// <summary>
+        /// And entity that will receive <see cref="Component.OnTransformUpdated(ComponentType)"/> events.
+        /// </summary>
+        public Entity Entity;
 
         Vector2 _localPosition, _position, _localScale = Vector2.One, _scale = Vector2.One;
         float _localRotation, _rotation;
@@ -200,6 +206,9 @@ namespace Instant2D {
             } else {
                 _position = _localPosition;
             }
+
+            // call the transform callback if entity is there
+            Entity?.OnTransformUpdated(_matricesDirty);
 
             _worldToLocalDirty = true;
             _matricesDirty = ComponentType.Clean;

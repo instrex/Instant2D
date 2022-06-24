@@ -1,4 +1,5 @@
 ﻿using Instant2D.Core;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,14 @@ namespace Instant2D.EC {
         public static SceneManager Instance { get; set; }
 
         readonly Stack<Scene> _sceneStack = new(8);
-        
+
+        Scene _current;
+        public Scene Current {
+            get => _current;
+            set {
+                _current = value;
+            }
+        }
 
         public override void Initialize() {
             Instance = this;
@@ -23,8 +31,12 @@ namespace Instant2D.EC {
             InstantGame.Instance.Window.ClientSizeChanged += ClientSizeChangedCallback;
         }
 
+        public override void Update(GameTime time) {
+            _current?.InternalUpdate();
+        }
+
         private void ClientSizeChangedCallback(object sender, EventArgs e) {
-            throw new NotImplementedException();
+            _current?.ResizeRenderTargets();
         }
     }
 }

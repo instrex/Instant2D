@@ -68,6 +68,12 @@ namespace Instant2D.EC {
         bool _shouldDestroy;
         Scene _scene;
 
+        internal void OnTransformUpdated(Transform.ComponentType components) {
+            for (var i = 0; i < _components.Count; i++) {
+                _components[i].OnTransformUpdated(components);
+            }
+        }
+
         public void Destroy() {
             _shouldDestroy = true;
         }
