@@ -1,4 +1,5 @@
 ﻿using Instant2D.Core;
+using Instant2D.Graphics;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -26,6 +27,11 @@ namespace Instant2D.EC {
         public override void Initialize() {
             Instance = this;
             ShouldUpdate = true;
+
+            if (!InstantGame.Instance.TryGetSystem<GraphicsManager>(out _)) {
+                InstantGame.Instance.Logger.Warning("SceneManager requires GraphicsManager system to be added, initializing...");
+                InstantGame.Instance.AddSystem<GraphicsManager>();
+            }
 
             // setup the client size change callback for resizing RTs and stuff
             InstantGame.Instance.Window.ClientSizeChanged += ClientSizeChangedCallback;

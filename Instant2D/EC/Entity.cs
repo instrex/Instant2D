@@ -12,7 +12,7 @@ namespace Instant2D.EC {
     /// <summary>
     /// Represents an entity in the game world that may have components attached to it.
     /// </summary>
-    public sealed class Entity : IResettable {
+    public sealed class Entity : IResettable, ITransformCallbacksHandler {
         static uint _entityIdCounter;
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Instant2D.EC {
         bool _shouldDestroy;
         Scene _scene;
 
-        internal void OnTransformUpdated(Transform.ComponentType components) {
+        public void OnTransformUpdated(Transform.ComponentType components) {
             for (var i = 0; i < _components.Count; i++) {
                 _components[i].OnTransformUpdated(components);
             }

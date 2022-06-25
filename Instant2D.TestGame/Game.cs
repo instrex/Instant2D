@@ -25,7 +25,7 @@ namespace Instant2D.TestGame {
                     ;
             });
 
-            AddSystem<GraphicsManager>();
+            //AddSystem<GraphicsManager>();
             AddSystem<SceneManager>();
         }
 

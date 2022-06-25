@@ -86,13 +86,13 @@ namespace Instant2D.Core {
             SetupSystems();
 
             // initialize systems in order of definition
+            _initialized = true;
             foreach (var system in _subSystems.ToList()) {
                 system.Initialize();
             }
 
             // then, sort them for later update tasks
             _subSystems.Sort();
-            _initialized = true;
         }
 
         protected override void Update(GameTime gameTime) {

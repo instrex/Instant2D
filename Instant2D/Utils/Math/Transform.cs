@@ -10,6 +10,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D {
+    public interface ITransformCallbacksHandler {
+        void OnTransformUpdated(Transform.ComponentType components);
+    }
+
     /// <summary>
     /// Represents position, scale and rotation as well as object hierarchy. 
     /// Thank you, Nez!
@@ -27,7 +31,7 @@ namespace Instant2D {
         /// <summary>
         /// And entity that will receive <see cref="Component.OnTransformUpdated(ComponentType)"/> events.
         /// </summary>
-        public Entity Entity;
+        public ITransformCallbacksHandler CallbacksHandler;
 
         Vector2 _localPosition, _position, _localScale = Vector2.One, _scale = Vector2.One;
         float _localRotation, _rotation;
@@ -208,7 +212,7 @@ namespace Instant2D {
             }
 
             // call the transform callback if entity is there
-            Entity?.OnTransformUpdated(_matricesDirty);
+            CallbacksHandler?.OnTransformUpdated(_matricesDirty);
 
             _worldToLocalDirty = true;
             _matricesDirty = ComponentType.Clean;
