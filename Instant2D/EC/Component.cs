@@ -14,6 +14,14 @@ namespace Instant2D.EC {
             get; internal set;
         }
 
+        /// <summary>
+        /// Attempts to grab the scene of <see cref="Entity"/> attached.
+        /// </summary>
+        public Scene Scene {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Entity?.Scene;
+        }
+
         bool _isActive = true;
 
         /// <summary>
@@ -170,6 +178,14 @@ namespace Instant2D.EC {
         /// </summary>
         public virtual RectangleF Bounds {
             get => new(Entity.Transform.Position + new Vector2(-32), new(64));
+        }
+
+        /// <summary>
+        /// Get the camera this component will be displayed with. If <see cref="RenderLayer"/> doesn't have one defined, returns <see cref="Scene.Camera"/>.
+        /// </summary>
+        public ICamera Camera {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _layer?.Camera ?? Scene?.Camera;
         }
 
         /// <summary>

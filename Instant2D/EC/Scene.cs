@@ -32,6 +32,12 @@ namespace Instant2D.EC {
         public bool IsVisible = true;
 
         /// <summary>
+        /// The rate at which entities will update. Note that this doesn't change anything by itself, 
+        /// any time-sensitive components should make use of this variable in order to make it useful.
+        /// </summary>
+        public float TimeScale = 1.0f;
+
+        /// <summary>
         /// Camera used to render this scene.
         /// </summary>
         public ICamera Camera;

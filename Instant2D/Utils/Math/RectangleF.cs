@@ -26,6 +26,18 @@ namespace Instant2D.Utils.Math {
         public static RectangleF Empty => new();
 
         /// <summary>
+        /// Constructs a new <see cref="RectangleF"/> instance using four rectangle points.
+        /// </summary>
+        public static RectangleF FromCoordinates(Vector2 a, Vector2 b, Vector2 c, Vector2 d) {
+            // ugly as hecc but what can you do ...
+            var minX = MathF.Min(MathF.Min(MathF.Min(a.X, b.X), c.X), d.X);
+            var maxX = MathF.Max(MathF.Max(MathF.Max(a.X, b.X), c.X), d.X);
+            var minY = MathF.Min(MathF.Min(MathF.Min(a.Y, b.Y), c.Y), d.Y);
+            var maxY = MathF.Max(MathF.Max(MathF.Max(a.Y, b.Y), c.Y), d.Y);
+            return new RectangleF(minX, minY, maxX - minX, maxY - minY);
+        }
+
+        /// <summary>
         /// Top-left coordinates of the rectangle.
         /// </summary>
         public Vector2 Position {
