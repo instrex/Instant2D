@@ -46,7 +46,7 @@ namespace Instant2D.EC {
                 Objects.Sort();
             }
 
-            var drawing = GraphicsManager.Instance.Backend;
+            var drawing = GraphicsManager.Backend;
             var camera = Camera ?? _scene.Camera;
             var bounds = camera.Bounds;
             var cullingEnabled = bounds == default;

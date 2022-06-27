@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Instant2D.Utils {
     /// <summary>
-    /// Presents an easy way to avoid excess allocations. Types may implement <see cref="IResettable"/> in order to get reset before returning.
+    /// Presents an easy way to avoid excess allocations. Types may implement <see cref="IPooled"/> in order to get reset before returning.
     /// </summary>
     public class Pool<T> where T: new() {
         readonly Queue<T> _items;
@@ -30,7 +30,7 @@ namespace Instant2D.Utils {
 
         /// <summary>
         /// Get a free reference from the pool, possibly resizing and allocating more if none is available. 
-        /// If <typeparamref name="T"/> implements <see cref="IResettable"/>, the <see cref="IResettable.Reset"/> is called.
+        /// If <typeparamref name="T"/> implements <see cref="IPooled"/>, the <see cref="IPooled.Reset"/> is called.
         /// </summary>
         /// <returns></returns>
         public T Get() {
@@ -38,7 +38,7 @@ namespace Instant2D.Utils {
                 Heat(_initialCapacity);
 
             var obj = _items.Dequeue();
-            if (obj is IResettable resettable)
+            if (obj is IPooled resettable)
                 resettable.Reset();
 
             return obj;

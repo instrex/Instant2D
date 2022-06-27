@@ -1,6 +1,7 @@
 ﻿using Instant2D.Core;
 using Instant2D.Graphics;
 using Instant2D.Utils;
+using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -43,6 +44,11 @@ namespace Instant2D.EC {
         public ICamera Camera;
 
         /// <summary>
+        /// Scaled resolution used for this scene. If <see cref="SceneManager.ResolutionScaler"/> is null, returns the whole screen.
+        /// </summary>
+        public ScaledResolution Resolution;
+
+        /// <summary>
         /// Creates an entity and automatically adds it onto the scene.
         /// </summary>
         public Entity CreateEntity(string name, Vector2 position) {
@@ -75,7 +81,7 @@ namespace Instant2D.EC {
                 Initialize();
 
                 // initialize RTs for newly added layers
-                ResizeRenderTargets();
+                ResizeRenderTargets(Resolution);
             }
 
             if (IsActive) {
@@ -109,21 +115,23 @@ namespace Instant2D.EC {
             gd.Clear(Color.Transparent);
 
             // draw the layers onto the backbuffer
-            var drawing = GraphicsManager.Instance.Backend;
+            var drawing = GraphicsManager.Backend;
 
             drawing.Push(Material.Default);
             for (var i = 0; i < _layers.Count; i++) {
-                drawing.Draw(new Sprite(_layers[i]._renderTarget, new(0, 0, _sceneSize.X, _sceneSize.Y), Vector2.Zero), Vector2.Zero, Color.White);
+                drawing.Draw(new Sprite(_layers[i]._renderTarget, new(0, 0, _sceneSize.X, _sceneSize.Y), Vector2.Zero), Resolution.offset, Color.White, 0, Resolution.scaleFactor);
             }
 
             drawing.Pop(true);
         }
 
-        internal void ResizeRenderTargets() {
+        internal void ResizeRenderTargets(ScaledResolution resolution) {
             var gd = InstantGame.Instance.GraphicsDevice;
 
+            Resolution = resolution;
+
             // get Scene size
-            var (width, height) = (gd.Viewport.Width, gd.Viewport.Height);
+            var (width, height) = (resolution.Width, resolution.Height);
             _sceneSize = new(width, height);
 
             // dispose of the existing RTs

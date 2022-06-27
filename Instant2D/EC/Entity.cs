@@ -12,7 +12,12 @@ namespace Instant2D.EC {
     /// <summary>
     /// Represents an entity in the game world that may have components attached to it.
     /// </summary>
-    public sealed class Entity : IResettable, ITransformCallbacksHandler {
+    /// <remarks>
+    /// NOTE: preferably, avoid creating instances of this class using constructor, instead use <see cref="StaticPool{T}"/> to access pooled instances. <br/>
+    /// This will allow future <see cref="Scene.CreateEntity(string, Vector2)"/> calls utilize already allocated entities, instead of creating new ones each time. <br/>
+    /// Same applies to components implementing <see cref="IPooled"/> interface.
+    /// </remarks>
+    public sealed class Entity : IPooled, ITransformCallbacksHandler {
         static uint _entityIdCounter;
 
         /// <summary>
@@ -91,7 +96,7 @@ namespace Instant2D.EC {
                 get {
                     // check if type implements IResettable
                     if (_shouldPool is not bool shouldPool) {
-                        var isResettable = typeof(T).IsAssignableFrom(typeof(IResettable));
+                        var isResettable = typeof(T).IsAssignableFrom(typeof(IPooled));
                         _shouldPool = isResettable;
 
                         return isResettable;
@@ -111,7 +116,7 @@ namespace Instant2D.EC {
         }
 
         /// <summary>
-        /// When the component type implements <see cref="IResettable"/>, takes existing instance from pool and adds it. If not, a new instance is created.
+        /// When the component type implements <see cref="IPooled"/>, takes existing instance from pool and adds it. If not, a new instance is created.
         /// </summary>
         public T AddComponent<T>() where T : Component, new() => AddComponent(ComponentPoolingData<T>.ShouldPool ? StaticPool<T>.Get() : new T());
 
@@ -207,7 +212,7 @@ namespace Instant2D.EC {
             }
         }
 
-        void IResettable.Reset() {
+        void IPooled.Reset() {
             Transform.Reset();
             IsDestroyed = false;
             Name = null;

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Utils {
-    public interface IResettable {
+    public interface IPooled {
         void Reset();
     }
 }

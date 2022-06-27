@@ -18,7 +18,7 @@ namespace Instant2D {
     /// Represents position, scale and rotation as well as object hierarchy. 
     /// Thank you, Nez!
     /// </summary>
-    public class Transform : IResettable {
+    public class Transform : IPooled {
         [Flags]
         public enum ComponentType {
             Clean = 0,

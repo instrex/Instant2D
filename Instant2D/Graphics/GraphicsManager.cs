@@ -1,4 +1,6 @@
 ﻿using Instant2D.Core;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,12 +17,31 @@ namespace Instant2D.Graphics {
         /// <summary>
         /// Backend used for all drawing operations in the game.
         /// </summary>
-        public IDrawingBackend Backend { get; private set; }
+        public static IDrawingBackend Backend { get; private set; }
+
+        static Sprite? _pixelSprite;
+
+        /// <summary>
+        /// White pixel sprite with 1x1 dimensions. Initialized on-demand.
+        /// </summary>
+        public static Sprite Pixel { 
+            get {
+                if (_pixelSprite is null) {
+                    var tex = new Texture2D(InstantGame.Instance.GraphicsDevice, 1, 1);
+                    tex.SetData(new[] { Color.White });
+
+                    // create a sprite with default stuff
+                    _pixelSprite = new(tex, new Rectangle(0, 0, 1, 1), Vector2.Zero, ".instant-2d/pixel");
+                }
+
+                return _pixelSprite.Value;
+            }
+        }
 
         /// <summary>
         /// Sets the <see cref="Backend"/> property.
         /// </summary>
-        public void SetBackend<T>() where T: IDrawingBackend, new() {
+        public static void SetBackend<T>() where T: IDrawingBackend, new() {
             Backend = new T();
         }
 

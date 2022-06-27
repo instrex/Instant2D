@@ -9,8 +9,10 @@ using Instant2D.Core;
 using Instant2D.EC;
 using Instant2D.EC.Components;
 using Instant2D.Graphics;
+using Instant2D.Input;
 using Instant2D.Utils;
 using Instant2D.Utils.Math;
+using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
@@ -25,22 +27,29 @@ namespace Instant2D.TestGame {
                     ;
             });
 
-            //AddSystem<GraphicsManager>();
-            AddSystem<SceneManager>();
+            AddSystem<InputManager>();
+            AddSystem<GraphicsManager>();
+            AddSystem<SceneManager>(scene => {
+                scene.SetResolutionScaler<DefaultResolutionScaler>()
+                    .SetDesignResolution(640, 360)
+                    .SetPixelPerfect()
+                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.CutOff);
+            });
         }
 
         class MoveOnTouchComponent : Component, IUpdatableComponent {
             public void Update() {
-                var state = Mouse.GetState();
+                var mouse = InputManager.MousePosition;
+                Entity.Transform.Position = new Vector2(mouse.X, mouse.Y);
                 float deltaX = 0f;
-                if (state.LeftButton == ButtonState.Pressed) {
-                    deltaX = state.X - Entity.Transform.Position.X;
-                    Entity.Transform.Position = new Vector2(state.X, state.Y);
+                if (InputManager.LeftMousePressed) {
+                    deltaX = mouse.X - Entity.Transform.Position.X;
+                    
                 }
 
-                if (state.ScrollWheelValue != 0) {
-                    Entity.Transform.Scale += new Vector2(state.ScrollWheelValue * 0.0001f);
-                }
+                //if (mouse.ScrollWheelValue != 0) {
+                //    Entity.Transform.Scale += new Vector2(mouse.ScrollWheelValue * 0.0001f);
+                //}
 
                 Entity.Transform.Rotation = MathHelper.Lerp(Entity.Transform.Rotation, deltaX * 0.025f, 0.5f);
             }
@@ -90,6 +99,13 @@ namespace Instant2D.TestGame {
                     var bg = scene.CreateLayer("background");
                     bg.BackgroundColor = Color.DarkGreen;
 
+                    // create scaling test
+                    var test = scene.CreateEntity("scaling-test", Vector2.Zero)
+                        .AddComponent<SpriteRenderer>();
+                    test.Sprite = AssetManager.Instance.Get<Sprite>("scaling_test");
+                    test.Depth = 1f;
+                    test.RenderLayer = bg;
+
                     // create funny renderer
                     var renderer = scene.CreateEntity("sprite-entity", Vector2.Zero)
                         .AddComponent<SpriteRenderer>();
@@ -103,6 +119,18 @@ namespace Instant2D.TestGame {
 
                 }
             };
+        }
+
+        protected override void Draw(GameTime gameTime) {
+            base.Draw(gameTime);
+
+            var drawing = GraphicsManager.Backend;
+            drawing.Push(Material.Default);
+
+            var scaledRes = SceneManager.Instance.Current.Resolution;
+            drawing.Draw(GraphicsManager.Pixel, scaledRes.offset, Color.Red * 0.2f, 0, scaledRes.renderTargetSize.ToVector2());
+
+            drawing.Pop(true);
         }
     }
 }
