@@ -104,6 +104,17 @@ namespace Instant2D.Utils.ResolutionScaling {
                 };
             }
 
+            // DISPLAY MODE: ShowAll
+            // simply downscale the rendertarget based on design resolution
+            if (_displayMode == ScreenDisplayMode.ShowAll) {
+                return new() {
+                    offset = Vector2.Zero,
+                    renderTargetSize = (screenDimensions.ToVector2() / scale).RoundToPoint(),
+                    rawScreenSize = screenDimensions,
+                    scaleFactor = scale
+                };
+            }
+
             // :(
             throw new NotImplementedException($"{_displayMode} is not supported yet.");
         }

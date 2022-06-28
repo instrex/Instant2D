@@ -33,7 +33,7 @@ namespace Instant2D.TestGame {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
                     .SetDesignResolution(640, 360)
                     .SetPixelPerfect()
-                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.CutOff);
+                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.ShowAll);
             });
         }
 
