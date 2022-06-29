@@ -20,10 +20,13 @@ namespace Instant2D.Utils.Math {
             Y = y;
         }
 
+        // idk why but doing this should be more performant..?
+        static RectangleF _empty = new();
+
         /// <summary>
         /// Returns empty rectangle with all the components set to 0.
         /// </summary>
-        public static RectangleF Empty => new();
+        public static RectangleF Empty => _empty;
 
         /// <summary>
         /// Constructs a new <see cref="RectangleF"/> instance using four rectangle points.

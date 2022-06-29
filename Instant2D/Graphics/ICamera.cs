@@ -19,7 +19,7 @@ namespace Instant2D.Graphics {
         /// <summary>
         /// The rectangle used for object culling, pass <see cref="RectangleF.Empty"/> to disable.
         /// </summary>
-        RectangleF Bounds { get; }
+        RectangleF Bounds => RectangleF.Empty;
 
         /// <summary>
         /// Transform world position to screen coordinates.

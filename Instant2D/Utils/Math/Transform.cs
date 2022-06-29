@@ -29,7 +29,7 @@ namespace Instant2D {
         }
 
         /// <summary>
-        /// And entity that will receive <see cref="Component.OnTransformUpdated(ComponentType)"/> events.
+        /// An entity that will receive <see cref="Component.OnTransformUpdated(ComponentType)"/> events.
         /// </summary>
         public ITransformCallbacksHandler CallbacksHandler;
 
@@ -62,6 +62,9 @@ namespace Instant2D {
             }
         }
 
+        /// <summary>
+        /// Parent of this instance, in case you're working with entities set children/parents through entity methods, not this one!
+        /// </summary>
         public Transform Parent {
             get => _parent;
             set {

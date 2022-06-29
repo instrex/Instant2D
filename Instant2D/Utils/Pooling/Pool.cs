@@ -12,7 +12,7 @@ namespace Instant2D.Utils {
         readonly Queue<T> _items;
         readonly int _initialCapacity;
 
-        public Pool(int capacity = 100) {
+        public Pool(int capacity = 32) {
             _initialCapacity = capacity;
             _items = new(capacity);
             Heat(capacity);

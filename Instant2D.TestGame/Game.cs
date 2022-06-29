@@ -100,11 +100,11 @@ namespace Instant2D.TestGame {
                     bg.BackgroundColor = Color.DarkGreen;
 
                     // create scaling test
-                    var test = scene.CreateEntity("scaling-test", Vector2.Zero)
-                        .AddComponent<SpriteRenderer>();
-                    test.Sprite = AssetManager.Instance.Get<Sprite>("scaling_test");
-                    test.Depth = 1f;
-                    test.RenderLayer = bg;
+                    scene.CreateEntity("scaling-test", Vector2.Zero)
+                        .AddComponent<SpriteRenderer>()
+                        .SetSprite(AssetManager.Instance.Get<Sprite>("scaling_test"))
+                        .SetRenderLayer("background")
+                        .SetDepth(1.0f);
 
                     // create funny renderer
                     var renderer = scene.CreateEntity("sprite-entity", Vector2.Zero)

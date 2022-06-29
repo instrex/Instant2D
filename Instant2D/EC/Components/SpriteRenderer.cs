@@ -35,6 +35,28 @@ namespace Instant2D.EC.Components {
             set => _spriteFx = value ? _spriteFx | SpriteEffects.FlipVertically : _spriteFx & ~SpriteEffects.FlipVertically;
         }
 
+        #region Setters
+
+        /// <inheritdoc cref="FlipY"/>
+        public SpriteRenderer SetFlipY(bool flipY) {
+            FlipY = flipY;
+            return this;
+        }
+
+        /// <inheritdoc cref="FlipX"/>
+        public SpriteRenderer SetFlipX(bool flipX) {
+            FlipX = flipX;
+            return this;
+        }
+
+        /// <inheritdoc cref="Sprite"/>
+        public SpriteRenderer SetSprite(Sprite sprite) {
+            Sprite = sprite;
+            return this;
+        }
+
+        #endregion
+
         public override RectangleF Bounds {
             get {
                 if (_boundsDirty) {
