@@ -82,7 +82,7 @@ namespace Instant2D.EC {
                 // clamp the value betwen 0.0f and 1.0f
                 var clamped = Math.Clamp(value, 0f, 1f);
 
-                if (clamped == value)
+                if (_depth == clamped)
                     return;
 
                 _depth = clamped;
@@ -123,7 +123,8 @@ namespace Instant2D.EC {
                 return z;
             }
 
-            var depth = _depth.CompareTo(other._depth);
+            // reverse the depth comparison so it's actually from 0 (nearest to screen) to 1 (furthest from screen)
+            var depth = _depth.CompareTo(other._depth) * -1;
 
             // test depth second, if it's equal again go on with material testing
             if (depth != 0) {

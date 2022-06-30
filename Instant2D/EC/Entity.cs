@@ -78,11 +78,11 @@ namespace Instant2D.EC {
         /// <summary> Gets this entity's child using <paramref name="index"/>. </summary>
         public Entity this[int index] {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _children == null ? null : (index >= 0 && _children.Count < index ? _children[index] : null);
+            get => _children == null ? null : (index >= 0 && _children.Count > index ? _children[index] : null);
         }
 
         /// <summary> Amount of children entities this parent has. Use <see cref="this[int]"/> to access them. </summary>
-        public int ChildCount => _children?.Count ?? default;
+        public int ChildrenCount => _children?.Count ?? default;
 
         /// <summary> Adds the <paramref name="other"/> to the children list. </summary>
         public Entity AddChild(Entity other) {
@@ -234,6 +234,40 @@ namespace Instant2D.EC {
             }
 
             return null;
+        }
+
+        #endregion
+
+        #region Setters
+
+        /// <inheritdoc cref="Scene"/>
+        public Entity SetScene(Scene scene) {
+            Scene = scene;
+            return this;
+        }
+
+        /// <inheritdoc cref="Parent"/>
+        public Entity SetParent(Entity other) {
+            Parent = other;
+            return this;
+        }
+
+        /// <inheritdoc cref="Transform.LocalPosition"/>
+        public Entity SetLocalPosition(Vector2 position) {
+            Transform.LocalPosition = position;
+            return this;
+        }
+
+        /// <inheritdoc cref="Transform.Scale"/>
+        public Entity SetScale(Vector2 scale) {
+            Transform.Scale = scale;
+            return this;
+        }
+
+        /// <inheritdoc cref="Transform.Scale"/>
+        public Entity SetLocalScale(float scale) {
+            Transform.LocalScale = new(scale);
+            return this;
         }
 
         #endregion

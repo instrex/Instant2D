@@ -39,26 +39,22 @@ namespace Instant2D.TestGame {
 
         class MoveOnTouchComponent : Component, IUpdatableComponent {
             public void Update() {
-                var mouse = InputManager.MousePosition;
-                Entity.Transform.Position = new Vector2(mouse.X, mouse.Y);
-                float deltaX = 0f;
-                if (InputManager.LeftMousePressed) {
-                    deltaX = mouse.X - Entity.Transform.Position.X;
-                    
+                Entity.Transform.Position = InputManager.MousePosition;
+                Entity.Transform.Rotation += 0.1f;
+
+                // rotate wawas
+                for (var i = 0; i < Entity.ChildrenCount; i++) {
+                    var entity = Entity[i];
+                    entity.Transform.LocalRotation += i % 2 == 0 ? -0.1f : 0.1f;
+                    entity.Transform.LocalPosition = entity.Transform.LocalPosition.SafeNormalize() * (500 - 250 * MathF.Sin((TimeManager.TotalTime + i) * 4));
                 }
-
-                //if (mouse.ScrollWheelValue != 0) {
-                //    Entity.Transform.Scale += new Vector2(mouse.ScrollWheelValue * 0.0001f);
-                //}
-
-                Entity.Transform.Rotation = MathHelper.Lerp(Entity.Transform.Rotation, deltaX * 0.025f, 0.5f);
             }
         }
 
         SoundEffect _soundEffect;
         protected override void LoadContent() {
             base.LoadContent();
-
+            
             // OGG loading test using FAudio
             unsafe {
                 var data = File.ReadAllBytes(@"C:\Users\instrex\Desktop\OneShot.ogg");
@@ -107,12 +103,27 @@ namespace Instant2D.TestGame {
                         .SetDepth(1.0f);
 
                     // create funny renderer
-                    var renderer = scene.CreateEntity("sprite-entity", Vector2.Zero)
-                        .AddComponent<SpriteRenderer>();
+                    var wawaCat = scene.CreateEntity("wawa-cat", Vector2.Zero)
+                        .SetLocalScale(0.25f);
 
-                    renderer.Entity.AddComponent<MoveOnTouchComponent>();
-                    renderer.Sprite = AssetManager.Instance.Get<Sprite>("wawa");
-                    renderer.RenderLayer = bg;
+                    wawaCat.AddComponent<SpriteRenderer>()
+                        .SetSprite(AssetManager.Instance.Get<Sprite>("wawa"))
+                        .SetRenderLayer("background");
+
+                    wawaCat.AddComponent<MoveOnTouchComponent>();
+
+                    // create Mini Wawas
+                    for (var i = 0; i < 8; i++) {
+                        var wawa = scene.CreateEntity($"mini-wawa-{i}", Vector2.Zero)
+                            .SetParent(wawaCat)
+                            .SetLocalPosition(new Vector2(250, 0).RotatedBy(i * MathHelper.PiOver4))
+                            .SetLocalScale(0.5f)
+                            .AddComponent(new SpriteRenderer {
+                                Sprite = AssetManager.Instance.Get<Sprite>("wawa"),
+                                RenderLayer = bg,
+                                Depth = 0.5f
+                            });
+                    }
                 },
 
                 OnUpdate = scene => {
