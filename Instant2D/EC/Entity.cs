@@ -26,10 +26,14 @@ namespace Instant2D.EC {
         public readonly uint Id = _entityIdCounter++;
 
         /// <summary> Spatial information of this entity. </summary>
-        public readonly Transform Transform = new();
+        public readonly Transform Transform;
 
         /// <summary> Name assigned to this entity. </summary>
         public string Name;
+
+        public Entity() {
+            Transform = new() { CallbacksHandler = this };
+        }
 
         /// <summary> The scene this Entity exists on. </summary>
         public Scene Scene {
@@ -180,6 +184,8 @@ namespace Instant2D.EC {
         public T AddComponent<T>(T component) where T: Component {
             component.Entity = this;
             component.Initialize();
+
+            _components.Add(component);
 
             // register updatable components
             if (component is IUpdatableComponent updatable) {

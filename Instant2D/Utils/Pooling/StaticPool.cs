@@ -10,5 +10,8 @@
 
         /// <inheritdoc cref="Pool{T}.Return(T)"/>
         public static void Return(T obj) => _pool.Return(obj);
+
+        /// <inheritdoc cref="Pool{T}.PreHeat(int)"/>
+        public static void PreHeat(int objectsToAdd = -1) => _pool.PreHeat(objectsToAdd);
     }
 }

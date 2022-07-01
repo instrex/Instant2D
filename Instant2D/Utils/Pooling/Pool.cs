@@ -10,22 +10,28 @@ namespace Instant2D.Utils {
     /// </summary>
     public class Pool<T> where T: new() {
         readonly Queue<T> _items;
-        readonly int _initialCapacity;
+        int _capacity;
 
         public Pool(int capacity = 32) {
-            _initialCapacity = capacity;
+            _capacity = capacity;
             _items = new(capacity);
-            Heat(capacity);
+            PreHeat(capacity);
         }
 
         /// <summary>
-        /// Allocate more instances for later use.
+        /// Allocate more instances for later use. If <c>-1</c> is passed as <paramref name="objectsToAdd"/>, buffer size will be doubled.
         /// </summary>
-        public void Heat(int objectsToAdd) {
+        public void PreHeat(int objectsToAdd = -1) {
+            if (objectsToAdd == -1) {
+                objectsToAdd = _capacity;
+            }
+
             for (var i = 0; i < objectsToAdd; i++) {
                 var item = new T();
                 _items.Enqueue(item);
             }
+
+            _capacity += objectsToAdd;
         }
 
         /// <summary>
@@ -35,7 +41,7 @@ namespace Instant2D.Utils {
         /// <returns></returns>
         public T Get() {
             if (_items.Count == 0)
-                Heat(_initialCapacity);
+                PreHeat();
 
             var obj = _items.Dequeue();
             if (obj is IPooled resettable)

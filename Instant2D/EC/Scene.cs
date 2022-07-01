@@ -41,7 +41,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Camera used to render this scene.
         /// </summary>
-        public ICamera Camera;
+        public CameraComponent Camera;
 
         /// <summary>
         /// Scaled resolution used for this scene. If <see cref="SceneManager.ResolutionScaler"/> is null, returns the whole screen.
@@ -79,6 +79,12 @@ namespace Instant2D.EC {
             if (!_isInitialized) {
                 _isInitialized = true;
                 Initialize();
+
+                // if camera is null, create a new one
+                if (Camera is null) {
+                    Camera = CreateEntity("camera", new(Resolution.Width / 2, Resolution.Height / 2))
+                        .AddComponent<CameraComponent>();
+                }
 
                 // initialize RTs for newly added layers
                 ResizeRenderTargets(Resolution);
@@ -119,7 +125,15 @@ namespace Instant2D.EC {
 
             drawing.Push(Material.Default);
             for (var i = 0; i < _layers.Count; i++) {
-                drawing.Draw(new Sprite(_layers[i]._renderTarget, new(0, 0, _sceneSize.X, _sceneSize.Y), Vector2.Zero), Resolution.offset, Color.White, 0, Resolution.scaleFactor);
+                var layer = _layers[i];
+                drawing.Draw(new Sprite(
+                    _layers[i]._renderTarget, 
+                    new(0, 0, _sceneSize.X, _sceneSize.Y), Vector2.Zero),
+                    Resolution.offset, 
+                    layer.Color,
+                    0, 
+                    Resolution.scaleFactor
+                );
             }
 
             drawing.Pop(true);
@@ -131,7 +145,7 @@ namespace Instant2D.EC {
             Resolution = resolution;
 
             // get Scene size
-            var (width, height) = (resolution.Width, resolution.Height);
+            var (width, height) = (resolution.renderTargetSize.X, resolution.renderTargetSize.Y);
             _sceneSize = new(width, height);
 
             // dispose of the existing RTs
@@ -147,6 +161,9 @@ namespace Instant2D.EC {
                 _layers[i]._renderTarget?.Dispose();
                 _layers[i]._renderTarget = new RenderTarget2D(gd, width, height);
             }
+
+            // notify the main Camera of change
+            Camera?.OnClientSizeChanged();
         }
 
         #region Scene Lifecycle

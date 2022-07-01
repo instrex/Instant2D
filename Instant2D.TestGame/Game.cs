@@ -39,17 +39,21 @@ namespace Instant2D.TestGame {
 
         class MoveOnTouchComponent : Component, IUpdatableComponent {
             public void Update() {
-                Entity.Transform.Position = InputManager.MousePosition;
+                if (InputManager.LeftMousePressed) {
+                    Entity.Transform.Position = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
+                }
+                
                 Entity.Transform.Rotation += 0.1f;
 
                 // rotate wawas
                 for (var i = 0; i < Entity.ChildrenCount; i++) {
                     var entity = Entity[i];
                     entity.Transform.LocalRotation += i % 2 == 0 ? -0.1f : 0.1f;
-                    entity.Transform.LocalPosition = entity.Transform.LocalPosition.SafeNormalize() * (500 - 250 * MathF.Sin((TimeManager.TotalTime + i) * 4));
+                    entity.Transform.LocalPosition = entity.Transform.LocalPosition.SafeNormalize() * (1000 - 750 * MathF.Sin((TimeManager.TotalTime + i) * 4));
                 }
             }
         }
+
 
         SoundEffect _soundEffect;
         protected override void LoadContent() {
@@ -88,7 +92,7 @@ namespace Instant2D.TestGame {
             Window.AllowUserResizing = true;
 
             SceneManager.Instance.Current = new SimpleScene {
-                Camera = new ScreenSpaceCameraComponent(),
+                // Camera = new ScreenSpaceCameraComponent(),
                 
                 OnInitialize = scene => {
                     // setup layers
@@ -113,11 +117,12 @@ namespace Instant2D.TestGame {
                     wawaCat.AddComponent<MoveOnTouchComponent>();
 
                     // create Mini Wawas
-                    for (var i = 0; i < 8; i++) {
+                    var wawas = 12;
+                    for (var i = 0; i < wawas; i++) {
                         var wawa = scene.CreateEntity($"mini-wawa-{i}", Vector2.Zero)
                             .SetParent(wawaCat)
-                            .SetLocalPosition(new Vector2(250, 0).RotatedBy(i * MathHelper.PiOver4))
-                            .SetLocalScale(0.5f)
+                            .SetLocalPosition(new Vector2(250, 0).RotatedBy(i * (MathHelper.TwoPi / wawas)))
+                            .SetLocalScale(0.25f)
                             .AddComponent(new SpriteRenderer {
                                 Sprite = AssetManager.Instance.Get<Sprite>("wawa"),
                                 RenderLayer = bg,
@@ -127,7 +132,17 @@ namespace Instant2D.TestGame {
                 },
 
                 OnUpdate = scene => {
+                    if (InputManager.IsKeyDown(Keys.D))
+                        scene.Camera.Entity.Transform.Position += new Vector2(2, 0);
 
+                    if (InputManager.IsKeyDown(Keys.A))
+                        scene.Camera.Entity.Transform.Position += new Vector2(-2, 0);
+
+                    if (InputManager.IsKeyDown(Keys.W))
+                        scene.Camera.Entity.Transform.Position += new Vector2(0, -2);
+
+                    if (InputManager.IsKeyDown(Keys.S))
+                        scene.Camera.Entity.Transform.Position += new Vector2(0, 2);
                 }
             };
         }
@@ -139,7 +154,7 @@ namespace Instant2D.TestGame {
             drawing.Push(Material.Default);
 
             var scaledRes = SceneManager.Instance.Current.Resolution;
-            drawing.Draw(GraphicsManager.Pixel, scaledRes.offset, Color.Red * 0.2f, 0, scaledRes.renderTargetSize.ToVector2());
+            drawing.Draw(GraphicsManager.Pixel, scaledRes.offset, Color.Red * 0.2f, 0, scaledRes.renderTargetSize.ToVector2() * scaledRes.scaleFactor);
 
             drawing.Pop(true);
         }

@@ -23,13 +23,13 @@ namespace Instant2D.Utils.ResolutionScaling {
         /// </summary>
         public Vector2 offset;
 
-        public int Width => (int)renderTargetSize.X;
+        public int Width => (int)(renderTargetSize.X * scaleFactor);
 
-        public int Height => (int)renderTargetSize.Y;
+        public int Height => (int)(renderTargetSize.Y * scaleFactor);
 
         
 
-        public override string ToString() => $"{Width}x{Height} ({scaleFactor})";
+        public override string ToString() => $"{Width}x{Height} (x{scaleFactor})";
 
         /// <summary>
         /// Gets the default resolution using GraphicsDevice's Viewport and scale factor of 1.0f.

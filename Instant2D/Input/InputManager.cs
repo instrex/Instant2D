@@ -62,6 +62,10 @@ namespace Instant2D.Input {
         public static Vector2 RawMousePosition => _rawMousePosition;
 
         public override void Update(GameTime time) {
+            // move the states to previous
+            _prevMouseState = _currentMouseState;
+            _prevKeyState = _currentKeyState;
+
             // get current states
             _currentKeyState = Keyboard.GetState();
             _currentMouseState = Mouse.GetState();
@@ -72,11 +76,6 @@ namespace Instant2D.Input {
                 var resolution = SceneManager.Instance.Current.Resolution;
                 _scaledMousePosition = (_rawMousePosition - resolution.offset) / resolution.scaleFactor;
             }
-
-            // move the states to previous
-            _prevMouseState = _currentMouseState;
-            _prevKeyState = _currentKeyState;
-
         }
     }
 }

@@ -113,8 +113,6 @@ namespace Instant2D.Core {
                 _fpsCounter = 0;
             }
 
-            base.Update(gameTime);
-
             // update the subsystems
             for (var i = _updatableSystems.Count - 1; i >= 0; i--) {
                 var system = _updatableSystems[i];
@@ -125,6 +123,8 @@ namespace Instant2D.Core {
                     _updatableSystems.RemoveAt(i);
                 }
             }
+
+            base.Update(gameTime);
         }
     }
 }

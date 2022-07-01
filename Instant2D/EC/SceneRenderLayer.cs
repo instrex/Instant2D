@@ -18,10 +18,12 @@ namespace Instant2D.EC {
         /// <summary>
         /// An identifier of this Layer.
         /// </summary>
-        public string Name {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get; init; 
-        }
+        public string Name;
+
+        /// <summary>
+        /// The color this layer should use when drawing onto the screen.
+        /// </summary>
+        public Color Color = Color.White;
 
         internal RenderTarget2D _renderTarget;
         internal bool _orderDirty;
