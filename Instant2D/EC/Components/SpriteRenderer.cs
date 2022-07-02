@@ -71,7 +71,7 @@ namespace Instant2D.EC.Components {
             _boundsDirty = true;
         }
 
-        public override void Draw(IDrawingBackend drawing, ICamera camera) {
+        public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
             drawing.Draw(
                 Sprite, 
                 Entity.Transform.Position, 

@@ -102,7 +102,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Get the camera this component will be displayed with. If <see cref="RenderLayer"/> doesn't have one defined, returns <see cref="Scene.Camera"/>.
         /// </summary>
-        public ICamera Camera {
+        public CameraComponent Camera {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _layer?.Camera ?? Scene?.Camera;
         }
@@ -177,6 +177,6 @@ namespace Instant2D.EC {
         /// is called with <see cref="Material"/> and <see cref="ICamera.TransformMatrix"/>. <br/>
         /// Use Push/Pop functions if you happen to need to change the Material mid-rendering.
         /// </summary>
-        public abstract void Draw(IDrawingBackend drawing, ICamera camera);
+        public abstract void Draw(IDrawingBackend drawing, CameraComponent camera);
     }
 }

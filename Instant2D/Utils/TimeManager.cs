@@ -26,7 +26,7 @@ namespace Instant2D {
         public override void Initialize() {
             // time calculations should happen before anything else
             UpdateOrder = int.MinValue;
-            ShouldUpdate = true;
+            IsUpdatable = true;
         }
 
         public override void Update(GameTime time) {

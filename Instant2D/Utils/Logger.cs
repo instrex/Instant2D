@@ -4,13 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Utils {
     public class Logger : SubSystem, IDisposable {
         public enum Severity {
-            Info,
+            None,
             Warning,
             Error
         }
@@ -41,7 +42,7 @@ namespace Instant2D.Utils {
         }
 
         public override void Initialize() {
-            ShouldUpdate = true;
+            IsUpdatable = true;
             Game._logger = this;
         }
 
@@ -49,6 +50,23 @@ namespace Instant2D.Utils {
             // flush the filestream every 2 seconds
             if (TimeManager.FrameCount % 120 == 0) {
                 _writer.Flush();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteLine(object message, Severity severity = Severity.None) {
+            switch (severity) {
+                case Severity.None:
+                    InstantGame.Instance.Logger.Info(message);
+                    break;
+
+                case Severity.Error:
+                    InstantGame.Instance.Logger.Error(message);
+                    break;
+
+                case Severity.Warning:
+                    InstantGame.Instance.Logger.Warning(message);
+                    break;
             }
         }
 

@@ -12,8 +12,13 @@ namespace Instant2D.Core {
         public static InstantGame Instance { get; private set; }
 
         // subsystem loading
-        readonly List<SubSystem> _subSystems = new(16), _updatableSystems = new(16);
+        internal readonly List<SubSystem> 
+            _subSystems = new(16),
+            _updatableSystems = new(8),
+            _renderableSystems = new(8);
+
         internal Logger _logger;
+        internal bool _systemOrderDirty;
         bool _initialized;
 
         // fps stuff
@@ -70,10 +75,6 @@ namespace Instant2D.Core {
             return false;
         }
 
-        internal void UpdateSystem(SubSystem system) {
-            _updatableSystems.Add(system);
-        }
-
         /// <summary>
         /// Setup all of the systems in there using <see cref="AddSystem{T}(Action{T})"/>.
         /// </summary>
@@ -102,6 +103,22 @@ namespace Instant2D.Core {
         }
 
         protected override void Update(GameTime gameTime) {
+            // sort the systems when needed
+            if (_systemOrderDirty) {
+                _systemOrderDirty = false;
+                _updatableSystems.Sort();
+            }
+
+            // update the subsystems
+            for (var i = 0; i < _updatableSystems.Count; i++) {
+                var system = _updatableSystems[i];
+                system.Update(gameTime);
+            }
+
+            base.Update(gameTime);
+        }
+
+        protected override void Draw(GameTime gameTime) {
             // calculate FPS 
             _fpsCounter++;
             _fpsTimer += gameTime.ElapsedGameTime;
@@ -113,18 +130,13 @@ namespace Instant2D.Core {
                 _fpsCounter = 0;
             }
 
-            // update the subsystems
-            for (var i = _updatableSystems.Count - 1; i >= 0; i--) {
-                var system = _updatableSystems[i];
-                system.Update(gameTime);
-
-                // remove the system if it's no longer updatable
-                if (!system.ShouldUpdate) {
-                    _updatableSystems.RemoveAt(i);
-                }
+            // draw systems
+            for (var i = 0; i < _renderableSystems.Count; i++) {
+                var system = _renderableSystems[i];
+                system.Render(gameTime);
             }
 
-            base.Update(gameTime);
+            base.Draw(gameTime);
         }
     }
 }

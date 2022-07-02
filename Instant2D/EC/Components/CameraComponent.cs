@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Instant2D.EC {
     /// <summary>  </summary>
-    public class CameraComponent : Component, ICamera {
+    public class CameraComponent : Component {
         Matrix2D _transformMatrix = Matrix2D.Identity, _inverseTransformMatrix = Matrix2D.Identity;
         RectangleF _bounds = RectangleF.Empty;
         Matrix _projectionMatrix;
@@ -127,6 +127,11 @@ namespace Instant2D.EC {
 
         public override void Initialize() {
             _origin = new(Scene.Resolution.renderTargetSize.X / 2, Scene.Resolution.renderTargetSize.Y / 2);
+        }
+
+        /// <summary> Forces the camera matrices and bounds to be rebuilt. </summary>
+        public void ForceUpdate() {
+            _matricesDirty = true;
         }
 
         // happens when the window is resized,

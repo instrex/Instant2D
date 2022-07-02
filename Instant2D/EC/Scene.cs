@@ -90,21 +90,23 @@ namespace Instant2D.EC {
                 ResizeRenderTargets(Resolution);
             }
 
-            if (IsActive) {
-                // update entities before anything else
-                for (var i = 0; i < _entities.Count; i++) {
-                    _entities[i].Update();
-                }
+            if (!IsActive)
+                return;
 
-                // invoke the update callback
-                Update();
+            // update entities before anything else
+            for (var i = 0; i < _entities.Count; i++) {
+                _entities[i].Update();
             }
 
-            // we only do drawing from there
+            // invoke the update callback
+            Update();
+        }
+
+        internal void InternalRender() {
             if (!IsVisible) {
                 return;
             }
-
+            
             // draw each layer into its own RT
             var gd = InstantGame.Instance.GraphicsDevice;
             for (var i = 0; i < _layers.Count; i++) {
@@ -113,6 +115,8 @@ namespace Instant2D.EC {
                 // set the RT and clear it
                 gd.SetRenderTarget(layer._renderTarget);
                 gd.Clear(layer.BackgroundColor);
+
+                Camera.ForceUpdate();
 
                 layer.InternalDraw();
             }
@@ -127,11 +131,11 @@ namespace Instant2D.EC {
             for (var i = 0; i < _layers.Count; i++) {
                 var layer = _layers[i];
                 drawing.Draw(new Sprite(
-                    _layers[i]._renderTarget, 
+                    _layers[i]._renderTarget,
                     new(0, 0, _sceneSize.X, _sceneSize.Y), Vector2.Zero),
-                    Resolution.offset, 
+                    Resolution.offset,
                     layer.Color,
-                    0, 
+                    0,
                     Resolution.scaleFactor
                 );
             }

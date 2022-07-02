@@ -33,7 +33,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// The camera this layer uses. If it's <see langword="null"/>, Scene's camera will be used.
         /// </summary>
-        public ICamera Camera;
+        public CameraComponent Camera;
 
         /// <summary>
         /// A color which the RenderTarget will be cleared to. Defaults to <see cref="Color.Transparent"/>.

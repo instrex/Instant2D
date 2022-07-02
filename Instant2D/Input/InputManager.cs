@@ -20,7 +20,7 @@ namespace Instant2D.Input {
     public class InputManager : SubSystem {
         public override void Initialize() {
             UpdateOrder = int.MinValue;
-            ShouldUpdate = true;
+            IsUpdatable = true;
 
             // if SceneManager is there, enable mouse scaling relative to the scene
             _shouldScaleMouse = Game.TryGetSystem<SceneManager>(out _);

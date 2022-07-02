@@ -33,16 +33,24 @@ namespace Instant2D.TestGame {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
                     .SetDesignResolution(640, 360)
                     .SetPixelPerfect()
-                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.ShowAll);
+                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.CutOff);
             });
         }
 
         class MoveOnTouchComponent : Component, IUpdatableComponent {
+            Vector2 _targetPos;
+
             public void Update() {
                 if (InputManager.LeftMousePressed) {
                     Entity.Transform.Position = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
                 }
                 
+                if (InputManager.IsKeyDown(Keys.E)) {
+                    _targetPos = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
+                }
+
+                Scene.Camera.Entity.Transform.Position = Vector2.Lerp(Scene.Camera.Entity.Transform.Position, _targetPos, 0.025f);
+
                 Entity.Transform.Rotation += 0.1f;
 
                 // rotate wawas
@@ -87,7 +95,7 @@ namespace Instant2D.TestGame {
                 }
             }
 
-            _soundEffect.Play();
+            //_soundEffect.Play();
 
             Window.AllowUserResizing = true;
 
@@ -104,7 +112,8 @@ namespace Instant2D.TestGame {
                         .AddComponent<SpriteRenderer>()
                         .SetSprite(AssetManager.Instance.Get<Sprite>("scaling_test"))
                         .SetRenderLayer("background")
-                        .SetDepth(1.0f);
+                        .SetDepth(1.0f)
+                        .Entity.Transform.Rotation = 0.3f;
 
                     // create funny renderer
                     var wawaCat = scene.CreateEntity("wawa-cat", Vector2.Zero)

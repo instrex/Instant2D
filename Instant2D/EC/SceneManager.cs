@@ -48,7 +48,8 @@ namespace Instant2D.EC {
 
         public override void Initialize() {
             Instance = this;
-            ShouldUpdate = true;
+            IsUpdatable = true;
+            IsRenderable = true;
 
             if (!InstantGame.Instance.TryGetSystem<GraphicsManager>(out _)) {
                 InstantGame.Instance.Logger.Warning("SceneManager requires GraphicsManager system to be added, initializing...");
@@ -56,7 +57,7 @@ namespace Instant2D.EC {
             }
 
             // setup the client size change callback for resizing RTs and stuff
-            InstantGame.Instance.Window.ClientSizeChanged += UpdateResolution;
+            InstantGame.Instance.Window.ClientSizeChanged += OnClientSizeChanged;
 
             // initialize the resolution
             var screenSize = new Point(Game.GraphicsDevice.Viewport.Width, Game.GraphicsDevice.Viewport.Height);
@@ -67,7 +68,11 @@ namespace Instant2D.EC {
             _current?.InternalUpdate();
         }
 
-        private void UpdateResolution(object sender, EventArgs e) {
+        public override void Render(GameTime time) {
+            _current?.InternalRender();
+        }
+
+        void OnClientSizeChanged(object sender, EventArgs e) {
             var screenSize = new Point(Game.GraphicsDevice.Viewport.Width, Game.GraphicsDevice.Viewport.Height);
             _resolution = ResolutionScaler?.Calculate(screenSize) ?? new ScaledResolution { scaleFactor = 1.0f, renderTargetSize = screenSize };
             _current?.ResizeRenderTargets(_resolution);
