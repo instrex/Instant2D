@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,39 +30,64 @@ namespace Instant2D.Input {
         static KeyboardState _prevKeyState, _currentKeyState;
         static MouseState _prevMouseState, _currentMouseState;
         static Vector2 _rawMousePosition, _scaledMousePosition;
+        static float _mouseWheelDelta;
         static bool _shouldScaleMouse;
 
-        /// <summary>
-        /// Is true when the key was just pressed this frame.
-        /// </summary>
+        /// <summary> Is true when the key was just pressed this frame. </summary>
         public static bool IsKeyPressed(Keys key) => _prevKeyState.IsKeyUp(key) && _currentKeyState.IsKeyDown(key);
 
-        /// <summary>
-        /// Is true for a frame after the key was released.
-        /// </summary>
+        /// <summary> Is true for a frame after the key was released. </summary>
         public static bool IsKeyReleased(Keys key) => _prevKeyState.IsKeyDown(key) && !_currentKeyState.IsKeyDown(key);
 
-        /// <summary>
-        /// Is true when the key is held.
-        /// </summary>
+        /// <summary> Is true when the key is held. </summary>
         public static bool IsKeyDown(Keys key) => _currentKeyState.IsKeyDown(key);
 
-        /// <summary>
-        /// Is true when the left mouse button was just pressed this frame.
-        /// </summary>
-        public static bool LeftMousePressed => _currentMouseState.LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released;
+        #region Mouse Helpers
 
-        /// <summary>
-        /// Gets scaled mouse position relative to the current scene, or if <see cref="SceneManager"/> isn't added, <see cref="RawMousePosition"/>.
-        /// </summary>
-        public static Vector2 MousePosition => _shouldScaleMouse ? _scaledMousePosition : _rawMousePosition;
+        /// <summary> Gets scaled mouse position relative to the current scene, or if <see cref="SceneManager"/> isn't added, <see cref="RawMousePosition"/>. </summary>
+        public static Vector2 MousePosition => _scaledMousePosition;
 
-        /// <summary>
-        /// Raw mouse position relative to the game window.
-        /// </summary>
+        /// <summary> Raw mouse position relative to the game window. </summary>
         public static Vector2 RawMousePosition => _rawMousePosition;
 
-        public override void Update(GameTime time) {
+        /// <summary> Is true when the left mouse button was pressed this frame. </summary>
+        public static bool LeftMousePressed => _currentMouseState.LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released;
+
+        /// <summary> Is true when the left mouse button was released this frame. </summary>
+        public static bool LeftMouseReleased => _currentMouseState.LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released;
+
+        /// <summary> Is true when the left mouse button is down. </summary>
+        public static bool LeftMouseDown => _currentMouseState.LeftButton == ButtonState.Pressed;
+
+        /// <summary> Is true when the right mouse button was pressed this frame. </summary>
+        public static bool RightMousePressed => _currentMouseState.RightButton == ButtonState.Pressed && _prevMouseState.RightButton == ButtonState.Released;
+
+        /// <summary> Is true when the right mouse button was released this frame. </summary>
+        public static bool RightMouseReleased => _currentMouseState.RightButton == ButtonState.Pressed && _prevMouseState.RightButton == ButtonState.Released;
+
+        /// <summary> Is true when the right mouse button is down. </summary>
+        public static bool RightMouseDown => _currentMouseState.RightButton == ButtonState.Pressed;
+        
+        /// <summary> Is true when the middle mouse button was pressed this frame. </summary>
+        public static bool MiddleMousePressed => _currentMouseState.MiddleButton == ButtonState.Pressed && _prevMouseState.MiddleButton == ButtonState.Released;
+
+        /// <summary> Is true when the middle mouse button was released this frame. </summary>
+        public static bool MiddleMouseReleased => _currentMouseState.MiddleButton == ButtonState.Pressed && _prevMouseState.MiddleButton == ButtonState.Released;
+
+        /// <summary> Is true when the middle mouse button is down. </summary>
+        public static bool MiddleMouseDown => _currentMouseState.MiddleButton == ButtonState.Pressed;
+
+        /// <summary> How much the mouse wheel has moved during this frame. </summary>
+        public static float MouseWheelDelta => _mouseWheelDelta;
+
+        #endregion
+
+        /// <summary>
+        /// Handles mouse and keyboard states, as well as position scaling and other stuff. 
+        /// Abstracted away so you can manually call it instead of <see cref="Update(GameTime)"/> when required.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void StaticUpdate(GameTime time) {
             // move the states to previous
             _prevMouseState = _currentMouseState;
             _prevKeyState = _currentKeyState;
@@ -70,12 +96,20 @@ namespace Instant2D.Input {
             _currentKeyState = Keyboard.GetState();
             _currentMouseState = Mouse.GetState();
 
-            // record mouse state and optionally scale it to the scene
+            // record mouse state
             _rawMousePosition = new(_currentMouseState.X, _currentMouseState.Y);
+            _scaledMousePosition = _rawMousePosition;
+
+            // calculate mouse wheel delta
+            _mouseWheelDelta = _prevMouseState.ScrollWheelValue - _currentMouseState.ScrollWheelValue;
+
+            // optionally scale it to the scene
             if (_shouldScaleMouse) {
                 var resolution = SceneManager.Instance.Current.Resolution;
                 _scaledMousePosition = (_rawMousePosition - resolution.offset) / resolution.scaleFactor;
             }
         }
+
+        public override void Update(GameTime time) => StaticUpdate(time);
     }
 }

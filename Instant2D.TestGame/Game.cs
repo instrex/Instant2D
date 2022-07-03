@@ -31,25 +31,32 @@ namespace Instant2D.TestGame {
             AddSystem<GraphicsManager>();
             AddSystem<SceneManager>(scene => {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
-                    .SetDesignResolution(640, 360)
+                    .SetDesignResolution(640 / 2, 360 / 2)
                     .SetPixelPerfect()
-                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.CutOff);
+                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.ShowAll);
             });
         }
 
-        class MoveOnTouchComponent : Component, IUpdatableComponent {
+        class WawaComponent : Component, IUpdatableComponent {
             Vector2 _targetPos;
 
             public void Update() {
-                if (InputManager.LeftMousePressed) {
+                if (InputManager.LeftMouseDown) {
                     Entity.Transform.Position = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
                 }
                 
-                if (InputManager.IsKeyDown(Keys.E)) {
+                if (InputManager.RightMousePressed) {
                     _targetPos = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
                 }
 
-                Scene.Camera.Entity.Transform.Position = Vector2.Lerp(Scene.Camera.Entity.Transform.Position, _targetPos, 0.025f);
+                // move the camera to the focus zone
+                if (Vector2.Distance(Scene.Camera.Entity.Transform.Position, _targetPos) > 5) {
+                    Scene.Camera.Entity.Transform.Position = Vector2.Lerp(Scene.Camera.Entity.Transform.Position, _targetPos, 0.1f);
+                }
+                
+                if (InputManager.MouseWheelDelta != 0) {
+                    Scene.Camera.Zoom += InputManager.MouseWheelDelta * 0.0005f;
+                }
 
                 Entity.Transform.Rotation += 0.1f;
 
@@ -123,7 +130,7 @@ namespace Instant2D.TestGame {
                         .SetSprite(AssetManager.Instance.Get<Sprite>("wawa"))
                         .SetRenderLayer("background");
 
-                    wawaCat.AddComponent<MoveOnTouchComponent>();
+                    wawaCat.AddComponent<WawaComponent>();
 
                     // create Mini Wawas
                     var wawas = 12;

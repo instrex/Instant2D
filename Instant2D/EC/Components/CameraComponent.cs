@@ -12,9 +12,10 @@ using System.Threading.Tasks;
 namespace Instant2D.EC {
     /// <summary>  </summary>
     public class CameraComponent : Component {
-        Matrix2D _transformMatrix = Matrix2D.Identity, _inverseTransformMatrix = Matrix2D.Identity;
+        Matrix2D _transformMatrix = Matrix2D.Identity, _inverseTransformMatrix = Matrix2D.Identity, _temp;
         RectangleF _bounds = RectangleF.Empty;
         Matrix _projectionMatrix;
+        float _zoom = 1.0f;
         Vector2 _origin;
 
         // filth
@@ -36,6 +37,17 @@ namespace Instant2D.EC {
                 }
 
                 return _bounds;
+            }
+        }
+
+        public float Zoom {
+            get => _zoom;
+            set {
+                if (_zoom == value)
+                    return;
+
+                _matricesDirty = true;
+                _zoom = value;
             }
         }
 
@@ -80,23 +92,25 @@ namespace Instant2D.EC {
             if (!_matricesDirty)
                 return;
 
-            Matrix2D temp;
-
             _transformMatrix = Matrix2D.CreateTranslation(-Entity.Transform.Position.Floor());
 
-            // TODO: add camera zoom
+            // apply the zoom when needed
+            if (_zoom != 1.0f) {
+                Matrix2D.CreateScale(_zoom, out _temp);
+                Matrix2D.Multiply(ref _transformMatrix, ref _temp, out _transformMatrix);
+            }
 
             // apply the rotation if parent entity is rotated
             if (Entity.Transform.Rotation != 0) {
-                Matrix2D.CreateRotation(Entity.Transform.Rotation, out temp);
-                Matrix2D.Multiply(ref _transformMatrix, ref temp, out _transformMatrix);
+                Matrix2D.CreateRotation(Entity.Transform.Rotation, out _temp);
+                Matrix2D.Multiply(ref _transformMatrix, ref _temp, out _transformMatrix);
             }
 
             // offset the matrix by origin
-            Matrix2D.CreateTranslation(ref _origin, out temp);
-            Matrix2D.Multiply(ref _transformMatrix, ref temp, out _transformMatrix);
+            Matrix2D.CreateTranslation(ref _origin, out _temp);
+            Matrix2D.Multiply(ref _transformMatrix, ref _temp, out _transformMatrix);
 
-            // inverse the matrix as well
+            // invert the matrix as well
             Matrix2D.Invert(ref _transformMatrix, out _inverseTransformMatrix);
 
             // unset the filth
