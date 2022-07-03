@@ -121,17 +121,43 @@ namespace Instant2D.Assets.Loaders {
             }
         }
 
+        Dictionary<string, Sprite> _dependentSprites = new(64);
+
         public void LoadOnDemand(LazyAsset asset) {
+            // this asset is dependent on other asset,
+            // that means it's a spritesheet item or animation frame
+            if (asset.DependsOn is LazyAsset parentAsset) {
+
+                // load the parent asset if current one requires it
+                if (!parentAsset.IsLoaded) {
+                    LoadOnDemand(parentAsset);
+                }
+
+                // if the item was not added, abort loading
+                if (!_dependentSprites.TryGetValue(asset.Key, out var result)) {
+                    Logger.WriteLine($"Sprite '{parentAsset.Key}' doesn't have item '{asset.Key}'.", Logger.Severity.Error);
+                    return;
+                }
+
+                (asset as LazyAsset<Sprite>).Content = result;
+                return;
+            }
+
             _loadedTextures ??= new(64);
 
+            // since this asset doesn't depend on anything, we just load the texture and see how it goes
             using var fileStream = TitleContainer.OpenStream(Path.Combine(SPRITES_PATH, asset.Key + ".png"));
 
             // open the stream for asset data retrieval
             var tex = Texture2D.FromStream(InstantGame.Instance.GraphicsDevice, fileStream);
             _loadedTextures.Add(tex);
 
-            // proccess the spritedef and load the sprite back to the asset
+            // proccess the spritedef and load the sprite back to the asset,
+            // saving any dependent sprites along the way for later retrieval
             var sprites = ProcessSpriteDef(SpriteDefinitions[asset.Key], tex, new(0, 0, tex.Width, tex.Height), out var animationDef);
+            for (var i = 1; i < sprites.Count; i++) {
+                _dependentSprites.Add(sprites[i].Key, sprites[i]);
+            }
 
             // if asset is a sprite, simply return it
             if (asset is LazyAsset<Sprite> spriteAsset) {

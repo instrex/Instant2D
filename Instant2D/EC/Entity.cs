@@ -306,6 +306,10 @@ namespace Instant2D.EC {
                 // detach from the scene
                 IsDestroyed = true;
                 Scene = null;
+
+                // put the entity into the pool for reuse
+                StaticPool<Entity>.Return(this);
+
                 return;
             }
 

@@ -122,6 +122,12 @@ namespace Instant2D.TestGame {
                         .SetDepth(1.0f)
                         .Entity.Transform.Rotation = 0.3f;
 
+                    scene.CreateEntity("gardening-test", new(50))
+                        .AddComponent(new SpriteRenderer {
+                            Sprite = AssetManager.Instance.Get<Sprite>("gardening_vase"),
+                            RenderLayer = bg
+                        });
+
                     // create funny renderer
                     var wawaCat = scene.CreateEntity("wawa-cat", Vector2.Zero)
                         .SetLocalScale(0.25f);
