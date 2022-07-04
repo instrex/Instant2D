@@ -11,6 +11,14 @@ namespace Instant2D.EC {
         }
 
         /// <summary>
+        /// Attempts to grab the transform of <see cref="Entity"/> attached.
+        /// </summary>
+        public Transform Transform {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Entity?.Transform;
+        }
+
+        /// <summary>
         /// Attempts to grab the scene of <see cref="Entity"/> attached.
         /// </summary>
         public Scene Scene {
@@ -18,7 +26,7 @@ namespace Instant2D.EC {
             get => Entity?.Scene;
         }
 
-        bool _isActive = true;
+        internal bool _isActive = true;
 
         /// <summary>
         /// While true, <see cref="IUpdatableComponent.Update"/> will be run.

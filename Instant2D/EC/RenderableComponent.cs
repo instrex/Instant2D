@@ -1,19 +1,43 @@
 ﻿using Instant2D.Graphics;
+using Instant2D.Utils;
 using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC {
     public abstract class RenderableComponent : Component, IComparable<RenderableComponent> {
         SceneRenderLayer _layer;
 
+        // used for bounds calculations
+        static Matrix2D _tempMatrix, _tempTransform;
+
         // those are internal so I can acces them easier inside SceneLayers
         internal Material? _material;
         internal float _depth;
         internal int _z;
 
+        bool _isVisible = true;
+
         public Color Color = Color.White;
+
+        /// <summary>
+        /// Whether or not this RenderableComponent was visible during last render.
+        /// </summary>
+        public bool IsVisible {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _isVisible;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal set {
+                if (_isVisible == value)
+                    return;
+
+                _isVisible = value;
+                OnVisibilityChanged();
+            } 
+        }
 
         /// <summary>
         /// Material which this component will set before calling <see cref="Draw"/>.
@@ -171,6 +195,47 @@ namespace Instant2D.EC {
         }
 
         #endregion
+
+        /// <summary>
+        /// Helper method for calculating common renderable component bounds.
+        /// </summary>
+        public static RectangleF CalculateBounds(Vector2 position, Vector2 offset, Vector2 origin, Vector2 size, float rotation, Vector2 scale) {
+            if (rotation == 0f) {
+                return new(position + offset - origin * scale, size * scale);
+            }
+
+            var worldPosX = position.X + offset.X;
+            var worldPosY = position.Y + offset.Y;
+
+            Matrix2D.CreateTranslation(-worldPosX - origin.X, -worldPosY - origin.Y, out _tempTransform);
+            Matrix2D.CreateScale(scale.X, scale.Y, out _tempMatrix); // scale ->
+            Matrix2D.Multiply(ref _tempTransform, ref _tempMatrix, out _tempTransform);
+            Matrix2D.CreateRotation(rotation, out _tempMatrix); // rotate ->
+            Matrix2D.Multiply(ref _tempTransform, ref _tempMatrix, out _tempTransform);
+            Matrix2D.CreateTranslation(worldPosX, worldPosY, out _tempMatrix); // translate back
+            Matrix2D.Multiply(ref _tempTransform, ref _tempMatrix, out _tempTransform);
+
+            // get four rectangle points to construct bounds
+            var topLeft = new Vector2(worldPosX, worldPosY);
+            var topRight = new Vector2(worldPosX + size.X, worldPosY);
+            var bottomLeft = new Vector2(worldPosX, worldPosY + size.Y);
+            var bottomRight = new Vector2(worldPosX + size.X, worldPosY + size.Y);
+
+            // transform the corners
+            VectorUtils.Transform(ref topLeft, ref _tempTransform, out topLeft);
+            VectorUtils.Transform(ref topRight, ref _tempTransform, out topRight);
+            VectorUtils.Transform(ref bottomLeft, ref _tempTransform, out bottomLeft);
+            VectorUtils.Transform(ref bottomRight, ref _tempTransform, out bottomRight);
+
+            // create the bounds
+            return RectangleF.FromCoordinates(topLeft, topRight, bottomLeft, bottomRight);
+        }
+
+        /// <summary>
+        /// Is called whenever the object appears inside Camera bounds. <see cref="Bounds"/> property must be set and Camera should support culling for this to be called. <br/>
+        /// Use <see cref="IsVisible"/> to determine current visibility.
+        /// </summary>
+        public virtual void OnVisibilityChanged() { }
 
         /// <summary>
         /// The drawing function. Note that before this, <see cref="IDrawingBackend.Push(in Material, Microsoft.Xna.Framework.Matrix)"/>

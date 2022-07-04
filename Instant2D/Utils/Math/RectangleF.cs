@@ -68,6 +68,11 @@ namespace Instant2D.Utils.Math {
             }
         }
 
+        public float Left => X;
+        public float Right => X + Width;
+        public float Top => Y;
+        public float Bottom => Y + Height;
+
         /// <summary>
         /// Checks whether or not point <paramref name="value"/> lies in the rectangle.
         /// </summary>
@@ -79,13 +84,23 @@ namespace Instant2D.Utils.Math {
         }
 
         /// <summary>
-        /// Checks if two rectangles intersect each other.
+        /// Checks this rectangle contains another rectangle.
         /// </summary>
-        public bool Intersects(RectangleF other) => (X <= other.X) && ((other.X + other.Width) <= (X + Width)) && (Y <= other.Y) && ((other.Y + other.Height) <= (Y + Height));
+        public bool Contains(RectangleF other) => (X <= other.X) && ((other.X + other.Width) <= (X + Width)) && (Y <= other.Y) && ((other.Y + other.Height) <= (Y + Height));
 
-        /// <inheritdoc cref="Intersects(RectangleF)"/>
-        public void Intersects(ref RectangleF value, out bool result) {
+        /// <inheritdoc cref="Contains(RectangleF)"/>
+        public void Contains(ref RectangleF value, out bool result) {
             result = (X <= value.X) && (value.X < (X + Width)) && (Y <= value.Y) && (value.Y < (Y + Height));
+        }
+
+        /// <summary>
+        /// Checks whether or not two rectangles intersect.
+        /// </summary>
+        public bool Intersects(RectangleF value) {
+            return value.Left < Right &&
+                   Left < value.Right &&
+                   value.Top < Bottom &&
+                   Top < value.Bottom;
         }
 
         #region Equality

@@ -1,4 +1,6 @@
 ﻿using Instant2D.Graphics;
+using Instant2D.Utils;
+using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
@@ -24,6 +26,11 @@ namespace Instant2D.EC {
         /// The color this layer should use when drawing onto the screen.
         /// </summary>
         public Color Color = Color.White;
+
+        /// <summary>
+        /// Read-only access to this layer's RenderTarget. Note that this reference will change if viewport resolution changes.
+        /// </summary>
+        public RenderTarget2D RenderTarget => _renderTarget;
 
         internal RenderTarget2D _renderTarget;
         internal bool _orderDirty;
@@ -51,18 +58,27 @@ namespace Instant2D.EC {
             var drawing = GraphicsManager.Backend;
             var camera = Camera ?? _scene.Camera;
             var bounds = camera.Bounds;
-            var cullingEnabled = bounds == default;
+            var cullingEnabled = bounds != default;
 
             // begin the batch
             drawing.Push(Material.Default, camera.TransformMatrix);
+
+            drawing.DrawHollowRect(bounds, Color.Blue, 2);
 
             // draw everything
             for (var i = 0; i < Objects.Count; i++) {
                 var obj = Objects[i];
 
+                // skip non-active objects
+                if (!obj._isActive)
+                    continue;
+
                 if (cullingEnabled) {
+                    obj.IsVisible = bounds.Intersects(obj.Bounds);
+                    drawing.DrawHollowRect(obj.Bounds, obj.IsVisible ? Color.Green : Color.Red, 2);
+
                     // don't draw the objects outside view
-                    if (!bounds.Contains(obj.Entity.Transform.Position))
+                    if (!obj.IsVisible)
                         continue;
                 }
 

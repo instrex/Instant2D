@@ -25,15 +25,23 @@ namespace Instant2D.EC {
             get {
                 CalculateMatrices();
                 if (_boundsDirty) {
-                    var topLeft = ScreenToWorldPosition(Vector2.Zero);
-                    var bottomRight = ScreenToWorldPosition(Scene.Resolution.renderTargetSize.ToVector2() * Scene.Resolution.scaleFactor);
-
-                    // TODO: handle rotations
-                    _bounds.Width = bottomRight.X - topLeft.X;
-                    _bounds.Width = bottomRight.Y - topLeft.Y;
-                    _bounds.Position = topLeft;
-
                     _boundsDirty = false;
+
+                    var topLeft = ScreenToWorldPosition(Vector2.Zero);
+                    var bottomRight = ScreenToWorldPosition(Scene.Resolution.renderTargetSize.ToVector2());
+
+                    // if rotation is zero, no further action is needed
+                    if (Transform.Rotation == 0) {
+                        _bounds.Width = bottomRight.X - topLeft.X;
+                        _bounds.Height = bottomRight.Y - topLeft.Y;
+                        _bounds.Position = topLeft;
+
+                        return _bounds;
+                    }
+
+                    var topRight = ScreenToWorldPosition(new Vector2(Scene.Resolution.renderTargetSize.X, 0));
+                    var bottomLeft = ScreenToWorldPosition(new Vector2(0, Scene.Resolution.renderTargetSize.Y));
+                    _bounds = RectangleF.FromCoordinates(topLeft, topRight, bottomLeft, bottomRight);
                 }
 
                 return _bounds;
@@ -45,6 +53,11 @@ namespace Instant2D.EC {
             set {
                 if (_zoom == value)
                     return;
+
+                if (value <= 0) {
+                    Logger.WriteLine($"Attempted to set zoom value of '{Entity.Name}' to a value less than zero ({value:F2}). Pls don't.", Logger.Severity.Warning);
+                    return;
+                }
 
                 _matricesDirty = true;
                 _zoom = value;

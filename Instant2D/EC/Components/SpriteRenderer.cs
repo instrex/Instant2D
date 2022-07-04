@@ -1,6 +1,7 @@
 ﻿using Instant2D.Graphics;
 using Instant2D.Utils;
 using Instant2D.Utils.Math;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -60,6 +61,8 @@ namespace Instant2D.EC.Components {
         public override RectangleF Bounds {
             get {
                 if (_boundsDirty) {
+                    _bounds = CalculateBounds(Transform.Position, Vector2.Zero, Sprite.Origin, new(Sprite.SourceRect.Width, Sprite.SourceRect.Height), 
+                        Transform.Rotation, Transform.Scale);
                     _boundsDirty = false;
                 }
 
@@ -69,6 +72,10 @@ namespace Instant2D.EC.Components {
 
         public override void OnTransformUpdated(Transform.ComponentType components) {
             _boundsDirty = true;
+        }
+
+        public override void OnVisibilityChanged() {
+            Color = new Color[] { Color.Red, Color.Green, Color.Blue }[Random.Shared.Next(3)];
         }
 
         public override void Draw(IDrawingBackend drawing, CameraComponent camera) {

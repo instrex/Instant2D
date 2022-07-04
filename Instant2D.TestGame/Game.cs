@@ -33,7 +33,7 @@ namespace Instant2D.TestGame {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
                     .SetDesignResolution(640 / 2, 360 / 2)
                     .SetPixelPerfect()
-                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.ShowAll);
+                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.CutOff);
             });
         }
 
@@ -112,7 +112,7 @@ namespace Instant2D.TestGame {
                 OnInitialize = scene => {
                     // setup layers
                     var bg = scene.CreateLayer("background");
-                    bg.BackgroundColor = Color.DarkGreen;
+                    bg.BackgroundColor = Color.DarkCyan;
 
                     // create scaling test
                     scene.CreateEntity("scaling-test", Vector2.Zero)
@@ -154,6 +154,7 @@ namespace Instant2D.TestGame {
                 },
 
                 OnUpdate = scene => {
+                    scene.Camera.Transform.Rotation = MathF.Sin(TimeManager.TotalTime * 4) * 0.1f;
                     if (InputManager.IsKeyDown(Keys.D))
                         scene.Camera.Entity.Transform.Position += new Vector2(2, 0);
 
@@ -171,14 +172,6 @@ namespace Instant2D.TestGame {
 
         protected override void Draw(GameTime gameTime) {
             base.Draw(gameTime);
-
-            var drawing = GraphicsManager.Backend;
-            drawing.Push(Material.Default);
-
-            var scaledRes = SceneManager.Instance.Current.Resolution;
-            drawing.Draw(GraphicsManager.Pixel, scaledRes.offset, Color.Red * 0.2f, 0, scaledRes.renderTargetSize.ToVector2() * scaledRes.scaleFactor);
-
-            drawing.Pop(true);
         }
     }
 }
