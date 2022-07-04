@@ -26,13 +26,13 @@ namespace Instant2D.EC {
         public readonly uint Id = _entityIdCounter++;
 
         /// <summary> Spatial information of this entity. </summary>
-        public readonly Transform Transform;
+        public readonly Transform<Entity> Transform;
 
         /// <summary> Name assigned to this entity. </summary>
         public string Name;
 
         public Entity() {
-            Transform = new() { CallbacksHandler = this };
+            Transform = new() { Entity = this };
         }
 
         /// <summary> The scene this Entity exists on. </summary>
@@ -62,31 +62,42 @@ namespace Instant2D.EC {
         /// <summary> Handles assigning parent entities. </summary>
         /// <remarks> <b>NOTE: do not set the <see cref="Transform.Parent"/> manually</b>, as it will bypass registering the child for recursive destruction and activation!</remarks>
         public Entity Parent {
-            get => _parent;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Transform.Parent?.Entity;
             set {
-                if (_parent == value)
+                if (Transform.Parent == value?.Transform)
                     return;
 
-                // do some stuff if parent is not null
-                if (value != null) {
-                    // set the transform parent and add this as a child
-                    Transform.Parent = value.Transform;
-                    value.CheckChildrenBuffer();
-                    value._children.Add(this);
-                }
-                
-                _parent = value;
+                // pass to the internal transform
+                Transform.Parent = value.Transform;
             }
         }
 
         /// <summary> Gets this entity's child using <paramref name="index"/>. </summary>
         public Entity this[int index] {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _children == null ? null : (index >= 0 && _children.Count > index ? _children[index] : null);
+            get => Transform[index]?.Entity;
+        }
+
+        /// <summary> Attempts to find the child entity using <see cref="Name"/>. </summary>
+        public Entity this[string name] {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get {
+                for (var i = 0; i < Transform.ChildrenCount; i++) {
+                    var child = Transform[i];
+                    if (child.Entity.Name == name)
+                        return child.Entity;
+                }
+
+                return null;
+            }
         }
 
         /// <summary> Amount of children entities this parent has. Use <see cref="this[int]"/> to access them. </summary>
-        public int ChildrenCount => _children?.Count ?? default;
+        public int ChildrenCount {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Transform.ChildrenCount;
+        }
 
         /// <summary> Adds the <paramref name="other"/> to the children list. </summary>
         public Entity AddChild(Entity other) {
@@ -116,18 +127,8 @@ namespace Instant2D.EC {
 
         readonly List<Component> _components = new(16);
         internal List<IUpdatableComponent> _updatedComponents; 
-        internal List<Entity> _children;
-        Entity _parent;
         bool _shouldDestroy;
         Scene _scene;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void CheckChildrenBuffer() {
-            // allocate the children buffer when needed
-            if (_children == null) {
-                _children = new List<Entity>(16);
-            }
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void DetachRenderableComponents() {
@@ -139,7 +140,7 @@ namespace Instant2D.EC {
             }
         }
 
-        public void OnTransformUpdated(Transform.ComponentType components) {
+        public void OnTransformUpdated(TransformComponentType components) {
             for (var i = 0; i < _components.Count; i++) {
                 _components[i].OnTransformUpdated(components);
             }
@@ -297,10 +298,8 @@ namespace Instant2D.EC {
                 _components.Clear();
 
                 // destroy children
-                if (_children != null) {
-                    for (var i = 0; i < _children.Count; i++) {
-                        _children[i].Destroy();
-                    }
+                for (var i = 0; i < ChildrenCount; i++) {
+                    this[i].Destroy();
                 }
 
                 // detach from the scene

@@ -147,7 +147,7 @@ namespace Instant2D.EC {
             return result;
         }
 
-        public override void OnTransformUpdated(Transform.ComponentType components) {
+        public override void OnTransformUpdated(TransformComponentType components) {
             _matricesDirty = true;
             _boundsDirty = true;
         }

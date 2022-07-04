@@ -13,7 +13,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Attempts to grab the transform of <see cref="Entity"/> attached.
         /// </summary>
-        public Transform Transform {
+        public Transform<Entity> Transform {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Entity?.Transform;
         }
@@ -76,7 +76,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Is called each time <see cref="Entity.Transform"/> is updated.
         /// </summary>
-        public virtual void OnTransformUpdated(Transform.ComponentType components) { }
+        public virtual void OnTransformUpdated(TransformComponentType components) { }
 
         #endregion
     }

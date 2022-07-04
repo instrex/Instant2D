@@ -70,7 +70,7 @@ namespace Instant2D.EC.Components {
             }
         }
 
-        public override void OnTransformUpdated(Transform.ComponentType components) {
+        public override void OnTransformUpdated(TransformComponentType components) {
             _boundsDirty = true;
         }
 

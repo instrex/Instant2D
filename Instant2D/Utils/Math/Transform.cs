@@ -11,38 +11,38 @@ using System.Threading.Tasks;
 
 namespace Instant2D {
     public interface ITransformCallbacksHandler {
-        void OnTransformUpdated(Transform.ComponentType components);
+        void OnTransformUpdated(TransformComponentType components);
     }
 
-    /// <summary>
-    /// Represents position, scale and rotation as well as object hierarchy. 
-    /// Thank you, Nez!
-    /// </summary>
-    public class Transform : IPooled {
-        [Flags]
-        public enum ComponentType {
-            Clean = 0,
-            Position = 1, 
-            Scale = 2,
-            Rotation = 4,
-            All = Position | Scale | Rotation
-        }
+    [Flags]
+    public enum TransformComponentType {
+        Clean = 0,
+        Position = 1,
+        Scale = 2,
+        Rotation = 4,
+        All = Position | Scale | Rotation
+    }
 
+    /// <summary> 
+    /// Represents position, scale and rotation as well as object hierarchy. <br/> 
+    /// <typeparamref name="T"/> can optionally implement <see cref="ITransformCallbacksHandler"/> to receive transform events.
+    /// </summary>
+    public class Transform<T> : IPooled {
         /// <summary>
-        /// An entity that will receive <see cref="Component.OnTransformUpdated(ComponentType)"/> events.
+        /// An entity that will receive <see cref="Component.OnTransformUpdated(TransformComponentType)"/> events.
         /// </summary>
-        public ITransformCallbacksHandler CallbacksHandler;
+        public T Entity;
 
         Vector2 _localPosition, _position, _localScale = Vector2.One, _scale = Vector2.One;
         float _localRotation, _rotation;
 
-        readonly List<Transform> _children = new();
-        Transform _parent;
+        List<Transform<T>> _children;
+        Transform<T> _parent;
 
         Matrix2D _localTransform, _worldTransform = Matrix2D.Identity;
         Matrix2D _translationMatrix, _rotationMatrix, _scaleMatrix;
         Matrix2D _worldToLocalTransform = Matrix2D.Identity;
-        ComponentType _matricesDirty, _localMatricesDirty;
+        TransformComponentType _matricesDirty, _localMatricesDirty;
 
         bool _worldToLocalDirty;
         public Matrix2D WorldToLocalTransform {
@@ -62,28 +62,63 @@ namespace Instant2D {
             }
         }
 
+        #region Children
+
         /// <summary>
         /// Parent of this instance, in case you're working with entities set children/parents through entity methods, not this one!
         /// </summary>
-        public Transform Parent {
+        public Transform<T> Parent {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _parent;
             set {
+                // stop if nothing changes
                 if (_parent == value)
                     return;
 
-                _parent?._children.Remove(this);
-                value?._children.Add(this);
+                // update transform buffers
+                _parent?._children?.Remove(this);
+                value?.AddChild(this);
 
-                _parent = value;
-
-                if (_parent != null)
+                // assign new parent and reset the position
+                if ((_parent = value) != null)
                     Position = Vector2.Zero;
 
-                MarkDirty(ComponentType.Position);
+                MarkDirty(TransformComponentType.Position);
             }
         }
 
-        public IReadOnlyList<Transform> Children => _children;
+        /// <summary> Count of all the children this transform houses. </summary>
+        public int ChildrenCount {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _children?.Count ?? 0;
+        } 
+
+        /// <summary> Gets an indexed child transform. Use <see cref="ChildrenCount"/> to determine the count of children and possibly enumerate over this. </summary>
+        public Transform<T> this[int index] {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get {
+                // no children?
+                if (_children == null)
+                    return null;
+
+                // bruh moment
+                if (index < 0 || index >= _children.Count)
+                    return null;
+
+                return _children[index];
+            }
+        }
+
+        // add a child and lazily initialize the list
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void AddChild(Transform<T> transform) {
+            if (_children == null)
+                _children = new(8);
+
+            _children.Add(transform);
+        }
+
+        #endregion
 
         #region Components
 
@@ -113,8 +148,8 @@ namespace Instant2D {
                     return;
 
                 _localPosition = value;
-                _localMatricesDirty = ComponentType.All;
-                MarkDirty(ComponentType.Position);
+                _localMatricesDirty = TransformComponentType.All;
+                MarkDirty(TransformComponentType.Position);
             }
         }
 
@@ -138,8 +173,8 @@ namespace Instant2D {
 
             set {
                 _localRotation = value;
-                _localMatricesDirty = ComponentType.All;
-                MarkDirty(ComponentType.Rotation);
+                _localMatricesDirty = TransformComponentType.All;
+                MarkDirty(TransformComponentType.Rotation);
             }
         }
 
@@ -164,8 +199,8 @@ namespace Instant2D {
             }
             set {
                 _localScale = value;
-                _localMatricesDirty = ComponentType.All;
-                MarkDirty(ComponentType.Scale);
+                _localMatricesDirty = TransformComponentType.All;
+                MarkDirty(TransformComponentType.Scale);
             }
         }
 
@@ -173,24 +208,24 @@ namespace Instant2D {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void CalculateTransform() {
-            if (_matricesDirty == ComponentType.Clean)
+            if (_matricesDirty == TransformComponentType.Clean)
                 return;
 
             _parent?.CalculateTransform();
-            if (_localMatricesDirty != ComponentType.Clean) {
-                if ((_localMatricesDirty & ComponentType.Position) != 0) {
+            if (_localMatricesDirty != TransformComponentType.Clean) {
+                if ((_localMatricesDirty & TransformComponentType.Position) != 0) {
                     Matrix2D.CreateTranslation(_localPosition.X, _localPosition.Y, out _translationMatrix);
-                    _localMatricesDirty &= ~ComponentType.Position;
+                    _localMatricesDirty &= ~TransformComponentType.Position;
                 }
 
-                if ((_localMatricesDirty & ComponentType.Rotation) != 0) {
+                if ((_localMatricesDirty & TransformComponentType.Rotation) != 0) {
                     Matrix2D.CreateRotation(_localRotation, out _rotationMatrix);
-                    _localMatricesDirty &= ~ComponentType.Rotation;
+                    _localMatricesDirty &= ~TransformComponentType.Rotation;
                 }
 
-                if ((_localMatricesDirty & ComponentType.Scale) != 0) {
+                if ((_localMatricesDirty & TransformComponentType.Scale) != 0) {
                     Matrix2D.CreateScale(_localScale.X, _localScale.Y, out _scaleMatrix);
-                    _localMatricesDirty &= ~ComponentType.Scale;
+                    _localMatricesDirty &= ~TransformComponentType.Scale;
                 }
 
                 Matrix2D.Multiply(ref _scaleMatrix, ref _rotationMatrix, out _localTransform);
@@ -215,10 +250,11 @@ namespace Instant2D {
             }
 
             // call the transform callback if entity is there
-            CallbacksHandler?.OnTransformUpdated(_matricesDirty);
+            if (Entity is ITransformCallbacksHandler handler)
+                handler.OnTransformUpdated(_matricesDirty);
 
             _worldToLocalDirty = true;
-            _matricesDirty = ComponentType.Clean;
+            _matricesDirty = TransformComponentType.Clean;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -230,11 +266,12 @@ namespace Instant2D {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void MarkDirty(ComponentType flags = ComponentType.All) {
+        void MarkDirty(TransformComponentType flags = TransformComponentType.All) {
             _matricesDirty |= flags;
-            for (var i = 0; i < _children.Count; i++) {
-                _children[i].MarkDirty(flags);
-            }
+            if (_children != null)
+                for (var i = 0; i < _children.Count; i++) {
+                    _children[i].MarkDirty(flags);
+                }
         }
 
         public void Reset() {
@@ -242,7 +279,7 @@ namespace Instant2D {
             _position = default;
             _scale = Vector2.One;
             _rotation = 0;
-            _children.Clear();
+            _children?.Clear();
             _parent = null;
         }
     }
