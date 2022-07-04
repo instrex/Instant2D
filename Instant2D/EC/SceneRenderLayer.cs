@@ -63,8 +63,6 @@ namespace Instant2D.EC {
             // begin the batch
             drawing.Push(Material.Default, camera.TransformMatrix);
 
-            drawing.DrawHollowRect(bounds, Color.Blue, 2);
-
             // draw everything
             for (var i = 0; i < Objects.Count; i++) {
                 var obj = Objects[i];
@@ -75,7 +73,7 @@ namespace Instant2D.EC {
 
                 if (cullingEnabled) {
                     obj.IsVisible = bounds.Intersects(obj.Bounds);
-                    drawing.DrawHollowRect(obj.Bounds, obj.IsVisible ? Color.Green : Color.Red, 2);
+                    //drawing.DrawHollowRect(obj.Bounds, obj.IsVisible ? Color.Green : Color.Red, 2);
 
                     // don't draw the objects outside view
                     if (!obj.IsVisible)
@@ -83,9 +81,9 @@ namespace Instant2D.EC {
                 }
 
                 // swap the material when needed
-                if (obj._material is { } material && material != _currentMaterial) {
-                    _currentMaterial = material;
-                    drawing.Push(material);
+                if (obj._material != null && obj._material != _currentMaterial) {
+                    _currentMaterial = obj._material.Value;
+                    drawing.Push(_currentMaterial);
                 }
 
                 obj.Draw(drawing, camera);

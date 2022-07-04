@@ -49,26 +49,47 @@ namespace Instant2D.TestGame {
                     _targetPos = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
                 }
 
+                if (InputManager.MiddleMousePressed) {
+                    Scene.TimeScale = 0.01f;
+                }
+
+                if (Scene.TimeScale < 1f) {
+                    Scene.TimeScale *= 1.1f;
+                    if (Scene.TimeScale > 1f)
+                        Scene.TimeScale = 1f;
+                }
+
                 // move the camera to the focus zone
                 if (Vector2.Distance(Scene.Camera.Entity.Transform.Position, _targetPos) > 5) {
-                    Scene.Camera.Entity.Transform.Position = Vector2.Lerp(Scene.Camera.Entity.Transform.Position, _targetPos, 0.1f);
+                    Scene.Camera.Entity.Transform.Position = Vector2.Lerp(Scene.Camera.Entity.Transform.Position, _targetPos, 0.1f * Scene.TimeScale);
                 }
                 
                 if (InputManager.MouseWheelDelta != 0) {
                     Scene.Camera.Zoom += InputManager.MouseWheelDelta * 0.0005f;
                 }
 
-                Entity.Transform.Rotation += 0.1f;
+                Entity.Transform.Rotation += 0.1f * Scene.TimeScale;
 
                 // rotate wawas
                 for (var i = 0; i < Entity.ChildrenCount; i++) {
                     var entity = Entity[i];
-                    entity.Transform.LocalRotation += i % 2 == 0 ? -0.1f : 0.1f;
-                    entity.Transform.LocalPosition = entity.Transform.LocalPosition.SafeNormalize() * (1000 - 750 * MathF.Sin((TimeManager.TotalTime + i) * 4));
+                    entity.Transform.LocalRotation += (i % 2 == 0 ? -0.1f : 0.1f) * Scene.TimeScale;
+                    entity.Transform.LocalPosition = entity.Transform.LocalPosition.SafeNormalize() * (1000 - 750 * MathF.Sin((Scene.TotalTime + i) * 4));
                 }
             }
         }
 
+        class FireComponent : RenderableComponent {
+            public override void Initialize() {
+                Material = Material.Default with { BlendState = BlendState.Additive };
+            }
+
+            public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
+                var anim = AssetManager.Instance.Get<SpriteAnimation>("fire");
+                drawing.DrawAnimation(anim with { Fps = anim.Fps * Scene.TimeScale }, Transform.Position,
+                    Color, Transform.Rotation, Transform.Scale);
+            }
+        }
 
         SoundEffect _soundEffect;
         protected override void LoadContent() {
@@ -112,7 +133,7 @@ namespace Instant2D.TestGame {
                 OnInitialize = scene => {
                     // setup layers
                     var bg = scene.CreateLayer("background");
-                    bg.BackgroundColor = Color.DarkCyan;
+                    bg.BackgroundColor = Color.DarkRed;
 
                     // create scaling test
                     scene.CreateEntity("scaling-test", Vector2.Zero)
@@ -127,6 +148,15 @@ namespace Instant2D.TestGame {
                             Sprite = AssetManager.Instance.Get<Sprite>("gardening_vase"),
                             RenderLayer = bg
                         });
+
+                    // create burning hell
+                    for (var i = 0; i < 24; i++) {
+                        var entity = scene.CreateEntity($"fire_{i}", new Vector2(Random.Shared.Next(640), Random.Shared.Next(320)));
+                        entity.Transform.Scale = new Vector2(0.5f + Random.Shared.NextSingle() * 5);
+                        entity.AddComponent<FireComponent>()
+                            .SetRenderLayer(bg)
+                            .SetZ(Random.Shared.Next(-200, 200));
+                    }
 
                     // create funny renderer
                     var wawaCat = scene.CreateEntity("wawa-cat", Vector2.Zero)
@@ -154,7 +184,7 @@ namespace Instant2D.TestGame {
                 },
 
                 OnUpdate = scene => {
-                    scene.Camera.Transform.Rotation = MathF.Sin(TimeManager.TotalTime * 4) * 0.1f;
+                    scene.Camera.Transform.Rotation = MathF.Sin(scene.TotalTime * 12) * 0.1f;
                     if (InputManager.IsKeyDown(Keys.D))
                         scene.Camera.Entity.Transform.Position += new Vector2(2, 0);
 

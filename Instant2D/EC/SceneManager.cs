@@ -65,7 +65,7 @@ namespace Instant2D.EC {
         }
 
         public override void Update(GameTime time) {
-            _current?.InternalUpdate();
+            _current?.InternalUpdate(time);
         }
 
         public override void Render(GameTime time) {

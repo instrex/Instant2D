@@ -39,6 +39,11 @@ namespace Instant2D.EC {
         public float TimeScale = 1.0f;
 
         /// <summary>
+        /// Amount of time that has passed since beginning this scene, taking <see cref="TimeScale"/> into account.
+        /// </summary>
+        public float TotalTime;
+
+        /// <summary>
         /// Camera used to render this scene.
         /// </summary>
         public CameraComponent Camera;
@@ -74,7 +79,7 @@ namespace Instant2D.EC {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void InternalUpdate() {
+        internal void InternalUpdate(GameTime time) {
             // initialize the scene first
             if (!_isInitialized) {
                 _isInitialized = true;
@@ -89,6 +94,8 @@ namespace Instant2D.EC {
                 // initialize RTs for newly added layers
                 ResizeRenderTargets(Resolution);
             }
+
+            TotalTime += (float)time.ElapsedGameTime.TotalSeconds * TimeScale;
 
             if (!IsActive)
                 return;

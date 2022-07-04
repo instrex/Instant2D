@@ -12,7 +12,14 @@
     "pixel": { "origin": [0, 0] },
     "scaling_test": { "origin": [0, 0] },
     "ui_sample": { "origin": [0, 0] },
-    
+    "fire": {
+        "split": 60,
+        "origin": [32, 46],
+        "animation": {
+            "fps": 30
+        }
+    },
+
     "explosion": {
         "split": 4,
         "animation": {
