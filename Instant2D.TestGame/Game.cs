@@ -33,7 +33,7 @@ namespace Instant2D.TestGame {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
                     .SetDesignResolution(640 / 2, 360 / 2)
                     .SetPixelPerfect()
-                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.CutOff);
+                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.ShowAll);
             });
         }
 
@@ -49,7 +49,7 @@ namespace Instant2D.TestGame {
                     _targetPos = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
                 }
 
-                if (InputManager.MiddleMousePressed) {
+                if (InputManager.MiddleMouseDown) {
                     Scene.TimeScale = 0.01f;
                 }
 
@@ -86,7 +86,7 @@ namespace Instant2D.TestGame {
 
             public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
                 var anim = AssetManager.Instance.Get<SpriteAnimation>("fire");
-                drawing.DrawAnimation(anim with { Fps = anim.Fps * Scene.TimeScale }, Transform.Position,
+                drawing.DrawAnimation(anim, Transform.Position,
                     Color, Transform.Rotation, Transform.Scale);
             }
         }

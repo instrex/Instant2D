@@ -60,7 +60,6 @@ namespace Instant2D.EC {
         #region Children
 
         /// <summary> Handles assigning parent entities. </summary>
-        /// <remarks> <b>NOTE: do not set the <see cref="Transform.Parent"/> manually</b>, as it will bypass registering the child for recursive destruction and activation!</remarks>
         public Entity Parent {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Transform.Parent?.Entity;

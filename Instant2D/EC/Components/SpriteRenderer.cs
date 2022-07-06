@@ -14,11 +14,18 @@ namespace Instant2D.EC.Components {
         RectangleF _bounds;
         bool _boundsDirty = true;
         SpriteEffects _spriteFx;
+        Sprite _sprite;
 
         /// <summary>
         /// The sprite to render.
         /// </summary>
-        public Sprite Sprite { get; set; }
+        public Sprite Sprite { 
+            get => _sprite;
+            set {
+                _sprite = value;
+                _boundsDirty = true;
+            } 
+        }
 
         /// <summary>
         /// Whether or not this sprite should be horizontally flipped. Transformations will be applied to the origin.

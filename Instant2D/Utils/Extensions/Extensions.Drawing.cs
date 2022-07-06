@@ -1,4 +1,5 @@
-﻿using Instant2D.Graphics;
+﻿using Instant2D.EC;
+using Instant2D.Graphics;
 using Instant2D.Utils;
 using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
@@ -14,7 +15,8 @@ namespace Instant2D {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void DrawAnimation(this IDrawingBackend drawing, in SpriteAnimation animation, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects spriteEffects = SpriteEffects.None) {
             var timePerFrame = 1.0f / animation.Fps;
-            drawing.Draw(animation.Frames[(int)(TimeManager.TotalTime / timePerFrame % animation.Frames.Length)], position, color, rotation, scale, spriteEffects);
+            var time = SceneManager.Instance?.Current?.TotalTime ?? TimeManager.TotalTime;
+            drawing.Draw(animation.Frames[(int)(time / timePerFrame % animation.Frames.Length)], position, color, rotation, scale, spriteEffects);
         }
 
         public static void DrawLine(this IDrawingBackend drawing, Vector2 a, Vector2 b, Color color, float thickness = 1.0f) {

@@ -61,8 +61,8 @@ namespace Instant2D.EC {
             var cullingEnabled = bounds != default;
 
             // begin the batch
-            drawing.Push(Material.Default, camera.TransformMatrix);
-
+            drawing.Push(_currentMaterial = Material.Default, camera.TransformMatrix);
+            
             // draw everything
             for (var i = 0; i < Objects.Count; i++) {
                 var obj = Objects[i];
@@ -81,8 +81,8 @@ namespace Instant2D.EC {
                 }
 
                 // swap the material when needed
-                if (obj._material != null && obj._material != _currentMaterial) {
-                    _currentMaterial = obj._material.Value;
+                if (obj._material != _currentMaterial) {
+                    _currentMaterial = obj._material;
                     drawing.Push(_currentMaterial);
                 }
 

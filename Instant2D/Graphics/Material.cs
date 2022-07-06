@@ -9,7 +9,15 @@ namespace Instant2D.Graphics {
     /// <summary>
     /// Wrapper for values used during rendering.
     /// </summary>
-    public readonly struct Material : IEquatable<Material> {
+    public record Material {
+        public Material(BlendState blendState = default, SamplerState samplerState = default, Effect effect = default, RasterizerState rasterizerState = default, DepthStencilState depthStencilState = default) {
+            BlendState = blendState ?? BlendState.NonPremultiplied;
+            RasterizerState = rasterizerState ?? RasterizerState.CullNone;
+            SamplerState = samplerState ?? SamplerState.PointClamp;
+            DepthStencilState = depthStencilState ?? DepthStencilState.None;
+            Effect = effect;
+        }
+
         public BlendState BlendState { get; init; }
         public RasterizerState RasterizerState { get; init; }
         public SamplerState SamplerState { get; init; }
@@ -23,29 +31,5 @@ namespace Instant2D.Graphics {
             BlendState = BlendState.NonPremultiplied,
             SamplerState = SamplerState.PointClamp,
         };
-
-        public override bool Equals(object obj) {
-            return obj is Material material && Equals(material);
-        }
-
-        public bool Equals(Material other) {
-            return EqualityComparer<BlendState>.Default.Equals(BlendState, other.BlendState) &&
-                   EqualityComparer<RasterizerState>.Default.Equals(RasterizerState, other.RasterizerState) &&
-                   EqualityComparer<SamplerState>.Default.Equals(SamplerState, other.SamplerState) &&
-                   EqualityComparer<DepthStencilState>.Default.Equals(DepthStencilState, other.DepthStencilState) &&
-                   EqualityComparer<Effect>.Default.Equals(Effect, other.Effect);
-        }
-
-        public override int GetHashCode() {
-            return HashCode.Combine(BlendState, RasterizerState, SamplerState, DepthStencilState, Effect);
-        }
-
-        public static bool operator ==(Material left, Material right) {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Material left, Material right) {
-            return !(left == right);
-        }
     }
 }

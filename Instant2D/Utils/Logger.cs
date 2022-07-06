@@ -20,15 +20,18 @@ namespace Instant2D.Utils {
         readonly FileStream _stream;
 
         public Logger() {
-            _stream = File.OpenWrite(".log");
-            _writer = new StreamWriter(_stream, Encoding.Unicode);
-
-            _writer.WriteLine($"======= {DateTime.Now} =======");
+            try {
+                _stream = File.OpenWrite(".log");
+                _writer = new StreamWriter(_stream, Encoding.Unicode);
+                _writer.WriteLine($"======= {DateTime.Now} =======");
+            } catch {
+                Warning("Seems like another instance of the app is running, the logger will not write to '.log. file.");
+            }
         }
 
         void IDisposable.Dispose() {
-            _writer.WriteLine($"======= THE END =======");
-            _writer.Flush();
+            _writer?.WriteLine($"======= THE END =======");
+            _writer?.Flush();
 
             _stream?.Dispose();
             _writer?.Dispose();
@@ -38,7 +41,7 @@ namespace Instant2D.Utils {
 
         void Write(string message) {
             Console.Write(message);
-            _writer.Write(message);
+            _writer?.Write(message);
         }
 
         public override void Initialize() {
@@ -49,7 +52,7 @@ namespace Instant2D.Utils {
         public override void Update(GameTime time) {
             // flush the filestream every 2 seconds
             if (TimeManager.FrameCount % 120 == 0) {
-                _writer.Flush();
+                _writer?.Flush();
             }
         }
 

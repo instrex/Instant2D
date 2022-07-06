@@ -14,7 +14,7 @@ namespace Instant2D.EC {
         static Matrix2D _tempMatrix, _tempTransform;
 
         // those are internal so I can acces them easier inside SceneLayers
-        internal Material? _material;
+        internal Material _material = Material.Default;
         internal float _depth;
         internal int _z;
 
@@ -43,7 +43,7 @@ namespace Instant2D.EC {
         /// Material which this component will set before calling <see cref="Draw"/>.
         /// </summary>
         public Material Material { 
-            get => _material ?? Material.Default; 
+            get => _material; 
             set {
                 // if material's the same, no need to reassign it
                 if (_material == value)

@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Utils.Math {
-    public struct RectangleF : IEquatable<RectangleF> {
+    public record struct RectangleF {
         public float X, Y, Width, Height;
 
         public RectangleF(Vector2 position, Vector2 size) : this(position.X, position.Y, size.X, size.Y) { }
@@ -102,26 +102,5 @@ namespace Instant2D.Utils.Math {
                    value.Top < Bottom &&
                    Top < value.Bottom;
         }
-
-        #region Equality
-
-        public override int GetHashCode() => HashCode.Combine(X, Y, Width, Height);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals([NotNullWhen(true)] object obj) {
-            return obj is RectangleF other && Equals(other);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(RectangleF other) => other.X == X
-            && other.Y == Y
-            && other.Width == Width
-            && other.Height == Height;
-
-        public static bool operator ==(RectangleF left, RectangleF right) => left.Equals(right);
-
-        public static bool operator !=(RectangleF left, RectangleF right) => !(left == right);
-
-        #endregion
     }
 }
