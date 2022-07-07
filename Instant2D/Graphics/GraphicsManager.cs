@@ -1,8 +1,11 @@
-﻿using Instant2D.Core;
+﻿using Instant2D.Assets.Loaders;
+using Instant2D.Core;
+using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,6 +23,7 @@ namespace Instant2D.Graphics {
         public static IDrawingBackend Backend { get; private set; }
 
         static Sprite? _pixelSprite;
+        static InstantFont _defaultFont;
 
         /// <summary>
         /// White pixel sprite with 1x1 dimensions. Initialized on-demand.
@@ -39,6 +43,32 @@ namespace Instant2D.Graphics {
         }
 
         /// <summary>
+        /// Default sprite font instance. Initialized on-demand.
+        /// </summary>
+        public static InstantFont DefaultFont {
+            get {
+                if (_defaultFont is null) {
+                    const string NAMESPACE = "Instant2D.Resources.";
+
+                    // perform black magic ritual to load json description and texture
+                    using var textureStream = typeof(GraphicsManager).Assembly.GetManifestResourceStream(NAMESPACE + "default_font.png");
+                    var texture = Texture2D.FromStream(InstantGame.Instance.GraphicsDevice, textureStream);
+
+                    using var descStream = typeof(GraphicsManager).Assembly.GetManifestResourceStream(NAMESPACE + "default_font.json");
+                    using var reader = new StreamReader(descStream);
+                    if (!FontLoader.TryParse(reader.ReadToEnd(), out var fontDesc)) {
+                        Logger.WriteLine("Couldn't parse default font, something has gone very wrong...", Logger.Severity.Error);
+                        return null;
+                    }
+
+                    _defaultFont = new InstantFont(fontDesc.CreateGlyphs(new[] { texture }), fontDesc.lineSpacing, fontDesc.defaultChar);
+                }
+
+                return _defaultFont;
+            }
+        }
+
+        /// <summary>
         /// Sets the <see cref="Backend"/> property.
         /// </summary>
         public static void SetBackend<T>() where T: IDrawingBackend, new() {
@@ -47,6 +77,7 @@ namespace Instant2D.Graphics {
 
         public override void Initialize() {
             Instance = this;
+            _ = DefaultFont;
 
             if (Backend == null) {
                 InstantGame.Instance.Logger.Warning("No GraphicsManager backend specified, defaulting to SpriteBatchBackend...");

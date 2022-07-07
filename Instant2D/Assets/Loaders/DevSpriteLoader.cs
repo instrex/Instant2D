@@ -121,7 +121,7 @@ namespace Instant2D.Assets.Loaders {
             }
         }
 
-        Dictionary<string, Sprite> _dependentSprites = new(64);
+        readonly Dictionary<string, Sprite> _dependentSprites = new(64);
 
         public void LoadOnDemand(LazyAsset asset) {
             // this asset is dependent on other asset,

@@ -29,7 +29,7 @@ namespace Instant2D.Utils {
         public static Vector2 RotatedBy(this Vector2 vector, float rotation, Vector2 center = default) {
             var (x, y) = (MathF.Cos(rotation), MathF.Sin(rotation));
             var dir = vector - center;
-            return new(center.X + dir.X * x - dir.Y * y, center.Y + dir.X * y - dir.Y * x);
+            return new(center.X + dir.X * x - dir.Y * y, center.Y + dir.X * y + dir.Y * x);
         }
 
         /// <summary> Checks whether or not this vector have any NaNs in its components. </summary>

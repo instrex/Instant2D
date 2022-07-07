@@ -1,6 +1,7 @@
 ﻿using Instant2D.Core;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -22,6 +23,12 @@ namespace Instant2D.EC {
     public sealed class Entity : IPooled, ITransformCallbacksHandler {
         static uint _entityIdCounter;
 
+        readonly List<Component> _components = new(16);
+        internal List<IUpdatableComponent> _updatedComponents;
+        float? _overrideTimeScale;
+        bool _shouldDestroy;
+        Scene _scene;
+
         /// <summary> Unique number identifier for this entity. </summary>
         public readonly uint Id = _entityIdCounter++;
 
@@ -33,28 +40,6 @@ namespace Instant2D.EC {
 
         public Entity() {
             Transform = new() { Entity = this };
-        }
-
-        /// <summary> The scene this Entity exists on. </summary>
-        public Scene Scene {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _scene; 
-            set {
-                // if previous scene is not null and not the same as the one being assigned,
-                // deregister components from all scene systems
-                if (_scene != null && _scene != value) {
-                    _scene._entities.Remove(this);
-                    DetachRenderableComponents();
-                }
-
-                // if the new scene is not the same, assign it and register components
-                if (_scene != value) {
-                    _scene = value;
-                    if (_scene != null) {
-                        _scene._entities.Add(this);
-                    }
-                }
-            }
         }
 
         #region Children
@@ -118,25 +103,49 @@ namespace Instant2D.EC {
 
         #endregion
 
+        /// <summary> The scene this Entity exists on. </summary>
+        public Scene Scene {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _scene; 
+            set {
+                // if previous scene is not null and not the same as the one being assigned,
+                // deregister components from all scene systems
+                if (_scene != null && _scene != value) {
+                    _scene._entities.Remove(this);
+                    DetachRenderableComponents();
+                }
+
+                // if the new scene is not the same, assign it and register components
+                if (_scene != value) {
+                    _scene = value;
+                    if (_scene != null) {
+                        _scene._entities.Add(this);
+                    }
+                }
+            }
+        }
+
+        /// <summary> 
+        /// Allows objects to have individual timescales. In case it's not set, will return either the parent timescale (if defined) or a global scene timescale. <br/>
+        /// Set this to <see cref="float.NaN"/> to undo the timescale override and use <see cref="Scene.TimeScale"/>.
+        /// </summary>
+        public float TimeScale {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _overrideTimeScale is float ts ? ts : (Parent?.TimeScale ?? Scene.TimeScale);
+            set {
+                if (float.IsNaN(value)) {
+                    _overrideTimeScale = null;
+                    return;
+                }
+
+                _overrideTimeScale = value;
+            }
+        }
+
         /// <summary> <see langword="true"/> if this entity was destroyed and detached from its scene. </summary>
         public bool IsDestroyed {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get; private set;
-        }
-
-        readonly List<Component> _components = new(16);
-        internal List<IUpdatableComponent> _updatedComponents; 
-        bool _shouldDestroy;
-        Scene _scene;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void DetachRenderableComponents() {
-            for (var i = 0; i < _components.Count; i++) {
-                // null out their RenderLayer so they're automatically removed
-                if (_components[i] is RenderableComponent renderable) {
-                    renderable.RenderLayer = default;
-                }
-            }
         }
 
         public void OnTransformUpdated(TransformComponentType components) {
@@ -150,6 +159,16 @@ namespace Instant2D.EC {
         }
 
         #region Components
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void DetachRenderableComponents() {
+            for (var i = 0; i < _components.Count; i++) {
+                // null out their RenderLayer so they're automatically removed
+                if (_components[i] is RenderableComponent renderable) {
+                    renderable.RenderLayer = default;
+                }
+            }
+        }
 
         /// <summary>
         /// Provides read-only access to all components attached to this entity.
@@ -295,7 +314,7 @@ namespace Instant2D.EC {
                 // clear components so no references remain
                 _updatedComponents?.Clear();
                 _components.Clear();
-
+                
                 // destroy children
                 for (var i = 0; i < ChildrenCount; i++) {
                     this[i].Destroy();
@@ -328,6 +347,7 @@ namespace Instant2D.EC {
 
             Transform.Reset();
 
+            _overrideTimeScale = null;
             _updatedComponents?.Clear();
             _components.Clear();
             _shouldDestroy = false;

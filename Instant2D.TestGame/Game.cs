@@ -202,6 +202,22 @@ namespace Instant2D.TestGame {
 
         protected override void Draw(GameTime gameTime) {
             base.Draw(gameTime);
+
+            var drawing = GraphicsManager.Backend;
+            drawing.Push(Material.Default);
+
+            var str = @"0123456789#&$%~_|!?.,:;'""^`+-=*()/\[]<>@{} ABC
+ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz
+АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ абвгдеёжзийклмнопрстуфхцчшщъыьэюя
+".ReplaceLineEndings();
+
+            drawing.Draw(GraphicsManager.Pixel, new(50), Color.Blue, MathF.Sin(TimeManager.TotalTime * 1) * 3.14f, new(50, 4));
+
+            var measure = GraphicsManager.DefaultFont.MeasureString(str);
+            drawing.Draw(GraphicsManager.Pixel, new Vector2(500), Color.Blue, 0, measure);
+            GraphicsManager.DefaultFont.DrawString(drawing, str, new(500), Color.White, Vector2.One * 1, 0);
+
+            drawing.Pop(true);
         }
     }
 }
