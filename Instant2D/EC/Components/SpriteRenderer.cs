@@ -81,10 +81,6 @@ namespace Instant2D.EC.Components {
             _boundsDirty = true;
         }
 
-        public override void OnVisibilityChanged() {
-            Color = new Color[] { Color.Red, Color.Green, Color.Blue }[Random.Shared.Next(3)];
-        }
-
         public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
             drawing.Draw(
                 Sprite, 

@@ -46,7 +46,11 @@ namespace Instant2D.Assets.Loaders {
                         continue;
                     }
 
-                    SpriteDefinitions.Add(item.key, item with { manifest = _manifests[i] });
+                    var spriteKey = $"sprites/{item.key}";
+                    SpriteDefinitions.Add(spriteKey, item with { 
+                        key = spriteKey, 
+                        manifest = _manifests[i] 
+                    });
                 }
             }
 

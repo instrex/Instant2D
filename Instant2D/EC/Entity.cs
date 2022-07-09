@@ -1,5 +1,6 @@
 ﻿using Instant2D.Core;
 using Instant2D.Utils;
+using Instant2D.Utils.Coroutines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -20,7 +21,7 @@ namespace Instant2D.EC {
     /// This will allow future <see cref="Scene.CreateEntity(string, Vector2)"/> calls utilize already allocated entities, instead of creating new ones each time. <br/>
     /// Same applies to components implementing <see cref="IPooled"/> interface.
     /// </remarks>
-    public sealed class Entity : IPooled, ITransformCallbacksHandler {
+    public sealed class Entity : IPooled, ITransformCallbacksHandler, ICoroutineTarget {
         static uint _entityIdCounter;
 
         readonly List<Component> _components = new(16);
@@ -174,6 +175,7 @@ namespace Instant2D.EC {
         /// Provides read-only access to all components attached to this entity.
         /// </summary>
         public IReadOnlyList<Component> Components => _components;
+
         static class ComponentPoolingData<T> where T: Component {
             static bool? _shouldPool;
             public static bool ShouldPool {
@@ -341,6 +343,7 @@ namespace Instant2D.EC {
             }
         }
 
+        // IPooled impl
         void IPooled.Reset() {
             IsDestroyed = false;
             Name = null;
@@ -353,5 +356,9 @@ namespace Instant2D.EC {
             _shouldDestroy = false;
             _scene = null;
         }
+
+        // ICoroutineTarget impl
+        bool ICoroutineTarget.IsActive => !_shouldDestroy;
+        float ICoroutineTarget.TimeScale => TimeScale;
     }
 }

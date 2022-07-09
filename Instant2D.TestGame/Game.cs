@@ -11,6 +11,7 @@ using Instant2D.EC.Components;
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
+using Instant2D.Utils.Coroutines;
 using Instant2D.Utils.Math;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
@@ -22,12 +23,12 @@ namespace Instant2D.TestGame {
     public class Game : InstantGame {
         protected override void SetupSystems() {
             AddSystem<AssetManager>(assets => {
-                assets.AddLoader<DevSpriteLoader>()
-                    //.SetSpritesheetMode()
-                    ;
+                assets.SetupHotReload("./Instant2D.TestGame/Assets/");
+                assets.AddLoader<DevSpriteLoader>();
             });
 
             AddSystem<InputManager>();
+            AddSystem<CoroutineManager>();
             AddSystem<GraphicsManager>();
             AddSystem<SceneManager>(scene => {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
@@ -41,12 +42,14 @@ namespace Instant2D.TestGame {
             Vector2 _targetPos;
 
             public void Update() {
-                if (InputManager.LeftMouseDown) {
+                if (Instance.IsActive && InputManager.LeftMouseDown) {
                     Entity.Transform.Position = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
                 }
                 
                 if (InputManager.RightMousePressed) {
-                    _targetPos = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
+                    Entity.Schedule(0.5f, _ => {
+                        _targetPos = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
+                    });
                 }
 
                 if (InputManager.MiddleMouseDown) {
@@ -85,7 +88,7 @@ namespace Instant2D.TestGame {
             }
 
             public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
-                var anim = AssetManager.Instance.Get<SpriteAnimation>("fire");
+                var anim = AssetManager.Instance.Get<SpriteAnimation>("sprites/fire");
                 drawing.DrawAnimation(anim, Transform.Position,
                     Color, Transform.Rotation, Transform.Scale);
             }
@@ -96,32 +99,32 @@ namespace Instant2D.TestGame {
             base.LoadContent();
             
             // OGG loading test using FAudio
-            unsafe {
-                var data = File.ReadAllBytes(@"C:\Users\instrex\Desktop\OneShot.ogg");
-                fixed (byte* ptr = data) {
-                    var ogg = FAudio.stb_vorbis_open_memory((IntPtr)ptr, data.Length, out var err, IntPtr.Zero);
-                    var info = FAudio.stb_vorbis_get_info(ogg);
-                    var sampleCount = FAudio.stb_vorbis_stream_length_in_samples(ogg);
+            //unsafe {
+            //    var data = File.ReadAllBytes(@"C:\Users\instrex\Desktop\OneShot.ogg");
+            //    fixed (byte* ptr = data) {
+            //        var ogg = FAudio.stb_vorbis_open_memory((IntPtr)ptr, data.Length, out var err, IntPtr.Zero);
+            //        var info = FAudio.stb_vorbis_get_info(ogg);
+            //        var sampleCount = FAudio.stb_vorbis_stream_length_in_samples(ogg);
 
-                    // allocate sample buffers 
-                    var buffer = new byte[sampleCount * 2 * info.channels];
-                    var samples = new float[buffer.Length / 2];
-                    _ = FAudio.stb_vorbis_get_samples_float_interleaved(ogg, info.channels, samples, samples.Length);
+            //        // allocate sample buffers 
+            //        var buffer = new byte[sampleCount * 2 * info.channels];
+            //        var samples = new float[buffer.Length / 2];
+            //        _ = FAudio.stb_vorbis_get_samples_float_interleaved(ogg, info.channels, samples, samples.Length);
 
-                    // convert float to byte[] PCM data
-                    for (var i = 0; i < samples.Length; i++) {
-                        var val = (short)(samples[i] * short.MaxValue);
-                        buffer[i * 2] = (byte)val;
-                        buffer[i * 2 + 1] = (byte)(val >> 8);
-                    }
+            //        // convert float to byte[] PCM data
+            //        for (var i = 0; i < samples.Length; i++) {
+            //            var val = (short)(samples[i] * short.MaxValue);
+            //            buffer[i * 2] = (byte)val;
+            //            buffer[i * 2 + 1] = (byte)(val >> 8);
+            //        }
 
-                    // create the sound effect
-                    _soundEffect = new SoundEffect(buffer, (int)info.sample_rate, (AudioChannels)info.channels);
+            //        // create the sound effect
+            //        _soundEffect = new SoundEffect(buffer, (int)info.sample_rate, (AudioChannels)info.channels);
 
-                    // kill stream
-                    FAudio.stb_vorbis_close(ogg);
-                }
-            }
+            //        // kill stream
+            //        FAudio.stb_vorbis_close(ogg);
+            //    }
+            //}
 
             //_soundEffect.Play();
 
@@ -138,14 +141,14 @@ namespace Instant2D.TestGame {
                     // create scaling test
                     scene.CreateEntity("scaling-test", Vector2.Zero)
                         .AddComponent<SpriteRenderer>()
-                        .SetSprite(AssetManager.Instance.Get<Sprite>("scaling_test"))
+                        .SetSprite(AssetManager.Instance.Get<Sprite>("sprites/scaling_test"))
                         .SetRenderLayer("background")
                         .SetDepth(1.0f)
                         .Entity.Transform.Rotation = 0.3f;
 
                     scene.CreateEntity("gardening-test", new(50))
                         .AddComponent(new SpriteRenderer {
-                            Sprite = AssetManager.Instance.Get<Sprite>("gardening_vase"),
+                            Sprite = AssetManager.Instance.Get<Sprite>("sprites/gardening_vase"),
                             RenderLayer = bg
                         });
 
@@ -163,7 +166,7 @@ namespace Instant2D.TestGame {
                         .SetLocalScale(0.25f);
 
                     wawaCat.AddComponent<SpriteRenderer>()
-                        .SetSprite(AssetManager.Instance.Get<Sprite>("wawa"))
+                        .SetSprite(AssetManager.Instance.Get<Sprite>("sprites/wawa"))
                         .SetRenderLayer("background");
 
                     wawaCat.AddComponent<WawaComponent>();
@@ -176,7 +179,7 @@ namespace Instant2D.TestGame {
                             .SetLocalPosition(new Vector2(250, 0).RotatedBy(i * (MathHelper.TwoPi / wawas)))
                             .SetLocalScale(0.25f)
                             .AddComponent(new SpriteRenderer {
-                                Sprite = AssetManager.Instance.Get<Sprite>("wawa"),
+                                Sprite = AssetManager.Instance.Get<Sprite>("sprites/wawa"),
                                 RenderLayer = bg,
                                 Depth = 0.5f
                             });

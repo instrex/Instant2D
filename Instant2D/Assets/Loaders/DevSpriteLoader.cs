@@ -1,5 +1,7 @@
 ﻿using Instant2D.Assets.Sprites;
 using Instant2D.Core;
+using Instant2D.EC;
+using Instant2D.EC.Components;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,7 +16,7 @@ namespace Instant2D.Assets.Loaders {
     /// Implementation of <see cref="SpriteLoader"/> used for development, has spritesheet generation and lazy loading support. <br/>
     /// By default, loads each separate <see cref="Sprite"/> as its own <see cref="Texture2D"/> on-demand.
     /// </summary>
-    public class DevSpriteLoader : SpriteLoader, ILazyAssetLoader {
+    public class DevSpriteLoader : SpriteLoader, ILazyAssetLoader, IHotReloader {
         enum LoaderMode { 
             LoadOnDemand,
             GenerateSpritesheet
@@ -49,7 +51,7 @@ namespace Instant2D.Assets.Loaders {
 
         protected override IEnumerable<SpriteDef> LoadAdditionalDefinitions(AssetManager assets) {
             foreach (var file in Directory.EnumerateFiles(SPRITES_PATH, "*.png", SearchOption.AllDirectories)) {
-                var key = file[(file.IndexOf("sprites/") + 8)..]
+                var key = file[file.IndexOf("sprites/")..]
                     .Replace(".png", "")
                     .Replace('\\', '/');
 
@@ -146,11 +148,14 @@ namespace Instant2D.Assets.Loaders {
             _loadedTextures ??= new(64);
 
             // since this asset doesn't depend on anything, we just load the texture and see how it goes
-            using var fileStream = TitleContainer.OpenStream(Path.Combine(SPRITES_PATH, asset.Key + ".png"));
+            using var fileStream = TitleContainer.OpenStream(Path.Combine(AssetManager.Instance.Folder, asset.Key + ".png"));
 
             // open the stream for asset data retrieval
             var tex = Texture2D.FromStream(InstantGame.Instance.GraphicsDevice, fileStream);
             _loadedTextures.Add(tex);
+
+            // not sure why is this even needed
+            fileStream.Dispose();
 
             // proccess the spritedef and load the sprite back to the asset,
             // saving any dependent sprites along the way for later retrieval
@@ -224,5 +229,53 @@ namespace Instant2D.Assets.Loaders {
                 return false;
             }
         }
+
+        #region Hot Reloading
+
+        IEnumerable<string> IHotReloader.GetFileFormats() =>
+            new[] { "*.png", "*.json" };
+
+        bool IHotReloader.TryReload(string assetKey, string filename) {
+            // hot reloading is only enabled in load-on-demand mode
+            if (!assetKey.StartsWith("sprites/") || _mode != LoaderMode.LoadOnDemand)
+                return false;
+
+            switch (Path.GetExtension(assetKey)) {
+                default: return false;
+
+                case ".png":
+                    var key = assetKey.Replace(".png", "");
+                    if (AssetManager.Instance.GetAsset(key) is LazyAsset<Sprite> asset) {
+                        foreach (var dep in _dependentSprites.ToList()) {
+                            // remove all dependant sprites so they are reloaded
+                            if (dep.Key.StartsWith(key)) {
+                                if (AssetManager.Instance.GetAsset(dep.Key) is LazyAsset child)
+                                    child.Unload();
+
+                                _dependentSprites.Remove(dep.Key);
+                            }
+                        }
+
+                        asset.Unload();
+
+                        LoadOnDemand(asset);
+
+                        // update all of the sprite references in active entities
+                        if (SceneManager.Instance is SceneManager sceneManager) {
+                            foreach (var entity in sceneManager.Current._entities) {
+                                foreach (var spriteRenderer in entity.Components.OfType<SpriteRenderer>()) {
+                                    if (spriteRenderer.Sprite.Key == key) {
+                                        spriteRenderer.SetSprite(asset.Content);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return true;
+            }
+        }
+
+        #endregion
     }
 }

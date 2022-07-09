@@ -26,7 +26,7 @@ namespace Instant2D.Assets {
             Key = key;
         }
 
-        public T Content { get; init; }
+        public T Content { get; set; }
     }
 
     /// <summary>
@@ -56,6 +56,13 @@ namespace Instant2D.Assets {
 
             _loader.LoadOnDemand(this);
             _isLoaded = true;
+        }
+
+        /// <summary>
+        /// Unsets the loaded flag, causing the asset to load again on the next request.
+        /// </summary>
+        public void Unload() {
+            _isLoaded = false;
         }
 
         protected LazyAsset(ILazyAssetLoader loader) {
