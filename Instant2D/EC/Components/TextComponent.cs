@@ -1,25 +1,23 @@
 ﻿using Instant2D.Graphics;
 using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC.Components {
     public class TextComponent : RenderableComponent {
         RectangleF _bounds;
-        bool _boundsDirty, _textDirty;
+        bool _boundsDirty = true, _textDirty = true;
         ISpriteFont _font = GraphicsManager.DefaultFont;
         Vector2 _normalizedOrigin = new(0.5f);
         Vector2 _textSize, _offset;
         int _displayedCharacters = int.MaxValue;
-        string _text;
+        string _text = "";
 
         public override RectangleF Bounds {
             get {
                 if (_boundsDirty) {
+                    UpdateText();
+
                     _bounds = CalculateBounds(Entity.Transform.Position, _offset, Vector2.Zero, _textSize, Entity.Transform.Rotation, Entity.Transform.Scale);
                     _boundsDirty = false;
                 }
@@ -100,15 +98,21 @@ namespace Instant2D.EC.Components {
 
         #endregion
 
-        public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
-            if (_textDirty) {
-                _textSize = _font.MeasureString(_text);
-                _offset = (_textSize * _normalizedOrigin * -1f).Round();
-                _textDirty = false;
-                _boundsDirty = true;
-            }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void UpdateText() {
+            if (!_textDirty)
+                return;
 
-            drawing.DrawString(_text, Entity.Transform.Position + _offset * Entity.Transform.Scale, Color, Entity.Transform.Scale, Entity.Transform.Rotation, _displayedCharacters);
+            _textSize = _font.MeasureString(_text);
+            _offset = (_textSize * _normalizedOrigin * -1f).Round();
+            _textDirty = false;
+            _boundsDirty = true;
+        }
+
+        public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
+            UpdateText();
+
+            drawing.DrawString(_text, (Entity.Transform.Position + _offset * Entity.Transform.Scale).Round(), Color, Entity.Transform.Scale, Entity.Transform.Rotation, _displayedCharacters);
         }
     }
 }

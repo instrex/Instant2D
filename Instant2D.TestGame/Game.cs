@@ -216,10 +216,11 @@ namespace Instant2D.TestGame {
                 }
 
                 // text
-                var text = CreateEntity("text-test", new Vector2(-10, 10))
-                    .AddComponent<TextComponent>();
 
-                text.Content = "Wawa!!!";
+                CreateEntity("text-test", Vector2.Zero)
+                    .AddComponent<TextComponent>()
+                    .SetContent("Wawa!!!");
+
 
                 // create funny renderer
                 var wawaCat = scene.CreateEntity("wawa-cat", Vector2.Zero)
