@@ -18,6 +18,10 @@ namespace Instant2D.EC {
         internal float _depth;
         internal int _z;
 
+        // bounds business
+        protected bool _boundsDirty = true;
+        RectangleF _bounds;
+
         bool _isVisible = true;
 
         public Color Color = Color.White;
@@ -117,10 +121,17 @@ namespace Instant2D.EC {
         }
 
         /// <summary>
-        /// Gets this component's bounds used for culling. By default, it is a 64x64 box wrapped around the center of the Entity.
+        /// Gets this component's bounds used for culling. 
         /// </summary>
-        public virtual RectangleF Bounds {
-            get => new(Entity.Transform.Position + new Vector2(-32), new(64));
+        public RectangleF Bounds {
+            get {
+                if (_boundsDirty) {
+                    RecalculateBounds(ref _bounds);
+                    _boundsDirty = false;
+                }
+
+                return _bounds;
+            }
         }
 
         /// <summary>
@@ -243,15 +254,19 @@ namespace Instant2D.EC {
             return RectangleF.FromCoordinates(topLeft, topRight, bottomLeft, bottomRight);
         }
 
-        public override void Initialize() {
-            RenderLayer ??= Scene.DefaultRenderLayer;
+        /// <summary>
+        /// Recalculate bounds used for camera culling. By default, it is a 64x64 box wrapped around the center of the Entity. <br/>
+        /// When finished, <see cref="Bounds"/> value will be set to <paramref name="bounds"/>. This is only called when needed (see <see cref="_boundsDirty"/>).
+        /// </summary>
+        protected virtual void RecalculateBounds(ref RectangleF bounds) {
+            bounds = new(Entity.Transform.Position + new Vector2(-32), new(64));
         }
 
         /// <summary>
         /// Is called whenever the object appears inside Camera bounds. <see cref="Bounds"/> property must be set and Camera should support culling for this to be called. <br/>
         /// Use <see cref="IsVisible"/> to determine current visibility.
         /// </summary>
-        public virtual void OnVisibilityChanged() { }
+        protected virtual void OnVisibilityChanged() { }
 
         /// <summary>
         /// The drawing function. Note that before this, <see cref="IDrawingBackend.Push(in Material, Microsoft.Xna.Framework.Matrix)"/>

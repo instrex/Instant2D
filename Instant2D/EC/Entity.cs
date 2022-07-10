@@ -218,6 +218,11 @@ namespace Instant2D.EC {
                 _updatedComponents.Add(updatable);
             }
 
+            // set default render layer for Renderables
+            if (component is RenderableComponent renderable) {
+                renderable.RenderLayer ??= Scene.DefaultRenderLayer;
+            }
+
             return component;
         }
 

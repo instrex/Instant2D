@@ -11,8 +11,7 @@ using System.Threading.Tasks;
 
 namespace Instant2D.EC {
     public class SpriteComponent : RenderableComponent, IPooled {
-        RectangleF _bounds;
-        bool _boundsDirty = true, _isSpriteSet;
+        bool _isSpriteSet;
         protected SpriteEffects _spriteFx;
         Sprite _sprite;
 
@@ -66,20 +65,14 @@ namespace Instant2D.EC {
 
         #endregion
 
-        public override RectangleF Bounds {
-            get {
-                if (!_isSpriteSet) {
-                    return RectangleF.Empty;
-                }
-
-                if (_boundsDirty) {
-                    _bounds = CalculateBounds(Transform.Position, Vector2.Zero, Sprite.Origin, new(Sprite.SourceRect.Width, Sprite.SourceRect.Height), 
-                        Transform.Rotation, Transform.Scale);
-                    _boundsDirty = false;
-                }
-
-                return _bounds;
+        protected override void RecalculateBounds(ref RectangleF bounds) {
+            if (!_isSpriteSet) {
+                bounds = RectangleF.Empty;
+                return;
             }
+
+            bounds = CalculateBounds(Transform.Position, Vector2.Zero, Sprite.Origin, new(Sprite.SourceRect.Width, Sprite.SourceRect.Height),
+                Transform.Rotation, Transform.Scale);
         }
 
         public override void OnTransformUpdated(TransformComponentType components) {

@@ -5,26 +5,11 @@ using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC.Components {
     public class TextComponent : RenderableComponent {
-        RectangleF _bounds;
-        bool _boundsDirty = true, _textDirty = true;
         ISpriteFont _font = GraphicsManager.DefaultFont;
         Vector2 _normalizedOrigin = new(0.5f);
         Vector2 _textSize, _offset;
         int _displayedCharacters = int.MaxValue;
         string _text = "";
-
-        public override RectangleF Bounds {
-            get {
-                if (_boundsDirty) {
-                    UpdateText();
-
-                    _bounds = CalculateBounds(Entity.Transform.Position, _offset, Vector2.Zero, _textSize, Entity.Transform.Rotation, Entity.Transform.Scale);
-                    _boundsDirty = false;
-                }
-
-                return _bounds;
-            }
-        }
 
         /// <summary>
         /// Changes the displayed text.
@@ -36,7 +21,7 @@ namespace Instant2D.EC.Components {
                     return;
 
                 _text = value;
-                _textDirty = true;
+                UpdatePositioning();
             }
         }
 
@@ -47,7 +32,7 @@ namespace Instant2D.EC.Components {
             get => _font;
             set {
                 _font = value;
-                _textDirty = true;
+                UpdatePositioning();
             }
         }
 
@@ -66,7 +51,7 @@ namespace Instant2D.EC.Components {
             get => _normalizedOrigin;
             set {
                 _normalizedOrigin = value;
-                _textDirty = true;
+                UpdatePositioning();
             }
         }
 
@@ -99,20 +84,19 @@ namespace Instant2D.EC.Components {
         #endregion
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void UpdateText() {
-            if (!_textDirty)
-                return;
-
+        void UpdatePositioning() {
             _textSize = _font.MeasureString(_text);
-            _offset = (_textSize * _normalizedOrigin * -1f).Round();
-            _textDirty = false;
+            _offset = _textSize * _normalizedOrigin * -1f;
             _boundsDirty = true;
         }
 
-        public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
-            UpdateText();
+        protected override void RecalculateBounds(ref RectangleF bounds) {
+            bounds = CalculateBounds(Entity.Transform.Position, _offset, Vector2.Zero, _textSize, Entity.Transform.Rotation, Entity.Transform.Scale);
+        }
 
-            drawing.DrawString(_text, (Entity.Transform.Position + _offset * Entity.Transform.Scale).Round(), Color, Entity.Transform.Scale, Entity.Transform.Rotation, _displayedCharacters);
+        public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
+            drawing.DrawString(_text, (Entity.Transform.Position + _offset * Entity.Transform.Scale).Round(),
+                Color, Entity.Transform.Scale, Entity.Transform.Rotation, _displayedCharacters);
         }
     }
 }

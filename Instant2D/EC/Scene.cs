@@ -69,6 +69,22 @@ namespace Instant2D.EC {
         public ScaledResolution Resolution;
 
         /// <summary>
+        /// Returns transformation matrix used to convert scene -> screen coordinates. 
+        /// May be useful if you want to overlay some information on top of entities, similar to how DebugRender works.
+        /// </summary>
+        public Matrix2D SceneToScreenTransform {
+            get {
+                var matrix = Camera.TransformMatrix;
+
+                // apply resolution scale
+                Matrix2D.Multiply(ref matrix, Resolution.scaleFactor, out matrix);
+
+                // move by resolution offset
+                return Matrix2D.Multiply(matrix, Matrix2D.CreateTranslation(Resolution.offset));
+            }
+        }
+
+        /// <summary>
         /// Creates an entity and automatically adds it onto the scene.
         /// </summary>
         public Entity CreateEntity(string name, Vector2 position) {
@@ -101,13 +117,12 @@ namespace Instant2D.EC {
             // initialize the scene first
             if (!_isInitialized) {
                 _isInitialized = true;
-                Initialize();
-
-                // if camera is null, create a new one
                 if (Camera is null) {
-                    Camera = CreateEntity("camera", new(Resolution.Width / 2, Resolution.Height / 2))
+                    Camera = CreateEntity("camera", Vector2.Zero)
                         .AddComponent<CameraComponent>();
                 }
+
+                Initialize();
 
                 // initialize RTs for newly added layers
                 ResizeRenderTargets(Resolution);
@@ -176,18 +191,14 @@ namespace Instant2D.EC {
             // render some debug stuff
             if (_debugRender) {
                 // render bounds & culling data
-                var matrix = Camera.TransformMatrix;
-
-                Matrix2D.Multiply(ref matrix, Resolution.scaleFactor, out matrix);
-
-                drawing.Push(Material.Default, matrix);
+                drawing.Push(Material.Default, SceneToScreenTransform);
 
                 for (var i = 0; i < _layers.Count; i++) {
                     var layer = _layers[i];
                     for (var k = 0; k < layer.Objects.Count; k++) {
                         var obj = layer.Objects[k];
                         var color = obj.IsVisible ? Color.Green : Color.Red;
-                        var bounds = obj.Bounds with { Position = obj.Bounds.Position + Resolution.offset };
+                        var bounds = obj.Bounds with { Position = obj.Bounds.Position };
 
                         for (var j = 0; j < 4; j++) {
                             var offset = new Vector2(2, 0).RotatedBy(j * MathHelper.PiOver2);

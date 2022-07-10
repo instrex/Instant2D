@@ -37,7 +37,6 @@ namespace Instant2D {
         readonly Dictionary<string, TimerInstance> _hotReloadTimers = new();
         FileSystemWatcher _hotReloadWatcher;
         string _assetFolder = "Assets/";
-        string _devFolder;
         bool _assetsLoaded;
 
         #region Loaders

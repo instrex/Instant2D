@@ -35,7 +35,7 @@ namespace Instant2D.TestGame {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
                     .SetDesignResolution(640 / 2, 360 / 2)
                     .SetPixelPerfect()
-                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.ShowAll);
+                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.CutOff);
             });
         }
 
@@ -81,7 +81,7 @@ namespace Instant2D.TestGame {
 
                 // move the camera to the focus zone
                 if (Vector2.Distance(Scene.Camera.Entity.Transform.Position, _targetPos) > 5) {
-                    Scene.Camera.Entity.Transform.Position = Vector2.Lerp(Scene.Camera.Entity.Transform.Position, _targetPos, 0.1f * Scene.TimeScale);
+                    //Scene.Camera.Entity.Transform.Position = Vector2.Lerp(Scene.Camera.Entity.Transform.Position, _targetPos, 0.1f * Scene.TimeScale);
                 }
                 
                 if (InputManager.MouseWheelDelta != 0) {
@@ -254,14 +254,24 @@ namespace Instant2D.TestGame {
                             Depth = 0.5f
                         });
                 }
+
+                var dataset = new[] { (1, 1f), (2, 1f), (3, 1f) };
+                var results = Enumerable.Repeat(0, 100000)
+                    .Select(_ => Random.Shared.NextItemWeighted(dataset, i => i.Item2))
+                    .GroupBy(result => result)
+                    .Select(group => $"{group.Key}: {group.Count() / 100000f:P2}");
+
+                Instance.Logger.Info($"Test results: {string.Join(", ", results)}");
+            }
+
+            public override void Update() {
+                var text = FindComponentOfType<TextComponent>();
+                text.Transform.Position = Camera.MouseToWorldPosition();
+                text.SetContent(text.Transform.Position.RoundToPoint().ToString());
             }
 
             public override void Render(IDrawingBackend drawing) {
-                var matrix = Camera.TransformMatrix;
-
-                matrix = Matrix2D.Multiply(matrix, Resolution.scaleFactor);
-
-                drawing.Push(Material.Default, matrix);
+                drawing.Push(Material.Default, SceneToScreenTransform);
 
                 foreach (var hitbox in HitboxComponent._hitboxBuffer) {
                     drawing.DrawRectangle(hitbox.Hitbox, Color.Blue * 0.5f, Color.Black);

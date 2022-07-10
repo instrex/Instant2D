@@ -77,7 +77,7 @@ namespace Instant2D {
             pool.AddRange(collection.Select(i => (i, weightSelector(i))));
 
             // pick a random float value based on maxWeight
-            var pick = NextFloat(random, pool.Max(p => p.weight));
+            var pick = NextFloat(random, pool.Sum(p => p.weight));
             for (var i = 0; i < pool.Count; i++) {
                 var (item, weight) = pool[i];
  
