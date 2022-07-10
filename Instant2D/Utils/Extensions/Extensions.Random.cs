@@ -50,7 +50,7 @@ namespace Instant2D {
         /// Randomly chooses a value between <paramref name="first"/>, <paramref name="second"/> and <paramref name="third"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T Choose<T>(this Random random, T first, T second, T third) => random.Next(2) switch {
+        public static T Choose<T>(this Random random, T first, T second, T third) => random.Next(3) switch {
             0 => first,
             1 => second,
             _ => third

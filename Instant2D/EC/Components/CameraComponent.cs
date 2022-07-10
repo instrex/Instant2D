@@ -1,4 +1,5 @@
 ﻿using Instant2D.Graphics;
+using Instant2D.Input;
 using Instant2D.Utils;
 using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
@@ -132,6 +133,8 @@ namespace Instant2D.EC {
         }
 
         #endregion
+
+        public Vector2 MouseToWorldPosition() => ScreenToWorldPosition(InputManager.MousePosition);
 
         public Vector2 ScreenToWorldPosition(Vector2 screenPosition) {
             CalculateMatrices();

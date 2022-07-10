@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
@@ -281,6 +282,21 @@ namespace Instant2D.EC {
         public virtual void Render(IDrawingBackend drawing) { }
 
         #endregion
+
+        /// <summary>
+        /// Attempts to find first entity with component attached. Returns null if unsuccessful.
+        /// </summary>
+        public T FindComponentOfType<T>() where T : Component => FindComponentsOfType<T>().FirstOrDefault();
+
+        /// <summary>
+        /// Lists all of the component instances on this scene.
+        /// </summary>
+        public IEnumerable<T> FindComponentsOfType<T>() where T: Component {
+            for (var i = 0; i < _entities.Count; i++) {
+                if (_entities[i].TryGetComponent<T>(out var component))
+                    yield return component;
+            }
+        }
 
         // ICoroutineTarget impl
         bool ICoroutineTarget.IsActive => true; // TODO: return false when the scene changes
