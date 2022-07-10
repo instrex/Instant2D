@@ -231,6 +231,10 @@ namespace Instant2D.EC {
             return RectangleF.FromCoordinates(topLeft, topRight, bottomLeft, bottomRight);
         }
 
+        public override void Initialize() {
+            RenderLayer ??= Scene.DefaultRenderLayer;
+        }
+
         /// <summary>
         /// Is called whenever the object appears inside Camera bounds. <see cref="Bounds"/> property must be set and Camera should support culling for this to be called. <br/>
         /// Use <see cref="IsVisible"/> to determine current visibility.

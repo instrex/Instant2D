@@ -1,6 +1,8 @@
 ﻿using Instant2D.Core;
 using Instant2D.Graphics;
+using Instant2D.Input;
 using Instant2D.Utils;
+using Instant2D.Utils.Math;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -15,6 +17,7 @@ namespace Instant2D.EC {
         readonly List<SceneRenderLayer> _layers = new(12);
         RenderTarget2D _sceneTarget, _tempTarget;
         bool _isInitialized;
+        bool _debugRender;
         Point _sceneSize;
 
         /// <summary>
@@ -42,6 +45,11 @@ namespace Instant2D.EC {
         /// Amount of time that has passed since beginning this scene, taking <see cref="TimeScale"/> into account.
         /// </summary>
         public float TotalTime;
+
+        /// <summary>
+        /// Default RenderLayer used for components with nothing specified.
+        /// </summary>
+        public SceneRenderLayer DefaultRenderLayer;
 
         /// <summary>
         /// Camera used to render this scene.
@@ -75,6 +83,9 @@ namespace Instant2D.EC {
             var layer = new T() { Name = name, _scene = this };
             _layers.Add(layer);
 
+            // set the default layer to first one
+            DefaultRenderLayer ??= layer;
+
             return layer;
         }
 
@@ -96,6 +107,11 @@ namespace Instant2D.EC {
             }
 
             TotalTime += (float)time.ElapsedGameTime.TotalSeconds * TimeScale;
+
+            // switch debug render
+            if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.OemTilde)) {
+                _debugRender = !_debugRender;
+            }
 
             if (!IsActive)
                 return;
@@ -147,6 +163,68 @@ namespace Instant2D.EC {
                 );
             }
 
+            // invoke the user callback
+            Render(drawing);
+
+            // render some debug stuff
+            if (_debugRender) {
+                // render bounds & culling data
+                var matrix = Camera.TransformMatrix;
+
+                Matrix2D.Multiply(ref matrix, Resolution.scaleFactor, out matrix);
+
+                drawing.Push(Material.Default, matrix);
+
+                for (var i = 0; i < _layers.Count; i++) {
+                    var layer = _layers[i];
+                    for (var k = 0; k < layer.Objects.Count; k++) {
+                        var obj = layer.Objects[k];
+                        var color = obj.IsVisible ? Color.Green : Color.Red;
+                        var bounds = obj.Bounds with { Position = obj.Bounds.Position + Resolution.offset };
+
+                        for (var j = 0; j < 4; j++) {
+                            var offset = new Vector2(2, 0).RotatedBy(j * MathHelper.PiOver2);
+                            drawing.DrawRectangle(bounds with { Position = bounds.Position + offset }, Color.Transparent, Color.Black, 2);
+                        }
+
+                        var innerColor = Color.Transparent;
+                        if (bounds.Contains(Camera.ScreenToWorldPosition(InputManager.MousePosition))) {
+                            innerColor = color * (0.25f + 0.125f * MathF.Sin(TimeManager.TotalTime * 4 + i));
+                        }
+
+                        drawing.DrawRectangle(bounds, innerColor, color, 2);
+                        drawing.DrawString(obj.Entity.Name, new Vector2(bounds.Left, bounds.Top - 24), color, Vector2.One * 2, 0, drawOutline: true);
+                    }
+                }
+
+                drawing.Push(Material.Default, Matrix.Identity);
+
+                // render layers preview
+                for (var i = 0; i < _layers.Count; i++) {
+                    var drawScale = 0.5f;
+                    if (new RectangleF(16, 16 + _sceneSize.Y * 0.5f * i, _sceneSize.X * 0.5f, _sceneSize.Y * 0.5f).Contains(InputManager.RawMousePosition)) {
+                        drawing.DrawRectangle(new(0, 0, Resolution.rawScreenSize.X, Resolution.rawScreenSize.Y), Color.Black * 0.5f);
+                        drawScale = 2f;
+                    }
+
+                    drawing.DrawRectangle(new RectangleF(16, 16 + _sceneSize.Y * 0.5f * i, _sceneSize.X * drawScale, _sceneSize.Y * drawScale), Color.Black * 0.5f);
+
+                    drawing.Draw(
+                        new Sprite(_layers[i].RenderTarget, new(0, 0, _sceneSize.X, _sceneSize.Y), Vector2.Zero),
+                        new Vector2(16, 16 + _sceneSize.Y * 0.5f * i), 
+                        Color.White, 
+                        0f,
+                        drawScale
+                    );
+
+                    if (drawScale > 1f)
+                        break;
+
+                    drawing.DrawString($"#{i} '{_layers[i].Name}'", new Vector2(24 + _sceneSize.X * 0.5f, 18 + _sceneSize.Y * 0.5f * i).Round(),
+                        Color.White, Vector2.One * 2f, 0, drawOutline: true);
+                }
+            }
+
             drawing.Pop(true);
         }
 
@@ -188,6 +266,11 @@ namespace Instant2D.EC {
         /// Called each frame when this scene is in focus and all components have already been updated this frame.
         /// </summary>
         public virtual void Update() { }
+
+        /// <summary>
+        /// Called after everything is rendered onto the screen.
+        /// </summary>
+        public virtual void Render(IDrawingBackend drawing) { }
 
         #endregion
     }

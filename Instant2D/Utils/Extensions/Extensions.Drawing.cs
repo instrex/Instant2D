@@ -52,7 +52,13 @@ namespace Instant2D {
         /// Draws text using specified font.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawString(this IDrawingBackend drawing, ISpriteFont font, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue) {
+        public static void DrawString(this IDrawingBackend drawing, ISpriteFont font, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue, bool drawOutline = false) {
+            if (drawOutline) {
+                for (var i = 0; i < 4; i++) {
+                    font.DrawString(drawing, text, position + new Vector2(1, 0).RotatedBy(i * MathHelper.PiOver2) * scale, Color.Black, scale, rotation, maxDisplayedCharacters);
+                }
+            }
+
             font.DrawString(drawing, text, position, color, scale, rotation, maxDisplayedCharacters);
         }
 
@@ -60,8 +66,8 @@ namespace Instant2D {
         /// Draws text using <see cref="GraphicsManager.DefaultFont"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawString(this IDrawingBackend drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue) {
-            GraphicsManager.DefaultFont.DrawString(drawing, text, position, color, scale, rotation, maxDisplayedCharacters);
+        public static void DrawString(this IDrawingBackend drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue, bool drawOutline = false) {
+            DrawString(drawing, GraphicsManager.DefaultFont, text, position, color, scale, rotation, maxDisplayedCharacters, drawOutline);
         }
     }
 }

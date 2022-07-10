@@ -28,6 +28,24 @@ namespace Instant2D.Core {
         // window
         string _title;
 
+        /// <summary>
+        /// Gets or sets the window's title taking FPS counter into account.
+        /// </summary>
+        public string Title {
+            get {
+                if (_title == null) {
+                    _title = AppDomain.CurrentDomain.FriendlyName;
+                }
+
+                return _title;
+            }
+
+            set {
+                Window.Title = value;
+                _title = value;
+            }
+        }
+
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
         public InstantGame() {
@@ -36,6 +54,8 @@ namespace Instant2D.Core {
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
             IsMouseVisible = true;
         }
+
+        #region System Management
 
         public Logger Logger {
             get {
@@ -76,11 +96,35 @@ namespace Instant2D.Core {
         }
 
         /// <summary>
+        /// Gets the system, throwing an exception if it doesn't exist.
+        /// </summary>
+        public T GetSystem<T>() where T : SubSystem {
+            for (var i = 0; i < _subSystems.Count; i++) {
+                if (_subSystems[i] is T foundSystem) {
+                    return foundSystem;
+                }
+            }
+
+            throw new InvalidOperationException($"{GetType().Name} has no {typeof(T).Name} attached.");
+        }
+
+        #endregion
+
+        #region Game Lifecycle
+
+        /// <summary>
         /// Setup all of the systems in there using <see cref="AddSystem{T}(Action{T})"/>.
         /// </summary>
         protected virtual void SetupSystems() { }
 
-        protected override void LoadContent() {
+        /// <summary>
+        /// Called after each system has been initialized.
+        /// </summary>
+        protected virtual new void Initialize() { }
+
+        #endregion
+
+        protected sealed override void LoadContent() {
             base.LoadContent();
 
             // save the original title
@@ -100,6 +144,8 @@ namespace Instant2D.Core {
 
             // then, sort them for later update tasks
             _subSystems.Sort();
+
+            Initialize();
         }
 
         protected override void Update(GameTime gameTime) {
@@ -114,8 +160,6 @@ namespace Instant2D.Core {
                 var system = _updatableSystems[i];
                 system.Update(gameTime);
             }
-
-            base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime) {
@@ -135,8 +179,6 @@ namespace Instant2D.Core {
                 var system = _renderableSystems[i];
                 system.Render(gameTime);
             }
-
-            base.Draw(gameTime);
         }
     }
 }
