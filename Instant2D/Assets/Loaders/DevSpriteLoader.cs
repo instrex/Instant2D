@@ -1,7 +1,6 @@
 ﻿using Instant2D.Assets.Sprites;
 using Instant2D.Core;
 using Instant2D.EC;
-using Instant2D.EC.Components;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -263,7 +262,7 @@ namespace Instant2D.Assets.Loaders {
                         // update all of the sprite references in active entities
                         if (SceneManager.Instance is SceneManager sceneManager) {
                             foreach (var entity in sceneManager.Current._entities) {
-                                foreach (var spriteRenderer in entity.Components.OfType<SpriteRenderer>()) {
+                                foreach (var spriteRenderer in entity.Components.OfType<SpriteComponent>()) {
                                     if (spriteRenderer.Sprite.Key == key) {
                                         spriteRenderer.SetSprite(asset.Content);
                                     }

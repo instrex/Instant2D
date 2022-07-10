@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D.Utils {
+namespace Instant2D {
     public static partial class Extensions {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 ToVector2(this Point point) => new(point.X, point.Y);

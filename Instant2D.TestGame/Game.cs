@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Instant2D.Assets.Loaders;
 using Instant2D.Core;
 using Instant2D.EC;
-using Instant2D.EC.Components;
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
@@ -49,11 +48,26 @@ namespace Instant2D.TestGame {
                 if (InputManager.RightMousePressed) {
                     Entity.Schedule(0.5f, _ => {
                         _targetPos = Scene.Camera.ScreenToWorldPosition(InputManager.MousePosition);
-                    });
+                    }).SetOverrideTimeScale(1.0f);
                 }
 
                 if (InputManager.MiddleMouseDown) {
                     Scene.TimeScale = 0.01f;
+                }
+
+                if (InputManager.IsKeyPressed(Keys.E)) {
+                    for (var i = 0; i < 32; i++) {
+                        Entity.Schedule(Random.Shared.NextFloat(0.1f, 1f), _ => {
+                            var animator = Scene.CreateEntity("explosion", Transform.Position + Random.Shared.NextDirection(Random.Shared.NextFloat(8, 32)))
+                                .AddComponent<SpriteAnimationComponent>()
+                                .Play(AssetManager.Instance.Get<SpriteAnimation>("sprites/explosion"))
+                                .SetSpeed(Random.Shared.NextFloat(0.5f, 1.5f));
+
+                            animator.SetZ(1000);
+                            animator.SetRenderLayer("objects");
+                            animator.OnAnimationComplete += anim => anim.Entity.Destroy();
+                        });
+                    }
                 }
 
                 if (Scene.TimeScale < 1f) {
@@ -97,6 +111,8 @@ namespace Instant2D.TestGame {
         protected override void Initialize() {
             Window.AllowUserResizing = true;
 
+            Title = "WawaGame";
+
             SceneManager.Instance.Current = new SimpleScene {
                 OnInitialize = scene => {
                     // setup layers
@@ -107,14 +123,14 @@ namespace Instant2D.TestGame {
 
                     // create scaling test
                     scene.CreateEntity("scaling-test", Vector2.Zero)
-                        .AddComponent<SpriteRenderer>()
+                        .AddComponent<SpriteComponent>()
                         .SetSprite(AssetManager.Instance.Get<Sprite>("sprites/scaling_test"))
                         .SetRenderLayer("background")
                         .SetDepth(1.0f)
                         .Entity.Transform.Rotation = 0.3f;
 
                     scene.CreateEntity("gardening-test", new(50))
-                        .AddComponent(new SpriteRenderer {
+                        .AddComponent(new SpriteComponent {
                             Sprite = AssetManager.Instance.Get<Sprite>("sprites/gardening_vase"),
                             RenderLayer = bg
                         });
@@ -123,7 +139,10 @@ namespace Instant2D.TestGame {
                     for (var i = 0; i < 24; i++) {
                         var entity = scene.CreateEntity($"fire_{i}", new Vector2(Random.Shared.Next(640), Random.Shared.Next(320)));
                         entity.Transform.Scale = new Vector2(0.5f + Random.Shared.NextSingle() * 5);
-                        entity.AddComponent<FireComponent>()
+                        entity.AddComponent<SpriteAnimationComponent>()
+                            .Play(AssetManager.Instance.Get<SpriteAnimation>("sprites/fire"), LoopType.Loop)
+                            .SetSpeed(0.1f + Random.Shared.NextSingle() * 2)
+                            .SetMaterial(Material.Default with { BlendState = BlendState.Additive })
                             .SetRenderLayer(objects)
                             .SetZ(Random.Shared.Next(-200, 200));
                     }
@@ -132,7 +151,7 @@ namespace Instant2D.TestGame {
                     var wawaCat = scene.CreateEntity("wawa-cat", Vector2.Zero)
                         .SetLocalScale(0.25f);
 
-                    wawaCat.AddComponent<SpriteRenderer>()
+                    wawaCat.AddComponent<SpriteComponent>()
                         .SetSprite(AssetManager.Instance.Get<Sprite>("sprites/wawa"))
                         .SetRenderLayer("objects");
 
@@ -145,7 +164,7 @@ namespace Instant2D.TestGame {
                             .SetParent(wawaCat)
                             .SetLocalPosition(new Vector2(250, 0).RotatedBy(i * (MathHelper.TwoPi / wawas)))
                             .SetLocalScale(0.25f)
-                            .AddComponent(new SpriteRenderer {
+                            .AddComponent(new SpriteComponent {
                                 Sprite = AssetManager.Instance.Get<Sprite>("sprites/wawa"),
                                 RenderLayer = objects,
                                 Depth = 0.5f

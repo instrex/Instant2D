@@ -194,6 +194,18 @@ namespace Instant2D.EC {
             return this;
         }
 
+        /// <inheritdoc cref="Material"/>
+        public RenderableComponent SetMaterial(Material material) {
+            _material = material;
+            return this;
+        }
+
+        /// <inheritdoc cref="Color"/>
+        public RenderableComponent SetColor(Color color) {
+            Color = color;
+            return this;
+        }
+
         #endregion
 
         /// <summary>

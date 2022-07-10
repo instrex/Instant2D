@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Instant2D.Utils {
+namespace Instant2D {
     /// <summary>
     /// Collection of common and useful methods to ease the use of Vector2.
     /// </summary>
@@ -22,7 +22,7 @@ namespace Instant2D.Utils {
 
         /// <summary> Converts this rotation (in radians) into normalized Vector2. </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector2 ToVector(this float angle) => new(MathF.Cos(angle), MathF.Sin(angle));
+        public static Vector2 ToVector2(this float angle) => new(MathF.Cos(angle), MathF.Sin(angle));
 
         /// <summary> Rotate the provided Vector around <paramref name="center"/> by <paramref name="rotation"/> radians. </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

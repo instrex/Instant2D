@@ -13,6 +13,7 @@ namespace Instant2D.Utils.Coroutines {
         public object context;
         public bool shouldRepeat;
         public Action<TimerInstance> callback;
+        public float? overrideTimeScale;
 
         bool _wasStopped;
 
@@ -27,7 +28,7 @@ namespace Instant2D.Utils.Coroutines {
             }
 
             // advance the timer by a scaled interval
-            time += (float)gameTime.ElapsedGameTime.TotalSeconds * (target?.TimeScale ?? 1.0f);
+            time += (float)gameTime.ElapsedGameTime.TotalSeconds * (overrideTimeScale ?? target?.TimeScale ?? 1.0f);
 
             if (time >= duration) {
                 callback?.Invoke(this);
@@ -77,12 +78,21 @@ namespace Instant2D.Utils.Coroutines {
             return this;
         }
 
+        /// <summary>
+        /// Sets the individual TimeScale for this timer. Useful for when you need an Entity as a target but want the timer to not slow down when the whole scene or the entity slows down.
+        /// </summary>
+        public TimerInstance SetOverrideTimeScale(float? value) {
+            overrideTimeScale = value;
+            return this;
+        }
+
         #endregion
 
         public void Reset() {
             _wasStopped = false;
             duration = time = 0;
             shouldRepeat = false;
+            overrideTimeScale = null;
             callback = null;
             context = null;
             target = null;

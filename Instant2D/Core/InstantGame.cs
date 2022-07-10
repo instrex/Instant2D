@@ -162,15 +162,17 @@ namespace Instant2D.Core {
             }
         }
 
+        static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
+
         protected override void Draw(GameTime gameTime) {
             // calculate FPS 
             _fpsCounter++;
             _fpsTimer += gameTime.ElapsedGameTime;
-            if (_fpsTimer >= TimeSpan.FromSeconds(1)) {
+            if (_fpsTimer >= _oneSecond) {
                 Window.Title = $"{_title} [{_fpsCounter} FPS, {GC.GetTotalMemory(false) / 1048576f:F1} MB]";
 
                 // reset the FPS metrics
-                _fpsTimer -= TimeSpan.FromSeconds(1);
+                _fpsTimer -= _oneSecond;
                 _fpsCounter = 0;
             }
 

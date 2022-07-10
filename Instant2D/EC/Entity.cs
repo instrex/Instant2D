@@ -279,6 +279,12 @@ namespace Instant2D.EC {
             return this;
         }
 
+        /// <inheritdoc cref="Transform.Position"/>
+        public Entity SetPosition(Vector2 position) {
+            Transform.Position = position;
+            return this;
+        }
+
         /// <inheritdoc cref="Transform.LocalPosition"/>
         public Entity SetLocalPosition(Vector2 position) {
             Transform.LocalPosition = position;
@@ -292,8 +298,32 @@ namespace Instant2D.EC {
         }
 
         /// <inheritdoc cref="Transform.Scale"/>
+        public Entity SetScale(float scale) {
+            Transform.Scale = new(scale);
+            return this;
+        }
+
+        /// <inheritdoc cref="Transform.Scale"/>
         public Entity SetLocalScale(float scale) {
             Transform.LocalScale = new(scale);
+            return this;
+        }
+
+        /// <inheritdoc cref="Transform.Scale"/>
+        public Entity SetLocalScale(Vector2 scale) {
+            Transform.LocalScale = scale;
+            return this;
+        }
+
+        /// <inheritdoc cref="Transform.Rotation"/>
+        public Entity SetRotation(float rotation) {
+            Transform.Rotation = rotation;
+            return this;
+        }
+
+        /// <inheritdoc cref="Transform.LocalRotation"/>
+        public Entity SetLocalRotation(float rotation) {
+            Transform.LocalRotation = rotation;
             return this;
         }
 

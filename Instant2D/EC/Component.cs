@@ -1,7 +1,8 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Instant2D.Utils.Coroutines;
+using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC {
-    public abstract class Component {
+    public abstract class Component : ICoroutineTarget {
         /// <summary>
         /// Entity this component is attached to.
         /// </summary>
@@ -79,5 +80,8 @@ namespace Instant2D.EC {
         public virtual void OnTransformUpdated(TransformComponentType components) { }
 
         #endregion
+
+        // ICoroutineTarget impl
+        float ICoroutineTarget.TimeScale => Entity.TimeScale;
     }
 }

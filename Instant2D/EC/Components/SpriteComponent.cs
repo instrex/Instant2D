@@ -9,11 +9,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D.EC.Components {
-    public class SpriteRenderer : RenderableComponent {
+namespace Instant2D.EC {
+    public class SpriteComponent : RenderableComponent, IPooled {
         RectangleF _bounds;
-        bool _boundsDirty = true;
-        SpriteEffects _spriteFx;
+        bool _boundsDirty = true, _isSpriteSet;
+        protected SpriteEffects _spriteFx;
         Sprite _sprite;
 
         /// <summary>
@@ -23,6 +23,7 @@ namespace Instant2D.EC.Components {
             get => _sprite;
             set {
                 _sprite = value;
+                _isSpriteSet = true;
                 _boundsDirty = true;
             } 
         }
@@ -46,19 +47,19 @@ namespace Instant2D.EC.Components {
         #region Setters
 
         /// <inheritdoc cref="FlipY"/>
-        public SpriteRenderer SetFlipY(bool flipY) {
+        public SpriteComponent SetFlipY(bool flipY) {
             FlipY = flipY;
             return this;
         }
 
         /// <inheritdoc cref="FlipX"/>
-        public SpriteRenderer SetFlipX(bool flipX) {
+        public SpriteComponent SetFlipX(bool flipX) {
             FlipX = flipX;
             return this;
         }
 
         /// <inheritdoc cref="Sprite"/>
-        public SpriteRenderer SetSprite(Sprite sprite) {
+        public SpriteComponent SetSprite(Sprite sprite) {
             Sprite = sprite;
             return this;
         }
@@ -67,6 +68,10 @@ namespace Instant2D.EC.Components {
 
         public override RectangleF Bounds {
             get {
+                if (!_isSpriteSet) {
+                    return RectangleF.Empty;
+                }
+
                 if (_boundsDirty) {
                     _bounds = CalculateBounds(Transform.Position, Vector2.Zero, Sprite.Origin, new(Sprite.SourceRect.Width, Sprite.SourceRect.Height), 
                         Transform.Rotation, Transform.Scale);
@@ -82,6 +87,9 @@ namespace Instant2D.EC.Components {
         }
 
         public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
+            if (!_isSpriteSet)
+                return;
+
             drawing.Draw(
                 Sprite, 
                 Entity.Transform.Position, 
@@ -90,6 +98,17 @@ namespace Instant2D.EC.Components {
                 Entity.Transform.Scale,
                 _spriteFx
             );
+        }
+
+        void IPooled.Reset() {
+            _spriteFx = SpriteEffects.None;
+            _boundsDirty = true;
+            _isSpriteSet = false;
+            _sprite = default;
+            Color = Color.White;
+            _material = Material.Default;
+            _depth = 0;
+            _z = 0;
         }
     }
 }

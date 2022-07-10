@@ -2,6 +2,7 @@
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
+using Instant2D.Utils.Coroutines;
 using Instant2D.Utils.Math;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
@@ -12,7 +13,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC {
-    public abstract class Scene {
+    public abstract class Scene : ICoroutineTarget {
         internal readonly List<Entity> _entities = new(128);
         readonly List<SceneRenderLayer> _layers = new(12);
         RenderTarget2D _sceneTarget, _tempTarget;
@@ -273,6 +274,10 @@ namespace Instant2D.EC {
         public virtual void Render(IDrawingBackend drawing) { }
 
         #endregion
+
+        // ICoroutineTarget impl
+        bool ICoroutineTarget.IsActive => true; // TODO: return false when the scene changes
+        float ICoroutineTarget.TimeScale => TimeScale;
     }
 
     /// <summary>

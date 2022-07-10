@@ -4,7 +4,7 @@ namespace Instant2D {
     /// <summary>
     /// Collection of sprites with optional events array.
     /// </summary>
-    public readonly struct SpriteAnimation {
+    public readonly record struct SpriteAnimation {
         public string Key { get; init; }
 
         /// <summary>
