@@ -49,6 +49,14 @@ namespace Instant2D {
         }
 
         /// <summary>
+        /// Draw a pixel point of specified color and size.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void DrawPoint(this IDrawingBackend drawing, Vector2 position, Color color, float scale = 1f) {
+            drawing.Draw(GraphicsManager.Pixel, position - new Vector2(scale * 0.5f), color, 0, scale);
+        }
+
+        /// <summary>
         /// Draws text using specified font.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

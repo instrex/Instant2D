@@ -27,6 +27,11 @@ namespace Instant2D.EC {
         public IReadOnlyList<SceneRenderLayer> RenderLayers => _layers;
 
         /// <summary>
+        /// Returns all entities attached to this scene.
+        /// </summary>
+        public IReadOnlyList<Entity> Entities => _entities;
+
+        /// <summary>
         /// When <see langword="true"/>, Scene's entities will be updated. Otherwise, they will be drawn but not updated.
         /// </summary>
         public bool IsActive = true;
@@ -194,6 +199,8 @@ namespace Instant2D.EC {
                         }
 
                         drawing.DrawRectangle(bounds, innerColor, color, 2);
+                        drawing.DrawPoint(obj.Entity.Transform.Position, Color.Black, 12);
+                        drawing.DrawPoint(obj.Entity.Transform.Position, color, 8);
                         drawing.DrawString(obj.Entity.Name, new Vector2(bounds.Left, bounds.Top - 24), color, Vector2.One * 2, 0, drawOutline: true);
                     }
                 }

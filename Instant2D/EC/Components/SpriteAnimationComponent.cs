@@ -143,6 +143,18 @@ namespace Instant2D.EC {
             return this;
         }
 
+        /// <inheritdoc cref="OnAnimationComplete"/>
+        public SpriteAnimationComponent SetCompletionHandler(Action<SpriteAnimationComponent> handler) {
+            OnAnimationComplete += handler;
+            return this;
+        }
+
+        /// <inheritdoc cref="OnAnimationEvent"/>
+        public SpriteAnimationComponent SetEventHandler(AnimationEventHandler handler) {
+            OnAnimationEvent += handler;
+            return this;
+        }
+
         #endregion
 
         public void Update() {

@@ -249,10 +249,6 @@ namespace Instant2D {
                 _position = _localPosition;
             }
 
-            // call the transform callback if entity is there
-            if (Entity is ITransformCallbacksHandler handler)
-                handler.OnTransformUpdated(_matricesDirty);
-
             _worldToLocalDirty = true;
             _matricesDirty = TransformComponentType.Clean;
         }
@@ -268,6 +264,12 @@ namespace Instant2D {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void MarkDirty(TransformComponentType flags = TransformComponentType.All) {
             _matricesDirty |= flags;
+
+            // call the transform callback if entity is there
+            if (Entity is ITransformCallbacksHandler handler)
+                handler.OnTransformUpdated(_matricesDirty);
+
+            // pass the dirt onto our children
             if (_children != null)
                 for (var i = 0; i < _children.Count; i++) {
                     _children[i].MarkDirty(flags);
