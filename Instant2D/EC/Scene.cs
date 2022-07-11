@@ -148,7 +148,7 @@ namespace Instant2D.EC {
         }
 
         internal void InternalRender() {
-            if (!IsVisible) {
+            if (!IsVisible || !_isInitialized) {
                 return;
             }
             

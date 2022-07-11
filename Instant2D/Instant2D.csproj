@@ -8,11 +8,13 @@
   <ItemGroup>
     <None Remove="Resources\default_font.json" />
     <None Remove="Resources\default_font.png" />
+    <None Remove="Resources\logo.png" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\default_font.json" />
     <EmbeddedResource Include="Resources\default_font.png" />
+    <EmbeddedResource Include="Resources\logo.png" />
   </ItemGroup>
 
   <ItemGroup>

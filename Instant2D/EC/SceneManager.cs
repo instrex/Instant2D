@@ -18,8 +18,7 @@ namespace Instant2D.EC {
         public static SceneManager Instance { get; set; }
 
         ScaledResolution _resolution;
-        Scene _current;
-
+        Scene _current, _next;
 
         /// <summary>
         /// Resolution scaler which will apply to all scenes this SceneManager uses. May be null.
@@ -39,9 +38,13 @@ namespace Instant2D.EC {
         public Scene Current {
             get => _current;
             set {
-                _current = value;
-                if (_current != null) {
-                    _current.Resolution = _resolution;
+                if (_current != null)
+                    _next = value;
+
+                else _current = value;
+
+                if (value != null) {
+                    value.Resolution = _resolution;
                 }
             }
         }
@@ -66,6 +69,10 @@ namespace Instant2D.EC {
 
         public override void Update(GameTime time) {
             _current?.InternalUpdate(time);
+            if (_next != null) {
+                _current = _next;
+                _next = null;
+            }
         }
 
         public override void Render(GameTime time) {

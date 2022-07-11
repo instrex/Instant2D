@@ -1,4 +1,7 @@
-﻿using Instant2D.Utils.Coroutines;
+﻿using Instant2D.Utils;
+using Instant2D.Utils.Coroutines;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC {
@@ -36,9 +39,6 @@ namespace Instant2D.EC {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _isActive;
             set {
-                if (_isActive == value)
-                    return;
-
                 // call appropriate callbacks
                 if (_isActive = value)
                     OnEnabled();
@@ -80,6 +80,12 @@ namespace Instant2D.EC {
         public virtual void OnTransformUpdated(TransformComponentType components) { }
 
         #endregion
+
+        /// <inheritdoc cref="Entity.AddComponent{T}"/>
+        public T AddComponent<T>() where T : Component, new() => Entity.AddComponent<T>();
+
+        /// <inheritdoc cref="Entity.AddComponent{T}(T)"/>
+        public T AddComponent<T>(T component) where T : Component => Entity.AddComponent(component);
 
         // ICoroutineTarget impl
         float ICoroutineTarget.TimeScale => Entity.TimeScale;

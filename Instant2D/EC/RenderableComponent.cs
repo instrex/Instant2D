@@ -67,9 +67,6 @@ namespace Instant2D.EC {
         public SceneRenderLayer RenderLayer {
             get => _layer;
             set {
-                if (_layer == value)
-                    return;
-
                 // remove the object from the previous layer
                 // (if it exists)
                 _layer?.Objects.Remove(this);
@@ -218,6 +215,19 @@ namespace Instant2D.EC {
         }
 
         #endregion
+
+        public override void OnEnabled() {
+            RenderLayer = _layer;
+        }
+
+        public override void OnDisabled() {
+            var layer = _layer;
+
+            // detach the component from the layer,
+            // but keep the value to reattach it later
+            RenderLayer = null;
+            _layer = layer;
+        }
 
         /// <summary>
         /// Helper method for calculating common renderable component bounds.

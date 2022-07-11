@@ -104,6 +104,39 @@ namespace Instant2D.EC {
 
         #endregion
 
+        internal bool _isActive = true;
+
+        public bool IsActive {
+            get => _isActive;
+            set {
+                if (_isActive == value)
+                    return;
+
+                _isActive = value;
+
+                // update components activity
+                for (var i = 0; i < _components.Count; i++) {
+                    var comp = _components[i];
+
+                    if (!_isActive) {
+                        // save the previous state
+                        var isActive = comp._isActive;
+                        comp.IsActive = _isActive;
+                        comp._isActive = isActive;
+
+                        continue;
+                    }
+
+                    comp.IsActive = comp._isActive;
+                }
+
+                // apply to children as well
+                for (var i = 0; i < ChildrenCount; i++) {
+                    this[i].IsActive = _isActive;
+                }
+            }
+        }
+
         /// <summary> The scene this Entity exists on. </summary>
         public Scene Scene {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -366,6 +399,9 @@ namespace Instant2D.EC {
 
                 return;
             }
+
+            if (!_isActive)
+                return;
 
             // update components
             if (_updatedComponents != null) {
