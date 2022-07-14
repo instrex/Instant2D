@@ -96,6 +96,14 @@ namespace Instant2D.EC {
             return entity;
         }
 
+        /// <summary>
+        /// Attaches an existing entity onto this scene.
+        /// </summary>
+        public Entity AddEntity(Entity entity) {
+            entity.Scene = this;
+            return entity;
+        }
+
         /// <inheritdoc cref="CreateLayer{T}(string)"/>
         public SceneRenderLayer CreateLayer(string name) => CreateLayer<SceneRenderLayer>(name);
 

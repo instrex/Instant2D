@@ -99,6 +99,11 @@ namespace Instant2D.EC {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetComponent<T>(out T component) where T : Component => Entity.TryGetComponent(out component);
 
+        // a shortcut to avoid writing .Entity in some places
+        // pretty stupid, I know, but very cozy when you stumble on it
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator Entity(Component component) => component.Entity;
+
         #endregion
 
         // ICoroutineTarget impl

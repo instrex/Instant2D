@@ -167,55 +167,6 @@ namespace Instant2D.EC {
             return _material.GetHashCode().CompareTo(other._material.GetHashCode());
         }
 
-        #region Setters
-
-        /// <inheritdoc cref="Z"/>
-        public RenderableComponent SetZ(int z) {
-            Z = z;
-            return this;
-        }
-
-        /// <inheritdoc cref="Depth"/>
-        public RenderableComponent SetDepth(float depth) {
-            Depth = depth;
-            return this;
-        }
-
-        /// <summary> Attempts to search the SceneRenderLayer by name. </summary>
-        public RenderableComponent SetRenderLayer(string name) {
-            for (var i = 0; i < Scene.RenderLayers.Count; i++) {
-                var layer = Scene.RenderLayers[i];
-
-                // search the layer by name
-                if (layer.Name == name) {
-                    RenderLayer = layer;
-                    return this;
-                }
-            }
-
-            return this;
-        }
-
-        /// <inheritdoc cref="RenderLayer"/>
-        public RenderableComponent SetRenderLayer(SceneRenderLayer layer) {
-            RenderLayer = layer;
-            return this;
-        }
-
-        /// <inheritdoc cref="Material"/>
-        public RenderableComponent SetMaterial(Material material) {
-            _material = material;
-            return this;
-        }
-
-        /// <inheritdoc cref="Color"/>
-        public RenderableComponent SetColor(Color color) {
-            Color = color;
-            return this;
-        }
-
-        #endregion
-
         public override void OnEnabled() {
             RenderLayer = _layer;
         }
