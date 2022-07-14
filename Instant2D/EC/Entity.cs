@@ -1,6 +1,6 @@
 ﻿using Instant2D.Core;
 using Instant2D.Utils;
-using Instant2D.Utils.Coroutines;
+using Instant2D.Coroutines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;

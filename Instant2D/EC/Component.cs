@@ -1,5 +1,5 @@
-﻿using Instant2D.Utils;
-using Instant2D.Utils.Coroutines;
+﻿using Instant2D.Coroutines;
+using Instant2D.Utils;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -81,11 +81,25 @@ namespace Instant2D.EC {
 
         #endregion
 
+        #region Entity Passthroughs
+
         /// <inheritdoc cref="Entity.AddComponent{T}"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T AddComponent<T>() where T : Component, new() => Entity.AddComponent<T>();
 
         /// <inheritdoc cref="Entity.AddComponent{T}(T)"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T AddComponent<T>(T component) where T : Component => Entity.AddComponent(component);
+
+        /// <inheritdoc cref="Entity.GetComponent{T}"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T GetComponent<T>() where T: Component => Entity.GetComponent<T>();
+
+        /// <inheritdoc cref="Entity.TryGetComponent{T}(out T)"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetComponent<T>(out T component) where T : Component => Entity.TryGetComponent(out component);
+
+        #endregion
 
         // ICoroutineTarget impl
         float ICoroutineTarget.TimeScale => Entity.TimeScale;

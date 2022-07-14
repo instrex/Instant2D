@@ -1,6 +1,6 @@
 ﻿using Instant2D.EC;
 using Instant2D.EC.Components;
-using Instant2D.Utils.Coroutines;
+using Instant2D.Coroutines;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -19,6 +19,20 @@ namespace Instant2D.TestGame.Scenes {
             }
         }
 
+        class ActivityReporter : Component, IUpdatableComponent {
+            public Component target;
+            TextComponent _text;
+
+            public override void Initialize() {
+                Entity.AddComponent(_text = new());
+            }
+
+            public void Update() {
+                _text.SetColor(target.Entity.IsActive ? Color.Green : Color.Red);
+                _text.SetContent($"Entity: {(target.Entity.IsActive ? "Active" : "Disabled")}\nComponent: {(target.IsActive ? "Active" : "Disabled")}");
+            }
+        }
+
         public override void Initialize() {
             CreateLayer("default").BackgroundColor = Color.DarkCyan;
 
@@ -28,8 +42,12 @@ namespace Instant2D.TestGame.Scenes {
                 var obj = CreateEntity($"obj_{i}", new Vector2(-120 + 120 * i, 0))
                     .SetScale(0.1f)
                     .AddComponent<SineWave>()
-                    .AddComponent<SpriteComponent>()
-                    .SetSprite(cat);
+                    .AddComponent(new SpriteComponent {
+                        Sprite = cat,
+                        Z = 100
+                    });
+
+
 
                 CreateEntity($"text_{i}", new Vector2(-120 + 120 * i, Resolution.renderTargetSize.Y * -0.25f))
                     .AddComponent<TextComponent>()
@@ -39,6 +57,10 @@ namespace Instant2D.TestGame.Scenes {
                         2 => "SineWave.IsActive",
                         _ => "???"
                     });
+
+                CreateEntity($"activity_tester_{i}", new Vector2(-120 + 120 * i, Resolution.renderTargetSize.Y * -0.25f + 24))
+                    .AddComponent<ActivityReporter>()
+                    .target = obj.Entity.GetComponent<SineWave>();
 
                 switch (i) {
                     case 0:

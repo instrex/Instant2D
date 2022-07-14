@@ -9,7 +9,7 @@ using System.IO;
 using System.Reflection;
 using System.Diagnostics;
 using Instant2D.Utils;
-using Instant2D.Utils.Coroutines;
+using Instant2D.Coroutines;
 
 namespace Instant2D {
     public interface IHotReloader {

@@ -1,13 +1,15 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Instant2D.Utils;
+using Microsoft.Xna.Framework;
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Instant2D.Utils.Coroutines {
+namespace Instant2D.Coroutines {
     /// <summary>
     /// Represents a basic timer which invokes <see cref="callback"/> after <see cref="duration"/> seconds. <br/>
-    /// Can also have <see cref="ICoroutineTarget"/> attached to tweak the timescale and stop when appropriate.
+    /// Can also have <see cref="ICoroutineTarget"/> attached to tweak the timescale and stop when appropriate. <br/>
+    /// This class is pooled, so avoid storing references of it or keep the pooling in mind.
     /// </summary>
-    public class TimerInstance : IPooled {
+    public class TimerInstance : IPooled, ICoroutineObject {
         public float time, duration;
         public ICoroutineTarget target;
         public object context;
@@ -45,6 +47,9 @@ namespace Instant2D.Utils.Coroutines {
 
         /// <summary> Stops the execution of this timer, possibly invoking the callback. </summary>
         public void Stop(bool invokeCallback = false) {
+            if (_wasStopped)
+                return;
+
             _wasStopped = true;
             if (invokeCallback) {
                 callback?.Invoke(this);
@@ -56,7 +61,7 @@ namespace Instant2D.Utils.Coroutines {
         /// <summary>
         /// Sets the optional <see cref="context"/> field which you can access from the callback.
         /// </summary>
-        public TimerInstance WithContext(object context) {
+        public TimerInstance SetContext(object context) {
             this.context = context;
             return this;
         }
@@ -64,7 +69,7 @@ namespace Instant2D.Utils.Coroutines {
         /// <summary>
         /// Sets the <see cref="target"/> used to obtain TimeScale information and stop the timer when the target goes inactive.
         /// </summary>
-        public TimerInstance WithTarget(ICoroutineTarget target) {
+        public TimerInstance SetTarget(ICoroutineTarget target) {
             this.target = target;
             return this;
         }
@@ -97,5 +102,10 @@ namespace Instant2D.Utils.Coroutines {
             context = null;
             target = null;
         }
+
+        // ICoroutineObject impl
+        bool ICoroutineObject.IsRunning => !_wasStopped && (shouldRepeat || time < duration);
+        ICoroutineTarget ICoroutineObject.Target => target;
+        void ICoroutineObject.Stop() => Stop();
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Instant2D.Utils.Coroutines {
+﻿namespace Instant2D.Coroutines {
     /// <summary>
     /// Convenience interface for all the possible timer/tween/coroutine targets. 
     /// Provides a way for them to know when the object is not active anymore and stop accordingly, preventing various unwanted scenarios. <br/> 

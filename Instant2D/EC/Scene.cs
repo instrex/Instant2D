@@ -2,7 +2,7 @@
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
-using Instant2D.Utils.Coroutines;
+using Instant2D.Coroutines;
 using Instant2D.Utils.Math;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
