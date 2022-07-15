@@ -167,6 +167,10 @@ namespace Instant2D.EC {
             return _material.GetHashCode().CompareTo(other._material.GetHashCode());
         }
 
+        public override void OnTransformUpdated(TransformComponentType components) {
+            _boundsDirty = true;
+        }
+
         public override void OnEnabled() {
             RenderLayer = _layer;
         }

@@ -1,5 +1,6 @@
 ﻿using Instant2D.Graphics;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,8 @@ using System.Xml.Linq;
 
 namespace Instant2D.EC {
     public static class Extensions {
+        #region Renderable Component
+
         /// <inheritdoc cref="RenderableComponent.Material"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T SetMaterial<T>(this T renderableComponent, Material material) where T: RenderableComponent {
@@ -60,5 +63,39 @@ namespace Instant2D.EC {
 
             return renderableComponent;
         }
+
+        #endregion
+
+        #region Sprite Renderer
+
+        /// <inheritdoc cref="SpriteComponent.FlipY"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetFlipY<T>(this T spriteRenderer, bool flipY) where T: SpriteComponent {
+            spriteRenderer.FlipY = flipY;
+            return spriteRenderer;
+        }
+
+        /// <inheritdoc cref="SpriteComponent.FlipX"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetFlipX<T>(this T spriteRenderer, bool flipX) where T : SpriteComponent {
+            spriteRenderer.FlipX = flipX;
+            return spriteRenderer;
+        }
+
+        /// <inheritdoc cref="SpriteComponent.Sprite"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetSprite<T>(this T spriteRenderer, Sprite sprite) where T : SpriteComponent {
+            spriteRenderer.Sprite = sprite;
+            return spriteRenderer;
+        }
+
+        /// <inheritdoc cref="SpriteComponent.SpriteEffects"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetSpriteEffects<T>(this T spriteRenderer, SpriteEffects spriteEffects) where T : SpriteComponent {
+            spriteRenderer.SpriteEffects = spriteEffects;
+            return spriteRenderer;
+        }
+
+        #endregion
     }
 }

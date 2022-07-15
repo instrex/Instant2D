@@ -11,19 +11,48 @@ using System.Threading.Tasks;
 namespace Instant2D.Coroutines {
     /// <summary>
     /// An instance of running coroutine. A coroutine is a function which can run during multiple frames, allowing you to spread tasks across update frames. <br/>
-    /// This may include awaiting for a player to pick up an item, changing the color until it's transparent and etc. <br/>
+    /// This may include awaiting for a player to pick up an item, changing the color until it's transparent and etc. <br/> <br/>
     /// You can control the flow by yielding values of different types:
     /// <list type="bullet">
-    /// <item> <see cref="int"/>/<see cref="float"/> - the coroutine will wait for specified time period in seconds.  </item>
+    /// 
+    /// <item> <see cref="int"/>/<see cref="float"/> - the coroutine will wait for specified time period in seconds. </item>
+    /// <code>
+    /// yield return 0.5f; // wait for half a second
+    /// </code>
+    /// 
     /// <item> <see langword="null"/> - the coroutine will wait for the next frame. </item>
-    /// <item> <see cref="ICoroutineObject"/> - the coroutine will wait for the nested coroutines to finish. <br/> 
-    /// This includes values of type <see cref="TimerInstance"/> and <see cref="CoroutineInstance"/>, returned by <see cref="CoroutineManager"/>. </item>
+    /// <code>
+    /// // increase frameCount by 1 each frame (FPS-dependent)
+    /// while (frameCount &lt; 60) {
+    ///     frameCount++;
+    ///     yield return null; 
+    /// } 
+    /// </code>
+    /// 
+    /// <item> 
+    /// <see cref="ICoroutineObject"/> - the coroutine will wait for the nested coroutines to finish. <br/> 
+    /// This includes values of type <see cref="TimerInstance"/> and <see cref="CoroutineInstance"/>, returned by <see cref="CoroutineManager"/>. 
+    /// </item>
+    /// <code>
+    /// yield return CoroutineManager.Schedule(0.5f, () => "Hello, world!");
+    /// yield return Entity.RunCoroutine(Greet());
+    /// </code>
+    /// 
     /// <item> <see cref="IEnumerator"/> - same as <see cref="ICoroutineObject"/>, but will start the coroutine using <see cref="CoroutineManager.Run(IEnumerator)"/>. <br/>
-    /// Newly created coroutine would also inherit <see cref="target"/> (if not null).</item>
+    /// Newly created coroutine would also inherit <see cref="target"/> (if not null).
+    /// </item>
+    /// <code>
+    /// yield return Greet(); // Greet() is IEnumerator Greet() { yield return null; }
+    /// </code>
+    /// 
+    /// <item> <see langword="break"/> - stop the execution of this coroutine. Does not stop nested coroutines. </item>
+    /// <code>
+    /// yield break; // end the coroutine
+    /// </code>
     /// </list>
     /// </summary>
     public class CoroutineInstance : IPooled, ICoroutineObject {
-        public IEnumerator coroutine;
+        public IEnumerator enumerator;
         public ICoroutineTarget target;
         public float? overrideTimeScale;
         public Action<bool> completionHandler;
@@ -59,13 +88,13 @@ namespace Instant2D.Coroutines {
 
             // cache the enumeration state in a variable
             // for later use and ICoroutineObject
-            if (!(_isRunning = coroutine.MoveNext())) {
+            if (!(_isRunning = enumerator.MoveNext())) {
                 completionHandler?.Invoke(false);
                 return false;
             }
 
-            switch (coroutine.Current) {
-                default: throw new InvalidOperationException($"Yielding {coroutine.Current.GetType().Name} in coroutines is not allowed.");
+            switch (enumerator.Current) {
+                default: throw new InvalidOperationException($"Yielding {enumerator.Current.GetType().Name} in coroutines is not allowed.");
 
                 // enumerator was passed, start a new coroutine and wait for it
                 // in case this instance has a target defined, pass it to the resulting coroutine
@@ -148,7 +177,7 @@ namespace Instant2D.Coroutines {
         }
 
         // ICoroutineObject impl
-        bool ICoroutineObject.IsRunning => _isRunning;
+        public bool IsRunning => _isRunning;
         ICoroutineTarget ICoroutineObject.Target => target;
         void ICoroutineObject.Stop() => Stop();
     }

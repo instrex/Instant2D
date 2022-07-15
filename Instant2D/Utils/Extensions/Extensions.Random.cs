@@ -1,4 +1,5 @@
 ﻿using Instant2D.Utils;
+using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,13 @@ namespace Instant2D {
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 NextDirection(this Random random, float length = 1.0f) => NextAngle(random).ToVector2() * length;
+
+        /// <summary>
+        /// Gets a random point from rectangle.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector2 NextRectanglePoint(this Random random, RectangleF rectangle) => 
+            new(NextFloat(random, rectangle.Left, rectangle.Right), NextFloat(random, rectangle.Top, rectangle.Bottom));
 
         /// <summary>
         /// Randomly chooses a value between <paramref name="first"/> and <paramref name="second"/>.

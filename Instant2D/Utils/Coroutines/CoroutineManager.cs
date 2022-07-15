@@ -37,7 +37,7 @@ namespace Instant2D.Coroutines {
         public static CoroutineInstance Run(IEnumerator enumerator, Action<bool> completionHandler = default) {
             var instance = StaticPool<CoroutineInstance>.Get();
             instance.completionHandler = completionHandler;
-            instance.coroutine = enumerator;
+            instance.enumerator = enumerator;
 
             // active the coroutine
             _coroutines.Add(instance);

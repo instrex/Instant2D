@@ -43,27 +43,13 @@ namespace Instant2D.EC {
             set => _spriteFx = value ? _spriteFx | SpriteEffects.FlipVertically : _spriteFx & ~SpriteEffects.FlipVertically;
         }
 
-        #region Setters
-
-        /// <inheritdoc cref="FlipY"/>
-        public SpriteComponent SetFlipY(bool flipY) {
-            FlipY = flipY;
-            return this;
+        /// <summary>
+        /// Gets flip information of this sprite.
+        /// </summary>
+        public SpriteEffects SpriteEffects {
+            get => _spriteFx;
+            set => _spriteFx = value;
         }
-
-        /// <inheritdoc cref="FlipX"/>
-        public SpriteComponent SetFlipX(bool flipX) {
-            FlipX = flipX;
-            return this;
-        }
-
-        /// <inheritdoc cref="Sprite"/>
-        public SpriteComponent SetSprite(Sprite sprite) {
-            Sprite = sprite;
-            return this;
-        }
-
-        #endregion
 
         protected override void RecalculateBounds(ref RectangleF bounds) {
             if (!_isSpriteSet) {
@@ -73,10 +59,6 @@ namespace Instant2D.EC {
 
             bounds = CalculateBounds(Transform.Position, Vector2.Zero, Sprite.Origin, new(Sprite.SourceRect.Width, Sprite.SourceRect.Height),
                 Transform.Rotation, Transform.Scale);
-        }
-
-        public override void OnTransformUpdated(TransformComponentType components) {
-            _boundsDirty = true;
         }
 
         public override void Draw(IDrawingBackend drawing, CameraComponent camera) {

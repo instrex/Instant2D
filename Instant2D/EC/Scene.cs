@@ -87,7 +87,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Creates an entity and automatically adds it onto the scene.
         /// </summary>
-        public Entity CreateEntity(string name, Vector2 position) {
+        public Entity CreateEntity(string name, Vector2 position = default) {
             var entity = StaticPool<Entity>.Get();
             entity.Transform.Position = position;
             entity.Name = name;
@@ -303,12 +303,12 @@ namespace Instant2D.EC {
         #endregion
 
         /// <summary>
-        /// Attempts to find first entity with component attached. Returns null if unsuccessful.
+        /// Attempts to find the first entity with component attached. Returns null if unsuccessful.
         /// </summary>
         public T FindComponentOfType<T>() where T : Component => FindComponentsOfType<T>().FirstOrDefault();
 
         /// <summary>
-        /// Lists all of the component instances on this scene.
+        /// Enumerates over all of the component instances in this scene.
         /// </summary>
         public IEnumerable<T> FindComponentsOfType<T>() where T: Component {
             for (var i = 0; i < _entities.Count; i++) {
@@ -317,31 +317,21 @@ namespace Instant2D.EC {
             }
         }
 
+
+        /// <summary>
+        /// Attempts to find an Entity by its name.
+        /// </summary>
+        public Entity FindEntityByName(string name) {
+            for (var i = 0; i < _entities.Count; i++) {
+                if (_entities[i].Name == name)
+                    return _entities[i];
+            }
+
+            return null;
+        }
+
         // ICoroutineTarget impl
         bool ICoroutineTarget.IsActive => true; // TODO: return false when the scene changes
         float ICoroutineTarget.TimeScale => TimeScale;
-    }
-
-    /// <summary>
-    /// A simple implementation of <see cref="Scene"/> which uses callbacks for control.
-    /// </summary>
-    public class SimpleScene : Scene {
-        /// <summary>
-        /// Called each frame when the Scene is active.
-        /// </summary>
-        public Action<Scene> OnUpdate;
-
-        /// <summary>
-        /// Called when the Scene begins.
-        /// </summary>
-        public Action<Scene> OnInitialize;
-
-        public override void Initialize() {
-            OnInitialize?.Invoke(this);
-        }
-
-        public override void Update() {
-            OnUpdate?.Invoke(this);
-        }
     }
 }
