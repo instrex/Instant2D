@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D.Utils.Math {
+namespace Instant2D {
     public record struct RectangleF {
         public float X, Y, Width, Height;
 
