@@ -23,7 +23,7 @@ namespace Instant2D.Collisions {
         /// <summary>
         /// Minimal movement required to push colliders apart.
         /// </summary>
-        public Vector2 MinimumTranslationVector;
+        public Vector2 PenetrationVector;
 
         /// <summary>
         /// The point of collision, may be <see langword="null"/> in some cases.

@@ -41,6 +41,13 @@ namespace Instant2D {
         }
 
         /// <summary>
+        /// Constructs a new <see cref="RectangleF"/> instance using four rectangle points.
+        /// </summary>
+        public static RectangleF FromCoordinates(Vector2 min, Vector2 max) {
+            return new RectangleF(min, max - min);
+        }
+
+        /// <summary>
         /// Top-left coordinates of the rectangle.
         /// </summary>
         public Vector2 Position {
@@ -73,6 +80,13 @@ namespace Instant2D {
         public float Top => Y;
         public float Bottom => Y + Height;
 
+        public Vector2 Center => new(X + Width * 0.5f, Y + Height * 0.5f);
+        public Vector2 TopLeft => Position;
+        public Vector2 TopRight => new(Right, Top);
+        public Vector2 BottomLeft => new(Left, Bottom);
+        public Vector2 BottomRight => new(Right, Bottom);
+
+
         /// <summary>
         /// Checks whether or not point <paramref name="value"/> lies in the rectangle.
         /// </summary>
@@ -101,6 +115,26 @@ namespace Instant2D {
                    Left < value.Right &&
                    value.Top < Bottom &&
                    Top < value.Bottom;
+        }
+
+        /// <summary>
+        /// Gets intersection between two rectangles.
+        /// </summary>
+        public RectangleF GetIntersection(RectangleF other) {
+            var (minA, minB, maxA, maxB) = (
+                TopLeft, other.TopLeft,
+                BottomRight, other.BottomRight
+            );
+
+            // get min/max
+            var min = new Vector2(minA.X > minB.X ? minA.X : minB.X, minA.Y > minB.Y ? minA.Y : minB.Y);
+            var max = new Vector2(maxA.X < maxB.X ? maxA.X : maxB.X, maxA.Y < maxB.Y ? maxA.Y : maxB.Y);
+
+            // uh...
+            if ((max.X < min.X) || (max.Y < min.Y))
+                return _empty;
+
+            return FromCoordinates(min, max);
         }
     }
 }

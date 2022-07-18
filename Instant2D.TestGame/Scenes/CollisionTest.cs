@@ -15,10 +15,13 @@ using System.Threading.Tasks;
 namespace Instant2D.TestGame.Scenes {
     // TEMPORARY scene for collision testing
     public class CollisionTest : Scene {
-        static SpatialHash<Entity> _spatialHash = new(32);
+        static SpatialHash<Entity> _spatialHash = new(12);
 
-        class ColliderComponent : Component {
+        class ColliderComponent : Component, IUpdatableComponent {
             public BoxCollider<Entity> Collider;
+            public Vector2 Velocity;
+            bool _firstUpdate = true;
+
             public override void Initialize() {
                 Collider.Entity = this;
                 _spatialHash.AddCollider(Collider);
@@ -28,6 +31,30 @@ namespace Instant2D.TestGame.Scenes {
                 Collider.Position = Transform.Position;
                 _spatialHash.RemoveCollider(Collider);
                 _spatialHash.AddCollider(Collider);
+            }
+
+            public void Update() {
+                var nearby = _spatialHash.Broadphase(Collider.Bounds, Collider.CollidesWith);
+                for (var i = 0; i < nearby.Count; i++) {
+                    var other = nearby[i];
+                    if (Collider != other && Collider.CheckCollision(other, out var hit)) {
+                        Collider.Position -= hit.PenetrationVector;
+                    }
+                }
+
+                if (Velocity == Vector2.Zero)
+                    return;
+
+                Collider.Position += Velocity;
+
+                var nearbyColliders = _spatialHash.Broadphase(Collider.Bounds, Collider.CollidesWith);
+                for (var i = 0; i < nearbyColliders.Count; i++) {
+                    var other = nearbyColliders[i];
+                    if (Collider != other && Collider.CheckCollision(other, out var hit)) {
+                        Collider.Position -= hit.PenetrationVector;
+                        Velocity = Vector2.Reflect(Velocity, hit.Normal);
+                    }
+                }
             }
         }
 
@@ -91,11 +118,11 @@ namespace Instant2D.TestGame.Scenes {
             drawing.Push(Material.Default, SceneToScreenTransform);
 
             // draw spatial hash chunks
-            foreach (var (coords, chunk) in _spatialHash.Chunks) {
-                drawing.DrawRectangle(new(coords.ToVector2() * _spatialHash.ChunkSize, new(_spatialHash.ChunkSize)),
-                    Color.Red * (0.15f * chunk.Count), 
-                    Color.Crimson * (0.2f + 0.1f * chunk.Count));
-            }
+            //foreach (var (coords, chunk) in _spatialHash.Chunks) {
+            //    drawing.DrawRectangle(new(coords.ToVector2() * _spatialHash.ChunkSize, new(_spatialHash.ChunkSize)),
+            //        Color.Red * (0.15f * chunk.Count),
+            //        Color.Crimson * (0.2f + 0.1f * chunk.Count));
+            //}
 
             if (_broadphased != null) {
                 drawing.DrawRectangle(_broadrect, Color.Transparent, Color.Blue);
@@ -108,6 +135,10 @@ namespace Instant2D.TestGame.Scenes {
                 if (entity.Collider.Bounds.Contains(Camera.MouseToWorldPosition())) {
                     if (InputManager.LeftMousePressed) {
                         this.RunCoroutine(DragCollider(entity));
+                    }
+
+                    if (InputManager.MiddleMousePressed) {
+                        entity.Velocity = Random.Shared.NextDirection(1);
                     }
                 }
             }

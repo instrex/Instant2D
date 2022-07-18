@@ -1,5 +1,6 @@
 ﻿using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.Collisions {
@@ -41,7 +42,7 @@ namespace Instant2D.Collisions {
         internal SpatialHash<T> _spatialHash;
         internal Rectangle _registrationRect;
         internal bool _areBoundsDirty = true;
-        RectangleF _bounds;
+        internal RectangleF _bounds;
 
         /// <summary>
         /// Marks this collider for bounds update.
@@ -65,13 +66,21 @@ namespace Instant2D.Collisions {
         /// </summary>
         public abstract bool CheckOverlap(BaseCollider<T> other);
 
+        /// <summary>
+        /// Check if two colliders collide with each other, calculating the penetration vector.
+        /// </summary>
+        public abstract bool CheckCollision(BaseCollider<T> other, out CollisionHit<T> hit);
+
         #endregion
     }
 
     // TEMPORARY box collider for testing purposes
     public class BoxCollider<T> : BaseCollider<T> {
-        Vector2 _position, _size, _origin = new(0.5f);
+        public Vector2 _position, _size;
 
+        /// <summary>
+        /// Position of this collider in world-space.
+        /// </summary>
         public Vector2 Position {
             get => _position;
             set {
@@ -80,6 +89,9 @@ namespace Instant2D.Collisions {
             }
         }
 
+        /// <summary>
+        /// Size of this box.
+        /// </summary>
         public Vector2 Size {
             get => _size;
             set {
@@ -88,16 +100,13 @@ namespace Instant2D.Collisions {
             }
         }
 
-        public Vector2 Origin {
-            get => _size;
-            set {
-                _size = value;
-                Update();
-            }
+        public float Rotation {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
         }
 
         protected override void RecalculateBounds(ref RectangleF bounds) {
-            bounds = new RectangleF(_position - _size * _origin, _size);
+            bounds = new RectangleF(_position - _size, _size);
         }
 
         public override bool CheckOverlap(BaseCollider<T> other) {
@@ -107,9 +116,32 @@ namespace Instant2D.Collisions {
 
             throw new System.NotImplementedException();
         }
+
+        public override bool CheckCollision(BaseCollider<T> other, out CollisionHit<T> hit) {
+            hit = new CollisionHit<T> { Self = this, Other = other };
+
+            // box to box collision (unrotated)
+            if (other is BoxCollider<T> boxCollider) {
+                var (a, b) = (Bounds, other.Bounds);
+
+                // get intersection between two boxes
+                var intersection = a.GetIntersection(b);
+
+                // no collision...
+                if (intersection == default)
+                    return false;
+
+                hit.PenetrationVector = intersection.Width < intersection.Height ?
+                    new(a.Center.X < b.Center.X ? intersection.Width : -intersection.Width, 0) :
+                    new(0, a.Center.Y < b.Center.Y ? intersection.Height : -intersection.Height);
+
+                hit.Normal = hit.PenetrationVector.SafeNormalize() * -1;
+
+                return true;
+            }
+
+            throw new System.NotImplementedException();
+        }
     }
-
-    
-
 
 }
