@@ -50,8 +50,12 @@ namespace Instant2D.Collisions {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Update() {
             _areBoundsDirty = true;
-            _spatialHash?.RemoveCollider(this);
-            _spatialHash?.AddCollider(this);
+
+            // update the collider in spatial hash if present
+            if (_spatialHash != null) {
+                _spatialHash.RemoveCollider(this);
+                _spatialHash.AddCollider(this);
+            }
         }
 
         /// <summary>
@@ -70,6 +74,11 @@ namespace Instant2D.Collisions {
         /// Check if two colliders collide with each other, calculating the penetration vector.
         /// </summary>
         public abstract bool CheckCollision(BaseCollider<T> other, out CollisionHit<T> hit);
+
+        /// <summary>
+        /// Check if this collider intersects a line created by linecast. In case if <see langword="true"/>, returns some information into as <see cref="LineCastHit{T}"/>.
+        /// </summary>
+        public abstract bool CheckLineCast(Vector2 start, Vector2 end, out LineCastHit<T> hit);
 
         #endregion
     }
@@ -120,27 +129,25 @@ namespace Instant2D.Collisions {
         public override bool CheckCollision(BaseCollider<T> other, out CollisionHit<T> hit) {
             hit = new CollisionHit<T> { Self = this, Other = other };
 
-            // box to box collision (unrotated)
-            if (other is BoxCollider<T> boxCollider) {
-                var (a, b) = (Bounds, other.Bounds);
+            if (other is BoxCollider<T>) {
 
-                // get intersection between two boxes
-                var intersection = a.GetIntersection(b);
+                // box to box collision (unrotated)
+                if (CollisionMethods.RectToRect(Bounds, other.Bounds, out var penetration)) {
+                    hit.PenetrationVector = penetration;
+                    hit.Normal = hit.PenetrationVector.SafeNormalize() * -1;
+                    return true;
+                }
 
-                // no collision...
-                if (intersection == default)
-                    return false;
-
-                hit.PenetrationVector = intersection.Width < intersection.Height ?
-                    new(a.Center.X < b.Center.X ? intersection.Width : -intersection.Width, 0) :
-                    new(0, a.Center.Y < b.Center.Y ? intersection.Height : -intersection.Height);
-
-                hit.Normal = hit.PenetrationVector.SafeNormalize() * -1;
-
-                return true;
+                return false;
             }
 
             throw new System.NotImplementedException();
+        }
+
+        public override bool CheckLineCast(Vector2 start, Vector2 end, out LineCastHit<T> hit) {
+
+
+            throw new NotImplementedException();
         }
     }
 

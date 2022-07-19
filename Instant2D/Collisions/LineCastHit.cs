@@ -4,11 +4,21 @@ namespace Instant2D.Collisions {
     /// <summary>
     /// A structure with linecast hit information.
     /// </summary>
-    public record struct LineCollisionHit<T> {
+    public record struct LineCastHit<T> {
         /// <summary>
         /// Represents the collider which has been hit by the linecast.
         /// </summary>
         public BaseCollider<T> Self;
+
+        /// <summary>
+        /// Origin of the line cast.
+        /// </summary>
+        public Vector2 Origin;
+
+        /// <summary>
+        /// Ending point of the line cast.
+        /// </summary>
+        public Vector2 End;
 
         /// <summary>
         /// Distance from the line origin to the point of impact.

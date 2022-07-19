@@ -118,11 +118,11 @@ namespace Instant2D.TestGame.Scenes {
             drawing.Push(Material.Default, SceneToScreenTransform);
 
             // draw spatial hash chunks
-            //foreach (var (coords, chunk) in _spatialHash.Chunks) {
-            //    drawing.DrawRectangle(new(coords.ToVector2() * _spatialHash.ChunkSize, new(_spatialHash.ChunkSize)),
-            //        Color.Red * (0.15f * chunk.Count),
-            //        Color.Crimson * (0.2f + 0.1f * chunk.Count));
-            //}
+            foreach (var (coords, chunk) in _spatialHash.Chunks) {
+                drawing.DrawRectangle(new(coords.ToVector2() * _spatialHash.ChunkSize, new(_spatialHash.ChunkSize)),
+                    Color.Red * (0.15f * chunk.Count),
+                    Color.Crimson * (0.2f + 0.1f * chunk.Count));
+            }
 
             if (_broadphased != null) {
                 drawing.DrawRectangle(_broadrect, Color.Transparent, Color.Blue);

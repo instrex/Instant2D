@@ -27,6 +27,9 @@ namespace Instant2D.Collisions {
         readonly HashSet<BaseCollider<T>> _colliderHash = new();
         readonly List<BaseCollider<T>> _colliderBuffer = new();
 
+        // dummy colliders
+        readonly BoxCollider<T> _overlapTestBox = new();
+
         /// <summary>
         /// Creates a new <see cref="SpatialHash"/> instance with the world batched to chunks with the size of <paramref name="chunkSize"/>.
         /// </summary>
@@ -121,10 +124,10 @@ namespace Instant2D.Collisions {
 
         /// <summary>
         /// Sweeps all colliders that fall close to <paramref name="bounds"/>. Note that this doesn't mean they collide, they just intersect with the bounds. <br/>
-        /// For precise collisions, call specialized <see cref="ICollider"/> methods after.
+        /// For precise collisions, call specialized <see cref="ICollider"/> methods after or <see cref="OverlapAll(RectangleF, IntFlags)"/>.
         /// </summary>
         /// <remarks> Returned list is pooled, so avoid storing references to it or just copy it. </remarks>
-        public List<BaseCollider<T>> Broadphase(RectangleF bounds, IntFlags layerMask) {
+        public List<BaseCollider<T>> Broadphase(RectangleF bounds, int layerMask = -1) {
             _colliderBuffer.Clear();
             _colliderHash.Clear();
 
@@ -139,7 +142,8 @@ namespace Instant2D.Collisions {
                     for (var i = 0; i < chunk.Count; i++) {
                         var collider = chunk[i];
 
-                        if (!layerMask.IsFlagSet(collider.CollisionLayer, false))
+                        // check if collider's layer is set in the layerMask
+                        if (!((IntFlags)layerMask).IsFlagSet(collider.CollisionLayer, false))
                             continue;
 
                         // if bounds intersect, try adding into the hash
@@ -152,6 +156,40 @@ namespace Instant2D.Collisions {
 
             return _colliderBuffer;
         }
+
+        /// <summary>
+        /// Performs a narrow overlap check and returns the first collider that meets <paramref name="layerMask"/> criteria. To get all of the results, call <see cref="OverlapAll(RectangleF, int)"/>.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BaseCollider<T> Overlap(RectangleF bounds, int layerMask = -1) {
+            var overlap = OverlapAll(bounds, layerMask);
+            return overlap.Count < 1 ? null : overlap[0];
+        }
+
+        /// <summary>
+        /// Performs a narrow overlap check against <paramref name="bounds"/> calling <see cref="BaseCollider{T}.CheckOverlap(BaseCollider{T})"/>.
+        /// </summary>
+        /// <remarks> Returned list is pooled, so avoid storing references to it or just copy it. </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public List<BaseCollider<T>> OverlapAll(RectangleF bounds, int layerMask = -1) {
+            // update the overlap test box
+            _overlapTestBox._position = bounds.Position;
+            _overlapTestBox._size = bounds.Size;
+            _overlapTestBox.Update();
+
+            // do a broadphase and narrow down overlapping colliders
+            var broadphase = Broadphase(bounds, layerMask);
+            for (var i = broadphase.Count - 1; i >= 0; i--) {
+                // if a collider doesn't overlap, discard it
+                if (!broadphase[i].CheckOverlap(_overlapTestBox)) {
+                    broadphase.RemoveAt(i);
+                }
+            }
+
+            return _colliderBuffer;
+        }
+
+
 
         #endregion
     }
