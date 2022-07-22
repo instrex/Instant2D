@@ -429,7 +429,7 @@ namespace Instant2D.EC {
         }
 
         // ICoroutineTarget impl
-        bool ICoroutineTarget.IsActive => !_shouldDestroy;
+        bool ICoroutineTarget.IsActive => !_shouldDestroy && !IsDestroyed;
         float ICoroutineTarget.TimeScale => TimeScale;
     }
 }

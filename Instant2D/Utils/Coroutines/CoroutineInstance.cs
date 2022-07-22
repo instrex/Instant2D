@@ -58,7 +58,7 @@ namespace Instant2D.Coroutines {
         public Action<bool> completionHandler;
         float _waitDuration, _timer;
         ICoroutineObject _waitForObject;
-        bool _wasStopped, _isRunning = true;
+        internal bool _wasStopped, _isRunning = true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Tick(GameTime gameTime) {
@@ -133,6 +133,7 @@ namespace Instant2D.Coroutines {
         /// </summary>
         public void Stop() {
             _wasStopped = true;
+            _isRunning = false;
             completionHandler?.Invoke(true);
         }
 

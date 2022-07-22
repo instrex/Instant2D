@@ -160,7 +160,7 @@ namespace Instant2D.Assets.Loaders {
             // saving any dependent sprites along the way for later retrieval
             var sprites = ProcessSpriteDef(SpriteDefinitions[asset.Key], tex, new(0, 0, tex.Width, tex.Height), out var animationDef);
             for (var i = 1; i < sprites.Count; i++) {
-                _dependentSprites.Add(sprites[i].Key, sprites[i]);
+                _dependentSprites.TryAdd(sprites[i].Key, sprites[i]);
             }
 
             // if asset is a sprite, simply return it

@@ -56,6 +56,7 @@ namespace Instant2D.Coroutines {
 
                 // remove the coroutine when it's done
                 if (!coroutine.Tick(time)) {
+                    coroutine._isRunning = false;
                     StaticPool<CoroutineInstance>.Return(coroutine);
                     _coroutines.RemoveAt(i);
                 }
