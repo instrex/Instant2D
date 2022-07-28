@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Instant2D.Collisions;
+using Instant2D.EC.Components;
 
 namespace Instant2D.EC {
     public abstract class Scene : ICoroutineTarget {
@@ -62,6 +64,11 @@ namespace Instant2D.EC {
         /// Camera used to render this scene.
         /// </summary>
         public CameraComponent Camera;
+
+        /// <summary>
+        /// Optional collision manager for this scene, must be initialized before using <see cref="CollisionComponent"/>!
+        /// </summary>
+        public SpatialHash<CollisionComponent> Collisions;
 
         /// <summary>
         /// Scaled resolution used for this scene. If <see cref="SceneManager.ResolutionScaler"/> is null, returns the whole screen.
@@ -254,6 +261,13 @@ namespace Instant2D.EC {
             }
 
             drawing.Pop(true);
+        }
+
+        internal void Cleanup() {
+            // destroy all entities before switching scenes
+            for (var i = 0; i < _entities.Count; i++) {
+                _entities[i].ImmediateDestroy();
+            }
         }
 
         internal void ResizeRenderTargets(ScaledResolution resolution) {

@@ -1,4 +1,5 @@
-﻿using Instant2D.Graphics;
+﻿using Instant2D.EC.Components;
+using Instant2D.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -94,6 +95,22 @@ namespace Instant2D.EC {
         public static T SetSpriteEffects<T>(this T spriteRenderer, SpriteEffects spriteEffects) where T : SpriteComponent {
             spriteRenderer.SpriteEffects = spriteEffects;
             return spriteRenderer;
+        }
+
+        #endregion
+
+        #region Collision Component
+
+        /// <inheritdoc cref="CollisionComponent.CollidesWith"/>
+        public static T SetCollidesWith<T>(this T collisionComponent, int collidesWith) where T: CollisionComponent {
+            collisionComponent.CollidesWith = collidesWith;
+            return collisionComponent;
+        }
+
+        /// <inheritdoc cref="CollisionComponent.CollisionLayer"/>
+        public static T SetCollisionLayer<T>(this T collisionComponent, int collisionLayer) where T : CollisionComponent {
+            collisionComponent.CollisionLayer = collisionLayer;
+            return collisionComponent;
         }
 
         #endregion

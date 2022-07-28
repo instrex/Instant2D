@@ -37,16 +37,28 @@ namespace Instant2D.EC {
 
         public Scene Current {
             get => _current;
-            set {
+            internal set {
                 if (_current != null)
                     _next = value;
 
                 else _current = value;
-
                 if (value != null) {
                     value.Resolution = _resolution;
                 }
             }
+        }
+
+        /// <summary>
+        /// Swtiches current scene to a new instance created by parameterless constructor.
+        /// </summary>
+        public static void Switch<T>() where T : Scene, new() => Switch<T>(new());
+
+        /// <summary>
+        /// Swtiches current scene to <paramref name="scene"/>.
+        /// </summary>
+        public static void Switch<T>(T scene) where T: Scene {
+            Logger.WriteLine($"Switching to scene '{scene.GetType()}'...");
+            Instance.Current = scene;
         }
 
         public override void Initialize() {
@@ -70,6 +82,7 @@ namespace Instant2D.EC {
         public override void Update(GameTime time) {
             _current?.InternalUpdate(time);
             if (_next != null) {
+                _current.Cleanup();
                 _current = _next;
                 _next = null;
             }

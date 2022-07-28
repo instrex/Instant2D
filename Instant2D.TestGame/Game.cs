@@ -35,7 +35,7 @@ namespace Instant2D.TestGame {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
                     .SetDesignResolution(640 / 2, 360 / 2)
                     .SetPixelPerfect()
-                    .SetDisplayMode(DefaultResolutionScaler.ScreenDisplayMode.ShowAll);
+                    .SetDisplayMode(DefaultResolutionScaler.DisplayMode.ShowAll);
             });
         }
 
@@ -61,7 +61,7 @@ namespace Instant2D.TestGame {
 
                     var isHovered = rect.Contains(InputManager.MousePosition);
                     if (InputManager.LeftMousePressed && isHovered) {
-                        SceneManager.Instance.Current = Activator.CreateInstance(type) as Scene;
+                        SceneManager.Switch(Activator.CreateInstance(type) as Scene);
                         return;
                     }
 
@@ -78,7 +78,7 @@ namespace Instant2D.TestGame {
 
             Title = "Instant2D Sample Projects";
 
-            SceneManager.Instance.Current = new MainScene();
+            SceneManager.Switch<MainScene>();
         }
     }
 }

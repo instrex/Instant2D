@@ -277,12 +277,15 @@ namespace Instant2D {
         }
 
         public void Reset() {
+            Entity = default;
             _localPosition = default;
             _position = default;
             _scale = Vector2.One;
             _rotation = 0;
             _children?.Clear();
             _parent = null;
+            _matricesDirty = TransformComponentType.All;
+            _localMatricesDirty = TransformComponentType.All;
         }
     }
 }

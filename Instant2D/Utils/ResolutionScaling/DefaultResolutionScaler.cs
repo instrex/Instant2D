@@ -9,7 +9,7 @@ namespace Instant2D.Utils.ResolutionScaling {
         /// <summary>
         /// Settings for how scenes should be presented to user.
         /// </summary>
-        public enum ScreenDisplayMode {
+        public enum DisplayMode {
             /// <summary>
             /// If only this is set, nothing will be cut off and resolution will keep aspect ratio of the window.
             /// </summary>
@@ -32,13 +32,13 @@ namespace Instant2D.Utils.ResolutionScaling {
         }
 
         Point _designResolution;
-        ScreenDisplayMode _displayMode;
+        DisplayMode _displayMode;
         bool _isPixelPerfect;
 
         /// <summary>
-        /// Display mode to use during resolution scaling. Check <see cref="ScreenDisplayMode"/> descriptions for more info.
+        /// Display mode to use during resolution scaling. Check <see cref="DisplayMode"/> descriptions for more info.
         /// </summary>
-        public ScreenDisplayMode DisplayMode {
+        public DisplayMode Mode {
             get => _displayMode;
             set => _displayMode = value;
         }
@@ -62,7 +62,7 @@ namespace Instant2D.Utils.ResolutionScaling {
         #region Setters
 
         /// <inheritdoc cref="DisplayMode"/>
-        public DefaultResolutionScaler SetDisplayMode(ScreenDisplayMode displayMode) {
+        public DefaultResolutionScaler SetDisplayMode(DisplayMode displayMode) {
             _displayMode = displayMode;
             return this;
         }
@@ -93,30 +93,26 @@ namespace Instant2D.Utils.ResolutionScaling {
                 scale = MathF.Floor(rawScale);
             }
 
-            // DISPLAY MODE: CutOff
-            // position the screen in the center, adjusting offset to fit it 
-            if (_displayMode == ScreenDisplayMode.CutOff) {
-                return new() {
-                    offset = screenDimensions.ToVector2() * 0.5f - _designResolution.ToVector2() * 0.5f * scale,
-                    renderTargetSize = _designResolution,
-                    rawScreenSize = screenDimensions,
-                    scaleFactor = scale,
-                };
+            var result = new ScaledResolution { 
+                rawScreenSize = screenDimensions,
+                scaleFactor = scale
+            };
+
+            // prepare the results
+            switch (_displayMode) {
+                default: throw new NotImplementedException($"{_displayMode} is not supported yet.");
+
+                case DisplayMode.CutOff:
+                    result.offset = screenDimensions.ToVector2() * 0.5f - _designResolution.ToVector2() * 0.5f * scale;
+                    result.renderTargetSize = _designResolution;
+                    break;
+
+                case DisplayMode.ShowAll:
+                    result.renderTargetSize = (screenDimensions.ToVector2() / scale).RoundToPoint();
+                    break;
             }
 
-            // DISPLAY MODE: ShowAll
-            // simply downscale the rendertarget based on design resolution
-            if (_displayMode == ScreenDisplayMode.ShowAll) {
-                return new() {
-                    offset = Vector2.Zero,
-                    renderTargetSize = (screenDimensions.ToVector2() / scale).RoundToPoint(),
-                    rawScreenSize = screenDimensions,
-                    scaleFactor = scale
-                };
-            }
-
-            // :(
-            throw new NotImplementedException($"{_displayMode} is not supported yet.");
+            return result;
         }
     }
 }

@@ -13,6 +13,8 @@ namespace Instant2D.Collisions {
     /// This removes the need to iterate over each defined collider.
     /// </summary>
     public class SpatialHash<T> {
+        public const int DEFAULT_CHUNK_SIZE = 100;
+
         /// <summary>
         /// Current world size. Expands when new colliders are added.
         /// </summary>
@@ -33,7 +35,7 @@ namespace Instant2D.Collisions {
         /// <summary>
         /// Creates a new <see cref="SpatialHash"/> instance with the world batched to chunks with the size of <paramref name="chunkSize"/>.
         /// </summary>
-        public SpatialHash(int chunkSize = 100) {
+        public SpatialHash(int chunkSize = DEFAULT_CHUNK_SIZE) {
             _chunkSize = chunkSize;
             _invChunkSize = 1f / _chunkSize;
         }
@@ -173,7 +175,7 @@ namespace Instant2D.Collisions {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public List<BaseCollider<T>> OverlapAll(RectangleF bounds, int layerMask = -1) {
             // update the overlap test box
-            _overlapTestBox._position = bounds.Position;
+            _overlapTestBox.Position = bounds.Position;
             _overlapTestBox._size = bounds.Size;
             _overlapTestBox.Update();
 

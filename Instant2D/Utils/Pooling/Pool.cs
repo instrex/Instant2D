@@ -15,13 +15,13 @@ namespace Instant2D.Utils {
         public Pool(int capacity = 32) {
             _capacity = capacity;
             _items = new(capacity);
-            PreHeat(capacity);
+            Expand(capacity);
         }
 
         /// <summary>
         /// Allocate more instances for later use. If <c>-1</c> is passed as <paramref name="objectsToAdd"/>, buffer size will be doubled.
         /// </summary>
-        public void PreHeat(int objectsToAdd = -1) {
+        public void Expand(int objectsToAdd = -1) {
             if (objectsToAdd == -1) {
                 objectsToAdd = _capacity;
             }
@@ -41,7 +41,7 @@ namespace Instant2D.Utils {
         /// <returns></returns>
         public T Get() {
             if (_items.Count == 0)
-                PreHeat();
+                Expand();
 
             var obj = _items.Dequeue();
             if (obj is IPooled resettable)

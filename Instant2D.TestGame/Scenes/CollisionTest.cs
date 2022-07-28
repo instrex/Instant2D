@@ -74,7 +74,7 @@ namespace Instant2D.TestGame.Scenes {
         public override void Update() {
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R)) {
                 _spatialHash = new SpatialHash<Entity>(_spatialHash.ChunkSize);
-                SceneManager.Instance.Current = new CollisionTest();
+                SceneManager.Switch<CollisionTest>();
             }
 
             if (InputManager.RightMousePressed) {

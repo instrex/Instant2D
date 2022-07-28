@@ -30,6 +30,11 @@ namespace Instant2D.Collisions {
         }
 
         /// <summary>
+        /// The position component used by this collider.
+        /// </summary>
+        public Vector2 Position;
+
+        /// <summary>
         /// Physics layer this collider belongs to. Other objects with its flag defined in <see cref="CollidesWith"/> will be able to collide with each other.
         /// </summary>
         public IntFlags CollisionLayer = -1;
@@ -85,18 +90,7 @@ namespace Instant2D.Collisions {
 
     // TEMPORARY box collider for testing purposes
     public class BoxCollider<T> : BaseCollider<T> {
-        public Vector2 _position, _size;
-
-        /// <summary>
-        /// Position of this collider in world-space.
-        /// </summary>
-        public Vector2 Position {
-            get => _position;
-            set {
-                _position = value;
-                Update();
-            }
-        }
+        public Vector2 _size;
 
         /// <summary>
         /// Size of this box.
@@ -115,7 +109,7 @@ namespace Instant2D.Collisions {
         }
 
         protected override void RecalculateBounds(ref RectangleF bounds) {
-            bounds = new RectangleF(_position - _size, _size);
+            bounds = new RectangleF(Position - _size, _size);
         }
 
         public override bool CheckOverlap(BaseCollider<T> other) {

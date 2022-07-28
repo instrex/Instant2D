@@ -256,6 +256,11 @@ namespace Instant2D.EC {
                 renderable.RenderLayer ??= Scene.DefaultRenderLayer;
             }
 
+            // finally call Component.OnEnabled
+            if (_isActive) {
+                component.OnEnabled();
+            }
+
             return component;
         }
 
@@ -282,8 +287,6 @@ namespace Instant2D.EC {
         /// <summary>
         /// Attempts to remove a component of type, and returns it on success. If removal didn't succeed, returns <see langword="null"/>.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
         public T RemoveComponent<T>() where T: Component {
             for (var i = 0; i < _components.Count; i++) {
                 if (_components[i] is T foundComponent) {
@@ -299,6 +302,26 @@ namespace Instant2D.EC {
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Attempts to detach specified component. Will return <see langword="true"/> if it exists and was successfully removed, or <see langword="false"/> if otherwise.
+        /// </summary>
+        public bool RemoveComponent<T>(T component) where T: Component {
+            for (var i = 0; i < _components.Count; i++) {
+                if (_components[i] == component) {
+                    _components.RemoveAt(i);
+                    if (component is IUpdatableComponent updatable) {
+                        _updatedComponents?.Remove(updatable);
+                    }
+
+                    // run the callback
+                    component.OnRemovedFromEntity();
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion
@@ -369,34 +392,7 @@ namespace Instant2D.EC {
 
         public void Update() {
             if (_shouldDestroy) {
-                // notify components of death and detach
-                for (var i = 0; i < _components.Count; i++) {
-                    // null out RenderLayers so that renderable components
-                    // are detached from them
-                    if (_components[i] is RenderableComponent render) {
-                        render.RenderLayer = null;
-                    }
-
-                    _components[i].OnRemovedFromEntity();
-                    _components[i].Entity = null;
-                }
-
-                // clear components so no references remain
-                _updatedComponents?.Clear();
-                _components.Clear();
-                
-                // destroy children
-                for (var i = 0; i < ChildrenCount; i++) {
-                    this[i].Destroy();
-                }
-
-                // detach from the scene
-                IsDestroyed = true;
-                Scene = null;
-
-                // put the entity into the pool for reuse
-                StaticPool<Entity>.Return(this);
-
+                ImmediateDestroy();
                 return;
             }
 
@@ -414,13 +410,46 @@ namespace Instant2D.EC {
             }
         }
 
+        internal void ImmediateDestroy() {
+            // notify components of death and detach
+            for (var i = 0; i < _components.Count; i++) {
+                // null out RenderLayers so that renderable components
+                // are detached from them
+                if (_components[i] is RenderableComponent render) {
+                    render.RenderLayer = null;
+                }
+
+                _components[i].OnRemovedFromEntity();
+                _components[i].Entity = null;
+            }
+
+            // clear components so no references remain
+            _updatedComponents?.Clear();
+            _components.Clear();
+
+            // destroy children
+            for (var i = 0; i < ChildrenCount; i++) {
+                this[i].Destroy();
+            }
+
+            // detach from the scene
+            IsDestroyed = true;
+            Scene = null;
+
+            // put the entity into the pool for reuse
+            StaticPool<Entity>.Return(this);
+        }
+
         // IPooled impl
         void IPooled.Reset() {
             IsDestroyed = false;
             Name = null;
 
+            // reset the transform and reassign entity
             Transform.Reset();
+            Transform.Entity = this;
 
+            // reset othet fields
             _overrideTimeScale = null;
             _updatedComponents?.Clear();
             _components.Clear();
