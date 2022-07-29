@@ -21,6 +21,7 @@ namespace Instant2D.Collisions {
         public Rectangle Bounds;
 
         // chunk information
+        // TODO: optimize _chunks indexing, as it somehow uses too much processing power to GetHashCode and Equals on
         internal readonly Dictionary<Point, List<BaseCollider<T>>> _chunks = new();
         readonly float _invChunkSize;
         readonly int _chunkSize;
@@ -176,7 +177,7 @@ namespace Instant2D.Collisions {
         public List<BaseCollider<T>> OverlapAll(RectangleF bounds, int layerMask = -1) {
             // update the overlap test box
             _overlapTestBox.Position = bounds.Position;
-            _overlapTestBox._size = bounds.Size;
+            _overlapTestBox.Size = bounds.Size;
             _overlapTestBox.Update();
 
             // do a broadphase and narrow down overlapping colliders

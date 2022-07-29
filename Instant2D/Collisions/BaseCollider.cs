@@ -37,12 +37,12 @@ namespace Instant2D.Collisions {
         /// <summary>
         /// Physics layer this collider belongs to. Other objects with its flag defined in <see cref="CollidesWith"/> will be able to collide with each other.
         /// </summary>
-        public IntFlags CollisionLayer = -1;
+        public int CollisionLayer = 0;
 
         /// <summary>
         /// Bitmask of layers which should collide with this collider. See <see cref="CollisionLayer"/> for more info.
         /// </summary>
-        public IntFlags CollidesWith = -1;
+        public int CollidesWith = -1;
 
         internal SpatialHash<T> _spatialHash;
         internal Rectangle _registrationRect;
@@ -88,20 +88,14 @@ namespace Instant2D.Collisions {
         #endregion
     }
 
-    // TEMPORARY box collider for testing purposes
+    /// <summary>
+    /// Box collider with a centered origin. When rotated, will behave like a polygon.
+    /// </summary>
     public class BoxCollider<T> : BaseCollider<T> {
-        public Vector2 _size;
-
         /// <summary>
         /// Size of this box.
         /// </summary>
-        public Vector2 Size {
-            get => _size;
-            set {
-                _size = value;
-                Update();
-            }
-        }
+        public Vector2 Size;
 
         public float Rotation {
             get => throw new NotImplementedException();
@@ -109,7 +103,7 @@ namespace Instant2D.Collisions {
         }
 
         protected override void RecalculateBounds(ref RectangleF bounds) {
-            bounds = new RectangleF(Position - _size, _size);
+            bounds = new RectangleF(Position - Size, Size);
         }
 
         public override bool CheckOverlap(BaseCollider<T> other) {

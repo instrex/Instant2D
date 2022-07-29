@@ -106,7 +106,7 @@ namespace Instant2D.EC {
             if (!_matricesDirty)
                 return;
 
-            _transformMatrix = Matrix2D.CreateTranslation(-Entity.Transform.Position.Floor());
+            _transformMatrix = Matrix2D.CreateTranslation(-Entity.Transform.Position.Floor() + _origin);
 
             // apply the zoom when needed
             if (_zoom != 1.0f) {
