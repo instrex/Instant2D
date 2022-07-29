@@ -66,7 +66,7 @@ namespace Instant2D.EC {
         public CameraComponent Camera;
 
         /// <summary>
-        /// Optional collision manager for this scene, must be initialized before using <see cref="CollisionComponent"/>!
+        /// Optional collision manager for this scene, must be initialized before using <see cref="CollisionComponent"/>.
         /// </summary>
         public SpatialHash<CollisionComponent> Collisions;
 

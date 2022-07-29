@@ -23,7 +23,7 @@ namespace Instant2D.Collisions {
 
         // chunk information
         // TODO: optimize _chunks indexing, as it somehow uses too much processing power to GetHashCode and Equals on
-        internal readonly Dictionary<Point, List<BaseCollider<T>>> _chunks = new();
+        internal readonly Dictionary<long, List<BaseCollider<T>>> _chunks = new();
         readonly float _invChunkSize;
         readonly int _chunkSize;
 
@@ -35,30 +35,22 @@ namespace Instant2D.Collisions {
         readonly BoxCollider<T> _overlapTestBox = new();
 
         /// <summary>
-        /// Creates a new <see cref="SpatialHash"/> instance with the world batched to chunks with the size of <paramref name="chunkSize"/>.
+        /// Creates a new <see cref="SpatialHash"/> instance with the world batched to chunks of size <paramref name="chunkSize"/>. <br/>
+        /// Different sizes may improve or worsen the collision detection performance, generally you should set <paramref name="chunkSize"/> to be of a size greater than your average collider.
         /// </summary>
         public SpatialHash(int chunkSize = DEFAULT_CHUNK_SIZE) {
             _chunkSize = chunkSize;
             _invChunkSize = 1f / _chunkSize;
         }
 
-        /// <summary>
-        /// Readonly list of all the chunks. Used for debugging purposes.
-        /// </summary>
-        public IReadOnlyDictionary<Point, List<BaseCollider<T>>> Chunks => _chunks;
-
-        /// <summary>
-        /// Readonly size of a single chunk.
-        /// </summary>
-        public int ChunkSize => _chunkSize;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         Point GetChunkCoords(float x, float y) => new((int)MathF.Floor(x * _invChunkSize), (int)MathF.Floor(y * _invChunkSize));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        List<BaseCollider<T>> GetChunk(Point point, bool createIfMissing = false) {
-            if (!_chunks.TryGetValue(point, out var values) && createIfMissing)
-                _chunks.Add(point, values = new());
+        List<BaseCollider<T>> GetChunk(int x, int y, bool createIfMissing = false) {
+            var hash = unchecked((long)x << 32 | (uint)y);
+            if (!_chunks.TryGetValue(hash, out var values) && createIfMissing)
+                _chunks.Add(hash, values = new());
 
             return values;
         }
@@ -91,7 +83,7 @@ namespace Instant2D.Collisions {
             // add this collider to each chunk it touches
             for (var x = topLeft.X; x <= bottomRight.X; x++) {
                 for (var y = topLeft.Y; y <= bottomRight.Y; y++) {
-                    var chunk = GetChunk(new(x, y), true);
+                    var chunk = GetChunk(x, y, true);
                     chunk?.Add(collider);
                 }
             }
@@ -118,7 +110,7 @@ namespace Instant2D.Collisions {
             // iterate the registration rect and remove the references
             for (var x = collider._registrationRect.X; x <= collider._registrationRect.Right; x++) {
                 for (var y = collider._registrationRect.Y; y <= collider._registrationRect.Bottom; y++) {
-                    var chunk = GetChunk(new(x, y));
+                    var chunk = GetChunk(x, y);
                     chunk?.Remove(collider);
                 }
             }
@@ -140,14 +132,14 @@ namespace Instant2D.Collisions {
             for (var x = topLeft.X; x <= bottomRight.X; x++) {
                 for (var y = topLeft.Y; y <= bottomRight.Y; y++) {
                     // if it's not initialized, skip
-                    if (GetChunk(new(x, y)) is not List<BaseCollider<T>> chunk)
+                    if (GetChunk(x, y) is not List<BaseCollider<T>> chunk)
                         continue;
 
                     for (var i = 0; i < chunk.Count; i++) {
                         var collider = chunk[i];
 
                         // check if collider's layer is set in the layerMask
-                        if (!layerMask.IsFlagSet(collider.CollisionLayer, false))
+                        if (!layerMask.IsFlagSet(collider.LayerMask, false))
                             continue;
 
                         // if bounds intersect, try adding into the hash

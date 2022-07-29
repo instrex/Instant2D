@@ -1,5 +1,6 @@
 ﻿using Instant2D.EC.Components;
 using Instant2D.Graphics;
+using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -101,15 +102,47 @@ namespace Instant2D.EC {
 
         #region Collision Component
 
-        /// <inheritdoc cref="CollisionComponent.CollidesWith"/>
+        /// <inheritdoc cref="CollisionComponent.CollidesWithMask"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T SetCollidesWith<T>(this T collisionComponent, int collidesWith) where T: CollisionComponent {
-            collisionComponent.CollidesWith = collidesWith;
+            collisionComponent.CollidesWithMask = collidesWith;
             return collisionComponent;
         }
 
-        /// <inheritdoc cref="CollisionComponent.CollisionLayer"/>
-        public static T SetCollisionLayer<T>(this T collisionComponent, int collisionLayer) where T : CollisionComponent {
-            collisionComponent.CollisionLayer = collisionLayer;
+        /// <inheritdoc cref="CollisionComponent.LayerMask"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetLayerMask<T>(this T collisionComponent, int layerMask) where T : CollisionComponent {
+            collisionComponent.LayerMask = layerMask;
+            return collisionComponent;
+        }
+
+        /// <summary>
+        /// Set collision layer as unshifted flag. Modifies <see cref="CollisionComponent.LayerMask"/> using <see cref="IntFlags.SetFlagExclusive(int, bool)"/>. <br/>
+        /// You can set multiple flags by modifying the <see cref="CollisionComponent.LayerMask"/> manually.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetCollisionLayer<T>(this T collisionComponent, int unshiftedCollisionFlag) where T : CollisionComponent {
+            collisionComponent.LayerMask = IntFlags.SetFlagExclusive(unshiftedCollisionFlag);
+            return collisionComponent;
+        }
+
+        /// <summary>
+        /// Adds an unshifted collision flag to <see cref="CollisionComponent.CollidesWithMask"/> using <see cref="IntFlags.SetFlag(int, int)"/>. <br/>
+        /// This means that this collider will react to objects with the provided flag set in their <see cref="CollisionComponent.LayerMask"/>.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T AddCollisionFlag<T>(this T collisionComponent, int unshiftedCollisionFlag) where T : CollisionComponent {
+            collisionComponent.CollidesWithMask = IntFlags.SetFlag(collisionComponent.CollidesWithMask, unshiftedCollisionFlag);
+            return collisionComponent;
+        }
+
+        /// <summary>
+        /// Removes an unshifted collision flag from <see cref="CollisionComponent.CollidesWithMask"/> using <see cref="IntFlags.RemoveFlag(int, int)"/>. <br/>
+        /// This means that this collider will no longer react to objects with the provided flag set in their <see cref="CollisionComponent.LayerMask"/>.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T RemoveCollisionFlag<T>(this T collisionComponent, int unshiftedCollisionFlag) where T : CollisionComponent {
+            collisionComponent.CollidesWithMask = IntFlags.RemoveFlag(collisionComponent.CollidesWithMask, unshiftedCollisionFlag);
             return collisionComponent;
         }
 

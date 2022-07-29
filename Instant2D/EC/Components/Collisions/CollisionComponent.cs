@@ -20,6 +20,26 @@ namespace Instant2D.EC.Components {
         public readonly BaseCollider<CollisionComponent> BaseCollider;
 
         /// <summary>
+        /// Since most of colliders are centered, origin must be adjusted to fit that.
+        /// </summary>
+        protected Vector2 _origin;
+        Vector2 _rawOrigin = new(0.5f);
+
+        /// <summary>
+        /// Origin of this collider. Defaults to {0.5, 0.5}.
+        /// </summary>
+        public Vector2 Origin {
+            get => _rawOrigin;
+            set {
+                _origin = value - new Vector2(0.5f);
+                _rawOrigin = value;
+
+                // update internal values
+                UpdateCollider();
+            }
+        }
+
+        /// <summary>
         /// When <see langword="true"/>, shape of the collider will be modified based on Entity's <see cref="Transform{T}.Scale"/>.
         /// </summary>
         public bool ShouldScaleWithTransform = true;
@@ -39,19 +59,20 @@ namespace Instant2D.EC.Components {
         }
 
         /// <summary>
-        /// Bitmask used to determine if object of different layers collide with each other.
+        /// Layer mask used to determine if object of different layers collide with each other.
         /// </summary>
-        public int CollidesWith {
-            get => BaseCollider.CollidesWith;
-            set => BaseCollider.CollidesWith = value;
+        public int CollidesWithMask {
+            get => BaseCollider.CollidesWithMask;
+            set => BaseCollider.CollidesWithMask = value;
         }
 
         /// <summary>
-        /// Flag used to determine this object's collision layer, meaning it can be shifted/unshifted to the <see cref="CollidesWith"/>.
+        /// Layer mask used to determine this object's collision layer, meaning it can be shifted/unshifted to the <see cref="CollidesWithMask"/>. <br/>
+        /// This could contain more than 1 flag for better flexibility. Use <see cref="IntFlags"/> extensions for more convenience when working with bit operations.
         /// </summary>
-        public int CollisionLayer {
-            get => BaseCollider.CollisionLayer;
-            set => BaseCollider.CollisionLayer = value;
+        public int LayerMask {
+            get => BaseCollider.LayerMask;
+            set => BaseCollider.LayerMask = value;
         }
 
         /// <summary>
@@ -88,29 +109,37 @@ namespace Instant2D.EC.Components {
         }
 
         /// <summary>
+        /// Apply all of the settings and update the base collider.
+        /// </summary>
+        public virtual void UpdateCollider() { }
+
+        /// <summary>
         /// Attempts to move the object by <paramref name="velocity"/> amount. If it collides into something, <paramref name="hit"/> will be populated with collision data,
         /// as well as <paramref name="velocity"/> will be recalculated to prevent the collision. <br/> 
         /// This method won't call <see cref="OnCollisionOccured"/>, so all of the collisions should be handled manually.
         /// </summary>
-        public bool TryMove(ref Vector2 velocity, out CollisionHit<CollisionComponent> hit) {
+        public bool TryMove(Vector2 velocity, out CollisionHit<CollisionComponent> hit) {
             hit = new();
 
             // generate bounds updated by the movement
             var bounds = BaseCollider.Bounds;
             bounds.Position += velocity;
 
-            // now move the collider in hopes it wont collide anything
+            // now move the collider in hopes it wont collide with anything
+            var oldPos = BaseCollider.Position;
             BaseCollider.Position += velocity;
-            BaseCollider.Update();
 
             // do a broad sweep to find all the potential collisions
-            var nearby = Scene.Collisions.Broadphase(bounds, CollidesWith);
-            for (var i = 0; i < nearby.Count; i++) {
+            var nearby = Scene.Collisions.Broadphase(bounds, CollidesWithMask);
+            for (var i = nearby.Count - 1; i >= 0; i--) {
                 var other = nearby[i];
 
                 // check for collision
                 if (other != BaseCollider && BaseCollider.CheckCollision(other, out var actualHit)) {
                     velocity -= actualHit.PenetrationVector;
+
+                    // move the collider to prevent jittering
+                    BaseCollider.Position = oldPos + velocity;
 
                     // assign the first hit
                     // TODO: introduce a way to return multiple hits?

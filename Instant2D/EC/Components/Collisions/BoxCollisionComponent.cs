@@ -13,11 +13,12 @@ namespace Instant2D.EC.Components {
         /// </summary>
         public readonly new BoxCollider<CollisionComponent> BaseCollider;
 
-        Vector2 _unscaledSize = new(32), _origin = new(0.5f);
-        Vector2 _correctedOrigin, _offset;
+        Vector2 _unscaledSize, _offset;
 
-        public BoxCollisionComponent() : base(new BoxCollider<CollisionComponent>()) {
+        public BoxCollisionComponent() : this(new Vector2(32)) { }
+        public BoxCollisionComponent(Vector2 size) : base(new BoxCollider<CollisionComponent>()) {
             BaseCollider = base.BaseCollider as BoxCollider<CollisionComponent>;
+            _unscaledSize = size;
         }
 
         /// <summary>
@@ -31,20 +32,6 @@ namespace Instant2D.EC.Components {
             }
         }
 
-        /// <summary>
-        /// Origin of this collider. Defaults to {0.5, 0.5}.
-        /// </summary>
-        public Vector2 Origin {
-            get => _origin;
-            set {
-                // calculate corrected origin as BoxCollider is centered by default 
-                _correctedOrigin = value - new Vector2(0.5f);
-                _origin = value;
-
-                UpdateBoxCollider();
-            }
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void UpdateBoxCollider() {
             // only update if properties change after initialization
@@ -52,7 +39,7 @@ namespace Instant2D.EC.Components {
                 return;
 
             var size = ShouldScaleWithTransform ? _unscaledSize * Transform.Scale : _unscaledSize;
-            _offset = size * _correctedOrigin;
+            _offset = size * _origin;
 
             // offset the position by origin amount
             BaseCollider.Position = Transform.Position - _offset;
@@ -60,6 +47,8 @@ namespace Instant2D.EC.Components {
             // TODO: BaseCollider.Rotation = Transform.Rotation;
             BaseCollider.Update();
         }
+
+        public override void UpdateCollider() => UpdateBoxCollider();
 
         public override void OnTransformUpdated(TransformComponentType components) {
             base.OnTransformUpdated(components);

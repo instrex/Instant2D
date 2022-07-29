@@ -21,8 +21,8 @@ namespace Instant2D.TestGame.Scenes {
             Collisions = new SpatialHash<CollisionComponent>(32);
 
             // create some funny boxes
-            for (var i = 0; i < 1000; i++) {
-                var pos = Random.Shared.NextRectanglePoint(new(-300, -300, 1300, 1300));
+            for (var i = 0; i < 10000; i++) {
+                var pos = Random.Shared.NextRectanglePoint(new(-1000, -1000, 1000, 1000));
                 CreateEntity($"collider_{i}", pos)
                     .AddComponent<FunnyMovingBox>();
             }
@@ -34,7 +34,7 @@ namespace Instant2D.TestGame.Scenes {
 
             public override void Initialize() {
                 Entity.AddComponent(Collider = new BoxCollisionComponent {
-                    Size = new(Random.Shared.Next(16, 32))
+                    Size = new(Random.Shared.Next(4, 16))
                 });
             }
 
@@ -43,7 +43,7 @@ namespace Instant2D.TestGame.Scenes {
                     return;
 
                 var velocity = Velocity * Entity.TimeScale * (TimeManager.TimeDelta / (1.0f / 60));
-                if (Collider.TryMove(ref velocity, out var hit)) {
+                if (Collider.TryMove(velocity, out var hit)) {
                     // push other box
                     if (hit.Other.Entity.TryGetComponent<FunnyMovingBox>(out var otherBox)) {
                         otherBox.Velocity = Velocity;
@@ -91,7 +91,12 @@ namespace Instant2D.TestGame.Scenes {
 
             // draw individual colliders
             foreach (var entity in FindComponentsOfType<FunnyMovingBox>()) {
-                drawing.DrawRectangle(entity.Collider.BaseCollider.Bounds, Color.Transparent, Color.Red);
+                var bounds = entity.Collider.BaseCollider.Bounds;
+
+                if (!Camera.Bounds.Intersects(bounds))
+                    continue;
+
+                drawing.DrawRectangle(bounds, Color.Transparent, Color.Red);
                 if (entity.Collider.BaseCollider.Bounds.Contains(Camera.MouseToWorldPosition())) {
                     if (InputManager.LeftMousePressed) {
                         this.RunCoroutine(DragBox(entity));

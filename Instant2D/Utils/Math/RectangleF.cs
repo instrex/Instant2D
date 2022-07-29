@@ -136,5 +136,49 @@ namespace Instant2D {
 
             return FromCoordinates(min, max);
         }
+
+        /// <summary>
+        /// Gets the closes point on border, additionally calculating edge normal.
+        /// </summary>
+        public Vector2 GetClosestPoint(Vector2 point, out Vector2 edgeNormal) {
+            edgeNormal = Vector2.Zero;
+
+            // for each axis, if the point is outside the box clamp it to the box else leave it alone
+            var res = new Vector2(MathHelper.Clamp(point.X, Left, Right), MathHelper.Clamp(point.Y, Top, Bottom));
+
+            // if point is inside the rectangle we need to push res to the border since it will be inside the rect
+            if (Contains(res)) {
+                var dl = res.X - Left;
+                var dr = Right - res.X;
+                var dt = res.Y - Top;
+                var db = Bottom - res.Y;
+
+                var min = MathF.Min(MathF.Min(MathF.Min(dl, dr), dt), db);
+                if (min == dt) {
+                    res.Y = Top;
+                    edgeNormal.Y = -1;
+                } else if (min == db) {
+                    res.Y = Bottom;
+                    edgeNormal.Y = 1;
+                } else if (min == dl) {
+                    res.X = Left;
+                    edgeNormal.X = -1;
+                } else {
+                    res.X = Right;
+                    edgeNormal.X = 1;
+                }
+            } else {
+                if (res.X == Left)
+                    edgeNormal.X = -1;
+                if (res.X == Right)
+                    edgeNormal.X = 1;
+                if (res.Y == Top)
+                    edgeNormal.Y = -1;
+                if (res.Y == Bottom)
+                    edgeNormal.Y = 1;
+            }
+
+            return res;
+        }
     }
 }

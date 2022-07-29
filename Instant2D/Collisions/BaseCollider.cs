@@ -1,7 +1,6 @@
 ﻿using Instant2D.Utils;
 using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
-using System;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.Collisions {
@@ -36,15 +35,15 @@ namespace Instant2D.Collisions {
         public Vector2 Position;
 
         /// <summary>
-        /// Physics layer this collider belongs to. Other objects with its flag defined in <see cref="CollidesWith"/> will be able to collide with each other. <br/>
-        /// Note that it's an unshifted mask, so operate on it using <see cref="IntFlags"/> extensions. Defaults to <c>IntFlags.SetFlagExclusive(0)</c>.
+        /// Physics layer mask this collider belongs to. Other objects with its flags defined in <see cref="CollidesWithMask"/> will be able to collide with each other. <br/>
+        /// Operate on it using <see cref="IntFlags"/> extensions. Defaults to <c>IntFlags.SetFlagExclusive(0)</c>.
         /// </summary>
-        public int CollisionLayer = IntFlags.SetFlagExclusive(0);
+        public int LayerMask = IntFlags.SetFlagExclusive(0);
 
         /// <summary>
-        /// Bitmask of layers which should collide with this collider. See <see cref="CollisionLayer"/> for more info. Defaults to all layers.
+        /// Layer mask for this collider. See <see cref="LayerMask"/> for more info. Defaults to all layers.
         /// </summary>
-        public int CollidesWith = -1;
+        public int CollidesWithMask = -1;
 
         internal SpatialHash<T> _spatialHash;
         internal Rectangle _registrationRect;
@@ -88,57 +87,6 @@ namespace Instant2D.Collisions {
         public abstract bool CheckLineCast(Vector2 start, Vector2 end, out LineCastHit<T> hit);
 
         #endregion
-    }
-
-    /// <summary>
-    /// Box collider with a centered origin. When rotated, will behave like a polygon.
-    /// </summary>
-    public class BoxCollider<T> : BaseCollider<T> {
-        /// <summary>
-        /// Size of this box.
-        /// </summary>
-        public Vector2 Size;
-
-        public float Rotation {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
-
-        protected override void RecalculateBounds(ref RectangleF bounds) {
-            bounds = new RectangleF(Position - Size, Size);
-        }
-
-        public override bool CheckOverlap(BaseCollider<T> other) {
-            if (other is BoxCollider<T> boxCollider) {
-                return Bounds.Intersects(boxCollider.Bounds);
-            }
-
-            throw new System.NotImplementedException();
-        }
-
-        public override bool CheckCollision(BaseCollider<T> other, out CollisionHit<T> hit) {
-            hit = new CollisionHit<T> { Self = this, Other = other };
-
-            if (other is BoxCollider<T>) {
-
-                // box to box collision (unrotated)
-                if (CollisionMethods.RectToRect(Bounds, other.Bounds, out var penetration)) {
-                    hit.PenetrationVector = penetration;
-                    hit.Normal = hit.PenetrationVector.SafeNormalize() * -1;
-                    return true;
-                }
-
-                return false;
-            }
-
-            throw new System.NotImplementedException();
-        }
-
-        public override bool CheckLineCast(Vector2 start, Vector2 end, out LineCastHit<T> hit) {
-
-
-            throw new NotImplementedException();
-        }
     }
 
 }
