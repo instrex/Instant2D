@@ -1,4 +1,5 @@
-﻿using Instant2D.Utils.Math;
+﻿using Instant2D.Utils;
+using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
 using System;
 using System.Runtime.CompilerServices;
@@ -35,12 +36,13 @@ namespace Instant2D.Collisions {
         public Vector2 Position;
 
         /// <summary>
-        /// Physics layer this collider belongs to. Other objects with its flag defined in <see cref="CollidesWith"/> will be able to collide with each other.
+        /// Physics layer this collider belongs to. Other objects with its flag defined in <see cref="CollidesWith"/> will be able to collide with each other. <br/>
+        /// Note that it's an unshifted mask, so operate on it using <see cref="IntFlags"/> extensions. Defaults to <c>IntFlags.SetFlagExclusive(0)</c>.
         /// </summary>
-        public int CollisionLayer = 0;
+        public int CollisionLayer = IntFlags.SetFlagExclusive(0);
 
         /// <summary>
-        /// Bitmask of layers which should collide with this collider. See <see cref="CollisionLayer"/> for more info.
+        /// Bitmask of layers which should collide with this collider. See <see cref="CollisionLayer"/> for more info. Defaults to all layers.
         /// </summary>
         public int CollidesWith = -1;
 

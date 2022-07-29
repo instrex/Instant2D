@@ -1,4 +1,5 @@
-﻿using Instant2D.Utils.Math;
+﻿using Instant2D.Utils;
+using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -146,7 +147,7 @@ namespace Instant2D.Collisions {
                         var collider = chunk[i];
 
                         // check if collider's layer is set in the layerMask
-                        if (!((IntFlags)layerMask).IsFlagSet(collider.CollisionLayer, false))
+                        if (!layerMask.IsFlagSet(collider.CollisionLayer, false))
                             continue;
 
                         // if bounds intersect, try adding into the hash
