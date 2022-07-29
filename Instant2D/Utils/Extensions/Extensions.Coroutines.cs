@@ -11,12 +11,12 @@ namespace Instant2D.Coroutines {
         /// Schedules a timer, automatically calling <see cref="TimerInstance.SetTarget(ICoroutineTarget)"/> as current target.
         /// </summary>
         public static TimerInstance Schedule(this ICoroutineTarget target, float duration, Action<TimerInstance> callback) =>
-            CoroutineManager.Schedule(duration, callback).SetTarget(target);
+            CoroutineManager.Schedule(duration, callback, target);
 
         /// <summary>
         /// Runs a coroutine, automatically calling <see cref="CoroutineManager.SetTarget(ICoroutineTarget)"/> as current target.
         /// </summary>
         public static CoroutineInstance RunCoroutine(this ICoroutineTarget target, IEnumerator enumerator, Action<bool> completionHandler = default) =>
-            CoroutineManager.Run(enumerator, completionHandler).SetTarget(target);
+            CoroutineManager.Run(enumerator, completionHandler, target);
     }
 }

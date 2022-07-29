@@ -438,6 +438,9 @@ namespace Instant2D.EC {
 
             // put the entity into the pool for reuse
             StaticPool<Entity>.Return(this);
+
+            // release all the coroutines attached to this entity
+            CoroutineManager.StopByTarget(this);
         }
 
         // IPooled impl

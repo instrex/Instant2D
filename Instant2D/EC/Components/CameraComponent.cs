@@ -155,10 +155,6 @@ namespace Instant2D.EC {
             _boundsDirty = true;
         }
 
-        public override void Initialize() {
-            _origin = new(Scene.Resolution.renderTargetSize.X / 2, Scene.Resolution.renderTargetSize.Y / 2);
-        }
-
         /// <summary> Forces the camera matrices and bounds to be rebuilt. </summary>
         public void ForceUpdate() {
             _matricesDirty = true;

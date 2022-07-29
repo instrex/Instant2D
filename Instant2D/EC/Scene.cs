@@ -20,7 +20,7 @@ namespace Instant2D.EC {
         internal readonly List<Entity> _entities = new(128);
         readonly List<SceneRenderLayer> _layers = new(12);
         RenderTarget2D _sceneTarget, _tempTarget;
-        bool _isInitialized;
+        bool _isInitialized, _isCleanedUp;
         bool _debugRender;
         Point _sceneSize;
 
@@ -232,6 +232,8 @@ namespace Instant2D.EC {
                     }
                 }
 
+                drawing.DrawPoint(Vector2.Zero, Color.Green, 16);
+
                 drawing.Push(Material.Default, Matrix.Identity);
 
                 // render layers preview
@@ -268,6 +270,12 @@ namespace Instant2D.EC {
             for (var i = 0; i < _entities.Count; i++) {
                 _entities[i].ImmediateDestroy();
             }
+
+            // release all the coroutines attached to this scene
+            CoroutineManager.StopByTarget(this);
+
+            // farewell
+            _isCleanedUp = true;
         }
 
         internal void ResizeRenderTargets(ScaledResolution resolution) {
@@ -331,7 +339,6 @@ namespace Instant2D.EC {
             }
         }
 
-
         /// <summary>
         /// Attempts to find an Entity by its name.
         /// </summary>
@@ -345,7 +352,7 @@ namespace Instant2D.EC {
         }
 
         // ICoroutineTarget impl
-        bool ICoroutineTarget.IsActive => true; // TODO: return false when the scene changes
+        bool ICoroutineTarget.IsActive => !_isCleanedUp;
         float ICoroutineTarget.TimeScale => TimeScale;
     }
 }

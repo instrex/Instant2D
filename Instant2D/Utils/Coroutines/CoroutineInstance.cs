@@ -39,7 +39,7 @@ namespace Instant2D.Coroutines {
     /// </code>
     /// 
     /// <item> <see cref="IEnumerator"/> - same as <see cref="ICoroutineObject"/>, but will start the coroutine using <see cref="CoroutineManager.Run(IEnumerator)"/>. <br/>
-    /// Newly created coroutine would also inherit <see cref="target"/> (if not null).
+    /// Newly created coroutine would also inherit <see cref="ICoroutineObject.Target"/> (if not null).
     /// </item>
     /// <code>
     /// yield return Greet(); // Greet() is IEnumerator Greet() { yield return null; }
@@ -53,23 +53,24 @@ namespace Instant2D.Coroutines {
     /// </summary>
     public class CoroutineInstance : IPooled, ICoroutineObject {
         public IEnumerator enumerator;
-        public ICoroutineTarget target;
         public float? overrideTimeScale;
         public Action<bool> completionHandler;
+
         float _waitDuration, _timer;
         ICoroutineObject _waitForObject;
         internal bool _wasStopped, _isRunning = true;
+        internal ICoroutineTarget _target;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Tick(GameTime gameTime) {
-            if (_wasStopped || target?.IsActive == false) { 
+            if (_wasStopped || _target?.IsActive == false) { 
                 return false;
             }
 
             // if waiting is in progress,
             // don't tick the coroutine
             if (_waitDuration > 0) {
-                _timer += (float)gameTime.ElapsedGameTime.TotalSeconds * (overrideTimeScale ?? target?.TimeScale ?? 1.0f);
+                _timer += (float)gameTime.ElapsedGameTime.TotalSeconds * (overrideTimeScale ?? _target?.TimeScale ?? 1.0f);
                 if (_timer < _waitDuration) {
                     return true;
                 }
@@ -99,8 +100,7 @@ namespace Instant2D.Coroutines {
                 // enumerator was passed, start a new coroutine and wait for it
                 // in case this instance has a target defined, pass it to the resulting coroutine
                 case IEnumerator enumerator:
-                    _waitForObject = CoroutineManager.Run(enumerator)
-                        .SetTarget(target);
+                    _waitForObject = CoroutineManager.Run(enumerator, target: _target);
                     break;
 
                 // if other coroutine object is passed,
@@ -156,20 +156,12 @@ namespace Instant2D.Coroutines {
             return this;
         }
 
-        /// <summary>
-        /// Sets the <see cref="target"/> used to obtain TimeScale information and stop the coroutine when the target goes inactive.
-        /// </summary>
-        public CoroutineInstance SetTarget(ICoroutineTarget target) {
-            this.target = target;
-            return this;
-        }
-
         #endregion
 
         public void Reset() {
             completionHandler = null;
             _waitForObject = null;
-            target = null;
+            _target = null;
             overrideTimeScale = null;
             _waitDuration = 0;
             _timer = 0;
@@ -179,7 +171,7 @@ namespace Instant2D.Coroutines {
 
         // ICoroutineObject impl
         public bool IsRunning => _isRunning;
-        ICoroutineTarget ICoroutineObject.Target => target;
+        ICoroutineTarget ICoroutineObject.Target => _target;
         void ICoroutineObject.Stop() => Stop();
     }
 }

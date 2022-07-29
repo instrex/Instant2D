@@ -6,17 +6,16 @@ using System.Runtime.CompilerServices;
 namespace Instant2D.Coroutines {
     /// <summary>
     /// Represents a basic timer which invokes <see cref="callback"/> after <see cref="duration"/> seconds. <br/>
-    /// Can also have <see cref="ICoroutineTarget"/> attached to tweak the timescale and stop when appropriate. <br/>
-    /// This class is pooled, so avoid storing references of it or keep the pooling in mind.
+    /// Can also have <see cref="ICoroutineTarget"/> attached to tweak the timescale and stop when appropriate.
     /// </summary>
     public class TimerInstance : IPooled, ICoroutineObject {
         public float time, duration;
-        public ICoroutineTarget target;
         public object context;
         public bool shouldRepeat;
         public Action<TimerInstance> callback;
         public float? overrideTimeScale;
 
+        internal ICoroutineTarget _target;
         bool _wasStopped;
 
         /// <summary>
@@ -25,12 +24,12 @@ namespace Instant2D.Coroutines {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Tick(GameTime gameTime) {
             // stop the timer when the target becomes inactive
-            if (_wasStopped || target?.IsActive == false) {
+            if (_wasStopped || _target?.IsActive == false) {
                 return false;
             }
 
             // advance the timer by a scaled interval
-            time += (float)gameTime.ElapsedGameTime.TotalSeconds * (overrideTimeScale ?? target?.TimeScale ?? 1.0f);
+            time += (float)gameTime.ElapsedGameTime.TotalSeconds * (overrideTimeScale ?? _target?.TimeScale ?? 1.0f);
 
             if (time >= duration) {
                 callback?.Invoke(this);
@@ -67,14 +66,6 @@ namespace Instant2D.Coroutines {
         }
 
         /// <summary>
-        /// Sets the <see cref="target"/> used to obtain TimeScale information and stop the timer when the target goes inactive.
-        /// </summary>
-        public TimerInstance SetTarget(ICoroutineTarget target) {
-            this.target = target;
-            return this;
-        }
-
-        /// <summary>
         /// Sets <see cref="shouldRepeat"/> to <see langword="true"/>, making the timer restart upon reaching its duration. 
         /// Set the field to <see langword="false"/> during callback to prevent it from running again.
         /// </summary>
@@ -100,12 +91,12 @@ namespace Instant2D.Coroutines {
             overrideTimeScale = null;
             callback = null;
             context = null;
-            target = null;
+            _target = null;
         }
 
         // ICoroutineObject impl
         bool ICoroutineObject.IsRunning => !_wasStopped && (shouldRepeat || time < duration);
-        ICoroutineTarget ICoroutineObject.Target => target;
+        ICoroutineTarget ICoroutineObject.Target => _target;
         void ICoroutineObject.Stop() => Stop();
     }
 }
