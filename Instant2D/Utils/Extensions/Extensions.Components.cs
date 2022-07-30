@@ -128,11 +128,14 @@ namespace Instant2D.EC {
 
         /// <summary>
         /// Adds an unshifted collision flag to <see cref="CollisionComponent.CollidesWithMask"/> using <see cref="IntFlags.SetFlag(int, int)"/>. <br/>
-        /// This means that this collider will react to objects with the provided flag set in their <see cref="CollisionComponent.LayerMask"/>.
+        /// This means that this collider will react to objects with the provided flag set in their <see cref="CollisionComponent.LayerMask"/>. <br/>
+        /// If <see cref="CollisionComponent.CollidesWithMask"/> was <c>-1</c> before calling this, the object will collide <b>only</b> with the specified layer.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T AddCollisionFlag<T>(this T collisionComponent, int unshiftedCollisionFlag) where T : CollisionComponent {
-            collisionComponent.CollidesWithMask = IntFlags.SetFlag(collisionComponent.CollidesWithMask, unshiftedCollisionFlag);
+            collisionComponent.CollidesWithMask = collisionComponent.CollidesWithMask == -1 ?
+                IntFlags.SetFlagExclusive(unshiftedCollisionFlag) :
+                IntFlags.SetFlag(collisionComponent.CollidesWithMask, unshiftedCollisionFlag);
             return collisionComponent;
         }
 
