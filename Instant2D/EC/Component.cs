@@ -50,6 +50,11 @@ namespace Instant2D.EC {
         #region Component Lifecycle
 
         /// <summary>
+        /// Called when all components are initialized and Entity they're attached to begin updating.
+        /// </summary>
+        public virtual void PostInitialize() { }
+
+        /// <summary>
         /// Called when the Component is added to Entity via <see cref="Entity.AddComponent{T}"/>.
         /// </summary>
         public virtual void Initialize() { }

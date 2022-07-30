@@ -26,6 +26,13 @@ namespace Instant2D.EC.Components {
         Vector2 _rawOrigin = new(0.5f);
 
         /// <summary>
+        /// Indicate whether or not collider size was explicitly provided by user. If <see langword="true"/>, autosizing will take place. <br/>
+        /// You should manually this to <see langword="true"/> when user requests changes to the size.
+        /// </summary>
+        protected bool _wasSizeSet;
+        bool _scaleWithTransform = true, _rotateWithTransform = true;
+
+        /// <summary>
         /// Origin of this collider. Defaults to {0.5, 0.5}.
         /// </summary>
         public Vector2 Origin {
@@ -42,13 +49,31 @@ namespace Instant2D.EC.Components {
         /// <summary>
         /// When <see langword="true"/>, shape of the collider will be modified based on Entity's <see cref="Transform{T}.Scale"/>.
         /// </summary>
-        public bool ShouldScaleWithTransform = true;
+        public bool ShouldScaleWithTransform {
+            get => _scaleWithTransform;
+            set {
+                if (_scaleWithTransform == value)
+                    return;
+
+                _scaleWithTransform = value;
+                UpdateCollider();
+            }
+        }
 
         /// <summary>
         /// When <see langword="true"/>, shape of the collider will be modified based on Entity's <see cref="Transform{T}.Rotation"/>. <br/>
         /// Could be set to <see langword="false"/> for box colliders to reduce the overhead introduced by rotation calculation.
         /// </summary>
-        public bool ShouldRotateWithTransform = true;
+        public bool ShouldRotateWithTransform {
+            get => _rotateWithTransform;
+            set {
+                if (_rotateWithTransform == value)
+                    return;
+
+                _rotateWithTransform = value;
+                UpdateCollider();
+            }
+        }
 
         /// <summary>
         /// Constructs a new <see cref="CollisionComponent"/> with specified base collider.
@@ -98,7 +123,17 @@ namespace Instant2D.EC.Components {
             BaseCollider._spatialHash = Scene.Collisions;
         }
 
+        public override void PostInitialize() {
+            if (!_wasSizeSet) {
+                // attempt to automatically determine size
+                // using RenderableComponents
+                this.AutoResize();
+            }
+        }
+
         public override void OnEnabled() {
+            UpdateCollider();
+
             // register collider when this component is enabled
             Scene.Collisions.AddCollider(BaseCollider);
         }
@@ -112,6 +147,11 @@ namespace Instant2D.EC.Components {
         /// Apply all of the settings and update the base collider.
         /// </summary>
         public virtual void UpdateCollider() { }
+
+        /// <summary>
+        /// Automatically assign size values using <see cref="RenderableComponent.Bounds"/> as reference.
+        /// </summary>
+        public virtual void AutoSize(RectangleF bounds) { }
 
         /// <summary>
         /// Attempts to move the object by <paramref name="velocity"/> amount. If it collides into something, <paramref name="hit"/> will be populated with collision data,
@@ -131,7 +171,7 @@ namespace Instant2D.EC.Components {
 
             // do a broad sweep to find all the potential collisions
             var nearby = Scene.Collisions.Broadphase(bounds, CollidesWithMask);
-            for (var i = nearby.Count - 1; i >= 0; i--) {
+            for (var i = 0; i < nearby.Count; i++) {
                 var other = nearby[i];
 
                 // check for collision

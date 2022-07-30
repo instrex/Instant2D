@@ -153,7 +153,7 @@ namespace Instant2D {
                 var dt = res.Y - Top;
                 var db = Bottom - res.Y;
 
-                var min = MathF.Min(MathF.Min(MathF.Min(dl, dr), dt), db);
+                var min = MathF.Min(dl, MathF.Min(dr, Math.Min(dt, db)));
                 if (min == dt) {
                     res.Y = Top;
                     edgeNormal.Y = -1;

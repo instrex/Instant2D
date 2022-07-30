@@ -21,7 +21,7 @@ namespace Instant2D.TestGame.Scenes {
             Collisions = new SpatialHash<CollisionComponent>(32);
 
             // create some funny boxes
-            for (var i = 0; i < 10000; i++) {
+            for (var i = 0; i < 1000; i++) {
                 var pos = Random.Shared.NextRectanglePoint(new(-1000, -1000, 1000, 1000));
                 CreateEntity($"collider_{i}", pos)
                     .AddComponent<FunnyMovingBox>();
@@ -29,13 +29,13 @@ namespace Instant2D.TestGame.Scenes {
         }
 
         class FunnyMovingBox : Component, IUpdatableComponent {
-            public BoxCollisionComponent Collider;
+            public CollisionComponent Collider;
             public Vector2 Velocity;
 
             public override void Initialize() {
-                Entity.AddComponent(Collider = new BoxCollisionComponent {
-                    Size = new(Random.Shared.Next(4, 16))
-                });
+                Collider = Entity.AddComponent<CircleCollisionComponent>()
+                    .SetRadius(Random.Shared.Next(6, 14))
+                    .SetCollisionLayer(Random.Shared.Next(3));
             }
 
             public void Update() {

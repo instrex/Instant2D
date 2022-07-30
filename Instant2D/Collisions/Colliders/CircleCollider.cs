@@ -30,6 +30,10 @@ namespace Instant2D.Collisions {
         public override bool CheckCollision(BaseCollider<T> other, out CollisionHit<T> hit) {
             hit = new CollisionHit<T> { Self = this, Other = other };
 
+            // if shapes don't overlap, there should be collision
+            if (!CheckOverlap(other))
+                return false;
+
             switch (other) {
                 default: throw new NotImplementedException();
 
@@ -52,30 +56,36 @@ namespace Instant2D.Collisions {
 
                 // circle-to-box collision
                 case BoxCollider<T> box: {
-                        var closestPoint = box.Bounds.GetClosestPoint(Position, out hit.Normal);
+                    var closestPoint = box.Bounds.GetClosestPoint(Position, out hit.Normal);
 
-                        // the circle is contained inside the box, easy win
-                        if (box.Bounds.Contains(closestPoint)) {
-                            hit.PenetrationVector = Position - closestPoint + hit.Normal * Radius;
-                            hit.Point = closestPoint;
+                    // the circle is contained inside the box, easy win
+                    if (box.Bounds.Contains(closestPoint)) {
+                        hit.PenetrationVector = Position - (closestPoint + hit.Normal * Radius);
+                        hit.Point = closestPoint;
 
-                            return true;
-                        }
-
-                        if (Vector2.DistanceSquared(closestPoint, Position) <= Radius * Radius) {
-                            hit.Point = closestPoint;
-                            hit.Normal = Position - closestPoint;
-
-                            // calculate penetraition
-                            var penetration = hit.Normal.Length() - Radius;
-                            hit.Normal = VectorUtils.SafeNormalize(hit.Normal);
-                            hit.PenetrationVector = penetration * hit.Normal;
-
-                            return true;
-                        }
-
-                        return false;
+                        return true;
                     }
+
+                    var dist = Vector2.DistanceSquared(closestPoint, Position);
+
+                    if (dist == 0) {
+                        hit.PenetrationVector = hit.Normal * Radius;
+                    } 
+                    
+                    else if (dist <= Radius * Radius) {
+                        hit.Point = closestPoint;
+                        hit.Normal = Position - closestPoint;
+
+                        // calculate penetraition
+                        var penetration = hit.Normal.Length() - Radius;
+                        hit.Normal = VectorUtils.SafeNormalize(hit.Normal);
+                        hit.PenetrationVector = penetration * hit.Normal;
+
+                        return true;
+                    }
+
+                    return false;
+                }
             }
         }
 

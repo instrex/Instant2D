@@ -104,8 +104,8 @@ namespace Instant2D.EC {
 
         /// <inheritdoc cref="CollisionComponent.CollidesWithMask"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T SetCollidesWith<T>(this T collisionComponent, int collidesWith) where T: CollisionComponent {
-            collisionComponent.CollidesWithMask = collidesWith;
+        public static T SetCollidesWith<T>(this T collisionComponent, int collidesWithMask) where T: CollisionComponent {
+            collisionComponent.CollidesWithMask = collidesWithMask;
             return collisionComponent;
         }
 
@@ -143,6 +143,31 @@ namespace Instant2D.EC {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T RemoveCollisionFlag<T>(this T collisionComponent, int unshiftedCollisionFlag) where T : CollisionComponent {
             collisionComponent.CollidesWithMask = IntFlags.RemoveFlag(collisionComponent.CollidesWithMask, unshiftedCollisionFlag);
+            return collisionComponent;
+        }
+
+        /// <inheritdoc cref="CollisionComponent.ShouldRotateWithTransform"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetShouldRotateWithTransform<T>(this T collisionComponent, bool shouldRotateWithTransform) where T : CollisionComponent {
+            collisionComponent.ShouldRotateWithTransform = shouldRotateWithTransform;
+            return collisionComponent;
+        }
+
+        /// <inheritdoc cref="CollisionComponent.ShouldScaleWithTransform"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetShouldScaleWithTransform<T>(this T collisionComponent, bool shouldScaleWithTransform) where T : CollisionComponent {
+            collisionComponent.ShouldScaleWithTransform = shouldScaleWithTransform;
+            return collisionComponent;
+        }
+
+        /// <summary>
+        /// Attempts to automatically determine collider size using renderables attached to entity.
+        /// </summary>
+        public static T AutoResize<T>(this T collisionComponent) where T : CollisionComponent {
+            // use renderables when possible
+            if (collisionComponent.Entity.TryGetComponent<RenderableComponent>(out var renderableComponent))
+                collisionComponent.AutoSize(renderableComponent.Bounds);
+
             return collisionComponent;
         }
 

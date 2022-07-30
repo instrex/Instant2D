@@ -28,6 +28,7 @@ namespace Instant2D.EC.Components {
             get => _unscaledSize;
             set {
                 _unscaledSize = value;
+                _wasSizeSet = true;
                 UpdateBoxCollider();
             }
         }
@@ -50,25 +51,35 @@ namespace Instant2D.EC.Components {
 
         public override void UpdateCollider() => UpdateBoxCollider();
 
+        public override void AutoSize(RectangleF bounds) {
+            SetSize(bounds.Size);
+        }
+
         public override void OnTransformUpdated(TransformComponentType components) {
             base.OnTransformUpdated(components);
 
             // if scale changed, full update is required
-            if ((components & TransformComponentType.Scale) != 0) {
+            if (ShouldScaleWithTransform && (components & TransformComponentType.Scale) != 0) {
                 UpdateBoxCollider();
                 return;
             }
 
             // else, just update the position
-            BaseCollider.Position = Transform.Position - _offset;
-            BaseCollider.Update();
+            if ((components & TransformComponentType.Position) != 0) {
+                BaseCollider.Position = Entity.Transform.Position;
+                BaseCollider.Update();
+            }
         }
 
-        public override void OnEnabled() {
-            UpdateBoxCollider();
+        /// <inheritdoc cref="Size"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BoxCollisionComponent SetSize(float size) => SetSize(new Vector2(size));
 
-            // update values before registering the collider
-            base.Initialize();
+        /// <inheritdoc cref="Size"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BoxCollisionComponent SetSize(Vector2 size) {
+            Size = size;
+            return this;
         }
     }
 }

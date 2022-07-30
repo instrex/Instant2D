@@ -38,6 +38,7 @@ namespace Instant2D.Collisions {
 
         public override bool CheckCollision(BaseCollider<T> other, out CollisionHit<T> hit) {
             hit = new CollisionHit<T> { Self = this, Other = other };
+
             switch (other) {
                 default: throw new NotImplementedException();
 

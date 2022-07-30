@@ -27,7 +27,7 @@ namespace Instant2D.EC {
         readonly List<Component> _components = new(16);
         internal List<IUpdatableComponent> _updatedComponents;
         float? _overrideTimeScale;
-        bool _shouldDestroy;
+        bool _shouldDestroy, _isInitialized;
         Scene _scene;
 
         /// <summary> Unique number identifier for this entity. </summary>
@@ -261,6 +261,10 @@ namespace Instant2D.EC {
                 component.OnEnabled();
             }
 
+            if (_isInitialized) {
+                component.PostInitialize();
+            }
+
             return component;
         }
 
@@ -391,6 +395,15 @@ namespace Instant2D.EC {
         #endregion
 
         public void Update() {
+            if (!_isInitialized) {
+                // call post initialize on all components
+                for (var i = 0; i < _components.Count; i++) {
+                    _components[i].PostInitialize();
+                }
+
+                _isInitialized = false;
+            }
+
             if (_shouldDestroy) {
                 ImmediateDestroy();
                 return;
@@ -453,6 +466,7 @@ namespace Instant2D.EC {
             Transform.Entity = this;
 
             // reset othet fields
+            _isInitialized = false;
             _overrideTimeScale = null;
             _updatedComponents?.Clear();
             _components.Clear();
