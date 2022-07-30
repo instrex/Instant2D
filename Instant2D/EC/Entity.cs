@@ -289,6 +289,17 @@ namespace Instant2D.EC {
         public T GetComponent<T>() where T: Component => TryGetComponent<T>(out var component) ? component : default;
 
         /// <summary>
+        /// Enumerates all components of provided type <typeparamref name="T"/>.
+        /// </summary>
+        public IEnumerable<T> GetComponents<T>() where T: Component {
+            for (var i = 0; i < _components.Count; i++) {
+                if (_components[i] is T foundComponent) {
+                    yield return foundComponent;
+                }
+            }
+        } 
+
+        /// <summary>
         /// Attempts to remove a component of type, and returns it on success. If removal didn't succeed, returns <see langword="null"/>.
         /// </summary>
         public T RemoveComponent<T>() where T: Component {

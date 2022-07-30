@@ -194,5 +194,33 @@ namespace Instant2D.EC.Components {
 
             return hit.Self != null;
         }
+
+        /// <summary>
+        /// Checks if this collider overlaps another Entity. <see cref="Entity.GetComponents{T}"/> is used to find all of the colliders. <br/>
+        /// If <paramref name="preciseCheck"/> is set to <see langword="false"/>, only the bounds check will take place.
+        /// </summary>
+        public bool Overlaps(Entity other, bool preciseCheck = true) {
+            foreach (var collider in other.GetComponents<CollisionComponent>()) {
+                // break early if overlap is found
+                if (Overlaps(collider, preciseCheck)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if this collider overlaps <paramref name="other"/>. If <paramref name="preciseCheck"/> is set to <see langword="false"/>, only the bounds check will take place.
+        /// </summary>
+        public bool Overlaps(CollisionComponent other, bool preciseCheck = true) {
+            if (!preciseCheck) {
+                // simply check bounds for intersections, that's it
+                return BaseCollider.Bounds.Contains(other.BaseCollider.Bounds);
+            }
+
+            // go for more precise approach and call stuff
+            return BaseCollider.CheckOverlap(other.BaseCollider);
+        }
     }
 }
