@@ -18,6 +18,10 @@ namespace Instant2D.Utils.Serialization {
                         buffer.Add((string)reader.Value);
                         break;
 
+                    case JsonToken.Boolean:
+                        buffer.Add((bool)reader.Value);
+                        break;
+
                     case JsonToken.Integer:
                         buffer.Add((int)(long)reader.Value);
                         break;

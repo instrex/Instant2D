@@ -1,38 +1,10 @@
-﻿using System.Linq;
+﻿using Instant2D.Assets.Containers;
 
 namespace Instant2D.Assets {
     /// <summary>
-    /// Base Asset class for use with <see cref="AssetManager"/>.
-    /// </summary>
-    public abstract class Asset {
-        public string Key { get; init; }
-
-        public override string ToString() {
-            var type = GetType();
-            if (type.IsGenericType) {
-                return $"{type.Name}<{string.Join(", ", type.GenericTypeArguments.Select(t => t.Name))}>";
-            }
-
-            return type.Name;
-        }
-    }
-
-    /// <summary>
-    /// Simple typed Asset, is assumed to be loaded at the moment of instantiation.
-    /// </summary>
-    public class Asset<T> : Asset, IAssetContainer<T> {
-        public Asset(string key, T content) {
-            Content = content;
-            Key = key;
-        }
-
-        public T Content { get; set; }
-    }
-
-    /// <summary>
     /// Asset base class that supports on-demand loading.
     /// </summary>
-    public abstract class LazyAsset : Asset {
+    public abstract record LazyAsset : Asset {
         readonly ILazyAssetLoader _loader;
         bool _isLoaded;
 
@@ -42,16 +14,12 @@ namespace Instant2D.Assets {
         public bool IsLoaded => _isLoaded;
 
         /// <summary>
-        /// The other <see cref="LazyAsset"/> that this content depends on, will be force loaded before this on-demand.
-        /// </summary>
-        public LazyAsset DependsOn { get; set; }
-
-        /// <summary>
         /// Force load this asset.
         /// </summary>
         public void Load() {
-            if (DependsOn != null) {
-                DependsOn.Load();
+            if (Parent is LazyAsset lazyParent && !lazyParent.IsLoaded) {
+                // load lazy parent
+                lazyParent.Load();
             }
 
             _loader.LoadOnDemand(this);
@@ -63,6 +31,14 @@ namespace Instant2D.Assets {
         /// </summary>
         public void Unload() {
             _isLoaded = false;
+
+            if (Children != null) {
+                foreach (var child in Children) {
+                    // unload lazy children
+                    if (child is LazyAsset lazyChild && lazyChild.IsLoaded)
+                        lazyChild.Unload();
+                }
+            }
         }
 
         protected LazyAsset(ILazyAssetLoader loader) {
@@ -73,7 +49,7 @@ namespace Instant2D.Assets {
     /// <summary>
     /// Lazily loaded Asset, will ask the <see cref="ILazyAssetLoader"/> to load stuff on-demand.
     /// </summary>
-    public class LazyAsset<T> : LazyAsset, IAssetContainer<T> {
+    public record LazyAsset<T> : LazyAsset, IAssetContainer<T> {
         private T _content;
 
         /// <summary>
@@ -90,8 +66,7 @@ namespace Instant2D.Assets {
             }
         }
 
-        public LazyAsset(string key, ILazyAssetLoader loader, LazyAsset dependsOn = default) : base(loader) {
-            DependsOn = dependsOn;
+        public LazyAsset(string key, ILazyAssetLoader loader) : base(loader) {
             Key = key;
         }
     }

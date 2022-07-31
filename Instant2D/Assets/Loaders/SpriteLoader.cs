@@ -6,232 +6,225 @@ using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 
 namespace Instant2D.Assets.Loaders {
-    /// <summary>
-    /// Base loader class for handling sprites in <see cref="SpriteManifest"/> format.
-    /// </summary>
-    public abstract class SpriteLoader : IAssetLoader {
-        protected const string SPRITES_PATH = "Assets/sprites/";
+    public class SpriteLoader : IAssetLoader, ILazyAssetLoader, IHotReloader {
+        const string DIRECTORY = "sprites";
 
-        /// <summary>
-        /// Enum used to decide produced asset types for lazy loading support or anything that needs to know it before loading.
-        /// </summary>
-        public enum AssetOutputType {
-            Sprite,
-            Animation
-        }
+        readonly Dictionary<string, SpriteDef> _definitions = new();
+        readonly List<SpriteManifest> _manifests = new();
+        readonly List<Texture2D> _textures = new();
 
-        /// <summary>
-        /// Currently loaded manifests.
-        /// </summary>
-        public IReadOnlyList<SpriteManifest> Manifests => _manifests;
+        public IEnumerable<Asset> Load(AssetManager assets) {
+            // load all json sprite manifests
+            foreach (var path in assets.EnumerateFiles(DIRECTORY, "*.json", true)) {
+                try {
+                    using var stream = assets.OpenStream(path);
+                    using var reader = new StreamReader(stream);
 
-        /// <summary>
-        /// Currently loaded <see cref="SpriteDef"/>initions, may be modified for better control.
-        /// </summary>
-        public readonly Dictionary<string, SpriteDef> SpriteDefinitions = new();
+                    // deserialize and save the manifest
+                    var manifest = JsonConvert.DeserializeObject<SpriteManifest>(reader.ReadToEnd(), new SpriteManifest.Converter());
+                    _manifests.Add(manifest);
 
-        readonly List<Sprite> _spriteBuffer = new(16);
-        SpriteManifest[] _manifests;
-
-        public IEnumerable<Asset> Load(AssetManager assets, LoadingProgress progress) {
-            _manifests = LoadManifests(assets).ToArray();
-            for (var i = 0; i < _manifests.Length; i++) {
-                foreach (var item in _manifests[i].Items) {
-                    // check for double definitions
-                    if (SpriteDefinitions.TryGetValue(item.key, out var existing)) {
-                        InstantGame.Instance.Logger.Warning($"Sprite '{item.key}' is defined in both '{existing.manifest.Name}' and '{_manifests[i].Name}' manifests, skipping the latter.");
-                        continue;
+                    // save sprite definitions
+                    foreach (var item in manifest.Items) {
+                        var key = $"sprites/{item.key}";
+                        _definitions.Add(key, item with {
+                            manifest = manifest,
+                            key = key,
+                        });
                     }
 
-                    var spriteKey = $"sprites/{item.key}";
-                    SpriteDefinitions.Add(spriteKey, item with { 
-                        key = spriteKey, 
-                        manifest = _manifests[i] 
-                    });
+                } catch (Exception ex) {
+                    Logger.WriteLine($"Could not load sprite manifest '{Path.GetFileName(path)}': {ex.Message}", Logger.Severity.Error);
                 }
             }
 
-            // load additional definitions
-            foreach (var item in LoadAdditionalDefinitions(assets)) {
-                if (!SpriteDefinitions.TryAdd(item.key, item)) {
-                    InstantGame.Instance.Logger.Warning($"Failed to load Sprite '{item.key}': element with the same key already exists.");
+            // load stray sprites not defined by manifests
+            foreach (var path in assets.EnumerateFiles(DIRECTORY, "*.png", true)) {
+                var key = path.Replace(".png", "");
+
+                // don't replace existing defs
+                if (_definitions.ContainsKey(key))
+                    continue;
+
+                _definitions.TryAdd(key, new SpriteDef {
+                    fileName = key,
+                    key = key
+                });
+            }
+
+            // produce assets
+            foreach (var (key, def) in _definitions) {
+                Asset baseAsset = def.animation != null ? new LazyAsset<SpriteAnimation>(key, this) : new LazyAsset<Sprite>(key, this);
+                baseAsset.Data = def;
+
+                // yield base asset now
+                yield return baseAsset;
+
+                // switch blocks are dumb ;-;
+                var i = 0;
+
+                // produce additional child assets from animations or splits
+                switch (def.split) {
+                    // manual sprite split
+                    case { type: SpriteSplitOptions.Manual, manual: var manualSplit }:
+                        for (i = 0; i < manualSplit.Length; i++) {
+                            var child = new LazyAsset<Sprite>(def.FormatFrameKey(manualSplit[i].key), this) {
+                                // save the data for later processing
+                                Data = manualSplit[i]
+                            };
+
+                            baseAsset.AddChild(child);
+
+                            yield return child;
+                        }
+
+                        break;
+
+                    // split using frame cound
+                    case { type: SpriteSplitOptions.ByCount, widthOrFrameCount: var count }:
+                        for (i = 0; i < count; i++) {
+                            var child = new LazyAsset<Sprite>(def.FormatFrameKey(i.ToString()), this);
+                            baseAsset.AddChild(child);
+
+                            yield return child;
+                        }
+
+                        break;
+
+                    // split using frame size (requires image dimensions)
+                    case { type: SpriteSplitOptions.BySize, widthOrFrameCount: var width, height: var height }:
+                        if (!TryGetPngSize(def.fileName, out var imageDimensions)) {
+                            Logger.WriteLine($"Couldn't get image dimensions for sprite '{key}'", Logger.Severity.Warning);
+                            break;
+                        }
+
+                        // crop the image by width x height 
+                        for (var x = 0; x < imageDimensions.X; x += width) {
+                            for (var y = 0; y < imageDimensions.Y; y += height) {
+                                var child = new LazyAsset<Sprite>(def.FormatFrameKey(i++.ToString()), this) {
+                                    // calculate the source rect while at it
+                                    Data = new Rectangle(x, y, width, height)
+                                };
+
+                                baseAsset.AddChild(child);
+
+                                yield return child;
+                            }
+                        }
+
+                        break;
+                }
+            }
+        }
+
+        public void LoadOnDemand(LazyAsset asset) {
+            // the parent should take care of loading
+            if (asset.Parent is LazyAsset parent) {
+                parent.Load();
+                return;
+            }
+
+            // load the texture
+            using var stream = AssetManager.Instance.OpenStream(asset.Key + ".png");
+            var texture = Texture2D.FromStream(InstantGame.Instance.GraphicsDevice, stream);
+            texture.Tag = asset.Key;
+
+            // make cool sprite
+            var def = asset.Data as SpriteDef;
+            var sprite = new Sprite(texture, new Rectangle(0, 0, texture.Width, texture.Height), new Vector2(texture.Width, texture.Height) * 0.5f, asset.Key);
+
+            // obtain the framebuffer when animation is needed
+            var frameBuffer = def.animation != null && def.split.type != SpriteSplitOptions.Manual ? ListPool<Sprite>.Get() : null;
+
+            // process children
+            if (asset.Children != null) {
+                for (var i = 0; i < asset.Children.Count; i++) {
+                    var child = asset.Children[i] as LazyAsset<Sprite>;
+                    switch (child.Data) {
+                        // split by size produces source rects in Load phase
+                        case Rectangle rect:
+                            var splitBySizeSprite = new Sprite(texture, rect, SpriteDef.TransformOrigin(def.origin, rect, def.manifest), child.Key);
+                            child.Content = splitBySizeSprite;
+                            frameBuffer?.Add(splitBySizeSprite);
+                            break;
+
+                        // manual split comes packaged with a nice struct
+                        case ManualSplitItem split:
+                            child.Content = new Sprite(texture, split.rect, SpriteDef.TransformOrigin(split.origin, split.rect, def.manifest, def.origin), child.Key);
+                            break;
+
+                        // and what does split by count get?
+                        default:
+                            var newRect = new Rectangle(0, texture.Height / asset.Children.Count * i, texture.Width, texture.Height);
+                            var splitByCountSprite = new Sprite(texture, newRect, SpriteDef.TransformOrigin(def.origin, newRect, def.manifest));
+                            child.Content = splitByCountSprite;
+                            frameBuffer?.Add(splitByCountSprite);
+                            break;
+                    }
                 }
             }
 
-            // load the sprite assets
-            foreach (var asset in LoadSpriteAssets(assets))
-                yield return asset;
+            // add the texture for later disposal
+            _textures.Add(texture);
+
+            // save asset data
+            switch (asset) {
+                default:
+                    Logger.WriteLine($"Unknown asset type '{asset.GetType().Name}' encountered by SpriteLoader", Logger.Severity.Warning);
+                    break;
+
+                case LazyAsset<SpriteAnimation> animationAsset when def.animation is SpriteAnimationDef animation:
+                    animationAsset.Content = new SpriteAnimation(animation.fps, frameBuffer.ToArray(), animation.events, def.key);
+                    break;
+
+                case LazyAsset<Sprite> spriteAsset:
+                    spriteAsset.Content = sprite;
+                    break;
+            }
         }
 
-        #region API
-
-        /// <summary>
-        /// Provides a way to specify how instances of <see cref="SpriteManifest"/> are loaded. 
-        /// You can access the results in <see cref="Manifests"/>.
-        /// </summary>
-        protected abstract IEnumerable<SpriteManifest> LoadManifests(AssetManager assets);
-
-        /// <summary>
-        /// Perform general <see cref="Asset{T}"/> loading tasks there.
-        /// </summary>
-        protected abstract IEnumerable<Asset> LoadSpriteAssets(AssetManager assets);
-
-        /// <summary>
-        /// If required, you can load additional <see cref="SpriteDef"/> instances in there. Called after <see cref="LoadManifests(AssetManager)"/>.
-        /// </summary>
-        protected virtual IEnumerable<SpriteDef> LoadAdditionalDefinitions(AssetManager assets) {
-            yield break;
-        }
-
-        #endregion
-
-        protected static bool TryParseManifest(string json, out SpriteManifest manifest, string name = default) {
+        static bool TryGetPngSize(string key, out Point size) {
             try {
-                var result = JsonConvert.DeserializeObject<SpriteManifest>(json, new SpriteManifest.Converter());
-                manifest = result;
+                using var fileStream = AssetManager.Instance.OpenStream(key + ".png");
+                using var reader = new BinaryReader(fileStream);
+                reader.BaseStream.Seek(16, SeekOrigin.Begin);
+
+                // read PNG metadata
+                Span<byte> buffer = stackalloc byte[sizeof(int)];
+                for (var i = 0; i < sizeof(int); i++) {
+                    buffer[sizeof(int) - 1 - i] = reader.ReadByte();
+                }
+
+                var width = BitConverter.ToInt32(buffer);
+                for (var i = 0; i < sizeof(int); i++) {
+                    buffer[sizeof(int) - 1 - i] = reader.ReadByte();
+                }
+
+                var height = BitConverter.ToInt32(buffer);
+                size = new(width, height);
 
                 return true;
-            } catch (Exception ex) {
-                InstantGame.Instance.Logger.Error($"Couldn't parse SpriteManifest{(name == null ? $" ({name})" : "")}: {ex.Message}");
 
-                manifest = null;
+            } catch {
+                size = new(0, 0);
                 return false;
             }
         }
 
-        protected static Vector2 GetOrigin(SpriteOrigin origin, Rectangle sourceRect, SpriteManifest manifest = default, SpriteOrigin? parent = default) {
-            var size = new Vector2(sourceRect.Width, sourceRect.Height);
-            return origin.type switch {
-                SpriteOriginType.Absolute => origin.value,
-                SpriteOriginType.Normalized => size * origin.value,
-                SpriteOriginType.Default when parent is not null => GetOrigin(parent.Value, sourceRect, manifest),
-                SpriteOriginType.Default when manifest is not null => size * manifest.DefaultOrigin,
-                _ => size * new Vector2(0.5f),
-            };
-        } 
+        #region Hot Reloading
 
-        /// <summary>
-        /// Attempts to get all asset information that may be produced by provided <see cref="SpriteDef"/>.
-        /// That includes additional sprites created by 'split' option, layers and animations.
-        /// </summary>
-        /// <remarks> 
-        /// NOTE: <see cref="SpriteSplitOptions.BySize"/> will only work if <paramref name="imageDimensions"/> are not (0, 0), as it requires image data to determine how many sprites will be created.
-        /// </remarks>
-        protected static List<(AssetOutputType type, string key)> GetProducedAssetData(in SpriteDef def, Point imageDimensions = default) {
-            var result = new List<(AssetOutputType type, string key)>();
-
-            // switch blocks are dumb lol
-            int i = 0;
-            switch (def.split.type) {
-                // only 1 asset (and its layers when finished) will be produced
-                case SpriteSplitOptions.None:
-                    result.Add((AssetOutputType.Sprite, def.key));
-                    break;
-
-                // produces assets for each manual rectangle
-                case SpriteSplitOptions.Manual:
-                    result.Add((def.animation != null ? AssetOutputType.Animation : AssetOutputType.Sprite, def.key));
-                    for (i = 0; i < def.split.manual.Length; i++) {
-                        result.Add((AssetOutputType.Sprite, def.FormatFrameKey(def.split.manual[i].key)));
-                    }
-
-                    break;
-
-                // produces assets based on frame count
-                case SpriteSplitOptions.ByCount:
-                    result.Add((def.animation != null ? AssetOutputType.Animation : AssetOutputType.Sprite, def.key));
-                    for (i = 0; i < def.split.widthOrFrameCount; i++) {
-                        result.Add((AssetOutputType.Sprite, def.FormatFrameKey(i.ToString())));
-                    }
-
-                    break;
-
-                // produces assets by analyzing image dimensions
-                case SpriteSplitOptions.BySize when imageDimensions != default:
-                    result.Add((def.animation != null ? AssetOutputType.Animation : AssetOutputType.Sprite, def.key));
-
-                    var width = def.split.widthOrFrameCount;
-                    var height = def.split.height;
-                    for (var x = 0; x < imageDimensions.X; x += width) {
-                        for (var y = 0; y < imageDimensions.Y; y += height) {
-                            result.Add((AssetOutputType.Sprite, def.FormatFrameKey(i++.ToString())));
-                        }
-                    }
-
-                    break;
-            }
-
-            return result;
+        IEnumerable<string> IHotReloader.GetFileFormats() {
+            yield return ".json";
+            yield return ".png";
         }
 
-        /// <summary>
-        /// Attempts to process specified <see cref="SpriteDef"/>, returning all the resulting sprites in a list. <br/>
-        /// Optionally sets <paramref name="animation"/>, if <see cref="SpriteDef"/> contains animation tag.
-        /// Otherwise, the entire sprite sheet will be added as individual <see cref="Sprite"/>.
-        /// </summary>
-        /// <remarks>
-        /// NOTE: returned List is pooled between each method call, avoid storing it long-term.
-        /// </remarks>
-        protected List<Sprite> ProcessSpriteDef(in SpriteDef def, Texture2D texture, Rectangle sourceRect, out SpriteAnimation? animation) {
-            animation = null;
-
-            _spriteBuffer.Clear();
-            switch (def.split.type) {
-                case SpriteSplitOptions.None:
-                    _spriteBuffer.Add(new Sprite(texture, sourceRect, GetOrigin(def.origin, sourceRect, def.manifest), def.key));
-                    break;
-
-                case SpriteSplitOptions.Manual:
-                    // since order for manual sprites cannot be defined,
-                    // we just ignore animations and warn the user about it
-                    if (def.animation != null) {
-                        InstantGame.Instance.Logger.Warning($"Sprite '{def.key}' with custom 'split' cannot have animation, adding as a spritesheet.");
-                    }
-
-                    // add all rects
-                    _spriteBuffer.Add(new Sprite(texture, sourceRect, GetOrigin(def.origin, sourceRect, def.manifest), def.key));
-                    for (var i = 0; i < def.split.manual.Length; i++) {
-                        var split = def.split.manual[i];
-                        var frameRect = new Rectangle(sourceRect.X + split.rect.X, sourceRect.Y + split.rect.Y, split.rect.Width, split.rect.Height);
-                        _spriteBuffer.Add(new Sprite(texture, frameRect, GetOrigin(split.origin, frameRect, def.manifest, def.origin), def.FormatFrameKey(split.key)));
-                    }
-
-                    break;
-
-                case SpriteSplitOptions.BySize:
-                case SpriteSplitOptions.ByCount:
-                    if (def.animation == null) {
-                        // if animation is null, we add the spritesheet as its own sprite
-                        _spriteBuffer.Add(new Sprite(texture, sourceRect, GetOrigin(def.origin, sourceRect, def.manifest), def.key));
-                    }
-
-                    // prepare frame data for parsing
-                    var width = def.split.type == SpriteSplitOptions.BySize ? def.split.widthOrFrameCount : sourceRect.Width;
-                    var height = def.split.type == SpriteSplitOptions.ByCount ? sourceRect.Height / def.split.widthOrFrameCount : def.split.height;
-                    var frameIndex = 0;
-                    for (var x = sourceRect.X; x < sourceRect.Right; x += width) {
-                        for (var y = sourceRect.Y; y < sourceRect.Bottom; y += height) {
-                            var frameRect = new Rectangle(x, y, width, height);
-                            _spriteBuffer.Add(new Sprite(texture, frameRect, GetOrigin(def.origin, sourceRect, def.manifest), def.FormatFrameKey(frameIndex++.ToString())));
-                        }
-                    }
-
-                    // save the animation in case it exists
-                    if (def.animation is SpriteAnimationDef splitAnimDef) {
-                        animation = new SpriteAnimation(splitAnimDef.fps, _spriteBuffer.ToArray(), splitAnimDef.events, def.key);
-                    }
-
-                    break;
-
-                default:
-                    
-                    break;
-            }
-
-            return _spriteBuffer;
+        bool IHotReloader.TryReload(string assetKey, string filename) {
+            throw new NotImplementedException();
         }
+
+        #endregion
     }
 }

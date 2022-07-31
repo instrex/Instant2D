@@ -1,8 +1,10 @@
-﻿namespace Instant2D.Assets.Sprites {
+﻿using Microsoft.Xna.Framework;
+
+namespace Instant2D.Assets.Sprites {
     /// <summary>
     /// An item definition stored in <see cref="SpriteManifest"/>, note that it might be an individual sprite or sprite collection.
     /// </summary>
-    public struct SpriteDef {
+    public record SpriteDef {
         /// <summary>
         /// This sprite's path relative to 'Assets/sprite/'
         /// </summary>
@@ -29,6 +31,11 @@
         public SpriteAnimationDef? animation;
 
         /// <summary>
+        /// Type of this definition, could be <see cref="SpriteDefType.Sprite"/> or <see cref="SpriteDefType.Texture"/>.
+        /// </summary>
+        public SpriteDefType type;
+
+        /// <summary>
         /// Sprite manifest reference this definition belongs to.
         /// </summary>
         public SpriteManifest manifest;
@@ -46,5 +53,19 @@
         /// <code> '{0}_{1}' -> 'sprite_0'</code>
         /// </summary>
         public string FormatFrameKey(string key) => string.Format(manifest?.FrameFormat ?? SpriteManifest.DEFAULT_FRAME_FORMAT, this.key, key);
+
+        /// <summary>
+        /// Gets an actual sprite origin.
+        /// </summary>
+        public static Vector2 TransformOrigin(SpriteOrigin origin, Rectangle sourceRect, SpriteManifest manifest = default, SpriteOrigin? parent = default) {
+            var size = new Vector2(sourceRect.Width, sourceRect.Height);
+            return origin.type switch {
+                SpriteOriginType.Absolute => origin.value,
+                SpriteOriginType.Normalized => size * origin.value,
+                SpriteOriginType.Default when parent is not null => TransformOrigin(parent.Value, sourceRect, manifest),
+                SpriteOriginType.Default when manifest is not null => size * manifest.DefaultOrigin,
+                _ => size * new Vector2(0.5f),
+            };
+        }
     }
 }

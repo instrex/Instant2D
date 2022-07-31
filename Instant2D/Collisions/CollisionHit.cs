@@ -6,14 +6,24 @@ namespace Instant2D.Collisions {
     /// </summary>
     public record struct CollisionHit<T> {
         /// <summary>
-        /// Represents the collider which has been hit by <see cref="Other"/>.
+        /// Represents the collider which has been hit by <see cref="BaseOther"/>.
         /// </summary>
-        public BaseCollider<T> Self;
+        public BaseCollider<T> BaseSelf;
 
         /// <summary>
-        /// Represents the collider which hit <see cref="Self"/>.
+        /// Represents the collider which hit <see cref="BaseSelf"/>.
         /// </summary>
-        public BaseCollider<T> Other;
+        public BaseCollider<T> BaseOther;
+
+        /// <summary>
+        /// Shortcut to <see cref="BaseSelf"/>'s entity.
+        /// </summary>
+        public T Self => BaseSelf.Entity;
+
+        /// <summary>
+        /// Shortcut to <see cref="BaseOther"/>'s entity.
+        /// </summary>
+        public T Other => BaseOther.Entity;
 
         /// <summary>
         /// Normal vector of the collision surface.

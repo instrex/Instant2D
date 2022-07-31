@@ -10,6 +10,10 @@ using System.Reflection;
 using System.Diagnostics;
 using Instant2D.Utils;
 using Instant2D.Coroutines;
+using Instant2D.Assets.Repositories;
+using System.Runtime.CompilerServices;
+using Instant2D.Assets.Containers;
+using System.Text.RegularExpressions;
 
 namespace Instant2D {
     public interface IHotReloader {
@@ -24,7 +28,7 @@ namespace Instant2D {
         bool TryReload(string assetKey, string filename);
     }
 
-    public class AssetManager : SubSystem {
+    public class AssetManager : SubSystem, IAssetRepository {
         public static AssetManager Instance { get; set; }
 
         /// <summary>
@@ -32,12 +36,29 @@ namespace Instant2D {
         /// </summary>
         public string Folder => _assetFolder;
 
+        /// <summary>
+        /// Asset repository which could be used to enumerate or load files. Provides a nice way to plug in your own asset reading middleware. <br/>
+        /// As an example: loading assets from packed '.bin' file in a unified way, without having to write new <see cref="IAssetLoader"/>s. 
+        /// </summary>
+        public IAssetRepository Repository;
+
         readonly List<(int order, IAssetLoader)> _loaders = new();
         readonly Dictionary<string, Asset> _assets = new();
         readonly Dictionary<string, TimerInstance> _hotReloadTimers = new();
         FileSystemWatcher _hotReloadWatcher;
         string _assetFolder = "Assets/";
         bool _assetsLoaded;
+
+        #region Repositories
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IEnumerable<string> EnumerateFiles(string directoryPath, string extensionFilter = null, bool recursive = false) =>
+            Repository.EnumerateFiles(directoryPath, extensionFilter, recursive);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Stream OpenStream(string path) => Repository.OpenStream(path);
+
+        #endregion
 
         #region Loaders
 
@@ -50,14 +71,6 @@ namespace Instant2D {
             _loaders.Add((order, loader));
 
             return loader;
-        }
-
-        public void AddLoader(int order, Func<IEnumerable<Asset>> loader) {
-            if (_assetsLoaded) {
-                throw new InvalidOperationException("Cannot add loaders after the assets has been loaded.");
-            }
-
-            _loaders.Add((order, new IAssetLoader.DefaultLoader { loader = loader }));
         }
 
         #endregion
@@ -151,7 +164,11 @@ namespace Instant2D {
             // if we do it immediately, there's a chance the file could be used by something
             // adding a little bit of delay helps making sure that wouldn't happen
             _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.Schedule(0.5f, timer => {
-                foreach (var loader in _loaders.Select(p => p.Item2).OfType<IHotReloader>()) {
+                var format = Path.GetExtension(assetKey);
+                foreach (var loader in _loaders.Select(p => p.Item2)
+                    .OfType<IHotReloader>()
+                    .Where(reloader => reloader.GetFileFormats().Contains(format))) {
+
                     if (loader.TryReload(assetKey, fullPath)) {
                         Logger.WriteLine($"Hot Reload: handled '{assetKey}'");
                         break;
@@ -165,6 +182,9 @@ namespace Instant2D {
         public override void Initialize() {
             Instance = this;
 
+            // create repository
+            Repository = new FileSystemRepository(_assetFolder);
+
             // load assets
             var progress = new LoadingProgress();
             _loaders.Sort((a, b) => a.order.CompareTo(b.order));
@@ -175,9 +195,8 @@ namespace Instant2D {
                     }
 
                 // run all loaders in order, saving assets
-                foreach (var asset in loader.Load(this, progress)) {
+                foreach (var asset in loader.Load(this)) {
                     _assets.Add(asset.Key, asset);
-                    InstantGame.Instance.Logger.Info($"+ {asset} '{asset.Key}'");
                 }
             }
 
@@ -193,13 +212,59 @@ namespace Instant2D {
         #region Asset Access
 
         /// <summary>
-        /// Get raw <see cref="Asset"/> instance.
+        /// Get raw <see cref="Asset"/> container instance.
         /// </summary>
-        public Asset GetAsset(string key) {
+        public Asset GetContainer(string key) {
             if (_assets.TryGetValue(key, out var asset))
                 return asset;
 
             return null;
+        }
+
+        /// <summary>
+        /// Remove asset from the asset system.
+        /// </summary>
+        public bool Remove(string key) => _assets.Remove(key);
+
+        /// <summary>
+        /// Perform an asset search using the <paramref name="pattern"/>. For convenience purposes, provided pattern will be automatically transformed into a regex. <br/>
+        /// You can set <paramref name="autoTransformPattern"/> to <see langword="true"/> in order to override that behaviour and provide your own regex pattern. <br/>
+        /// Example: <c>"folder/sprite_*"</c> will yield <c>"folder/sprite_0"</c>, <c>"folder/sprite_1"</c> etc.
+        /// </summary>
+        public IEnumerable<T> Search<T>(string pattern, bool autoTransformPattern = true) { 
+            static string Transform(string input) {
+                var builder = new StringBuilder();
+                for (var i = 0; i < input.Length; i++) {
+                    switch (input[i]) {
+                        default:
+                            builder.Append(input[i]);
+                            break;
+
+                        // conveniently replace asterisk with mathcing pattern
+                        case '*':
+                            builder.Append("(.*)");
+                            break;
+
+                        // escape special characters, in case they're used in asset paths somehow
+                        case '\\' or '+' or '?' or '|' or '^'
+                            or '[' or ']' or '(' or ')' or '{' 
+                            or '#' or '.' or '$':
+                            builder.Append('\\');
+                            builder.Append(input[i]);
+                            break;
+                    }
+                }
+                
+                return builder.ToString();
+            }
+
+            var regex = new Regex(autoTransformPattern ? Transform(pattern) : pattern, RegexOptions.Singleline);
+            foreach (var (key, asset) in _assets) {
+                // do a type check first to quickly brush off uninteresting assets
+                if (asset is IAssetContainer<T> container && regex.IsMatch(key)) {
+                    yield return container.Content;
+                }
+            }
         }
 
         /// <summary>

@@ -10,7 +10,7 @@ namespace Instant2D.Collisions {
     /// </summary>
     public abstract class BaseCollider<T> {
         /// <summary>
-        /// Custom data variable. Use it to store implementation-specific entity data, for example: 
+        /// Custom data variable. Use it to store implementation-specific entity data.
         /// </summary>
         public T Entity;
 

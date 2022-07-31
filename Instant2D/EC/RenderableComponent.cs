@@ -184,6 +184,13 @@ namespace Instant2D.EC {
             _layer = layer;
         }
 
+        public override void PostInitialize() {
+            if (_layer == null) {
+                // assign default renderlayer if its null
+                RenderLayer = Scene.DefaultRenderLayer;
+            }
+        }
+
         /// <summary>
         /// Helper method for calculating common renderable component bounds.
         /// </summary>

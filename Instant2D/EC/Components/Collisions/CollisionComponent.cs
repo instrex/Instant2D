@@ -123,6 +123,10 @@ namespace Instant2D.EC.Components {
             BaseCollider._spatialHash = Scene.Collisions;
         }
 
+        public override void OnRemovedFromEntity() {
+            Scene.Collisions.RemoveCollider(BaseCollider);
+        }
+
         public override void PostInitialize() {
             if (!_wasSizeSet) {
                 // attempt to automatically determine size
@@ -132,10 +136,8 @@ namespace Instant2D.EC.Components {
         }
 
         public override void OnEnabled() {
-            UpdateCollider();
-
             // register collider when this component is enabled
-            Scene.Collisions.AddCollider(BaseCollider);
+            UpdateCollider();
         }
 
         public override void OnDisabled() { 
@@ -183,7 +185,7 @@ namespace Instant2D.EC.Components {
 
                     // assign the first hit
                     // TODO: introduce a way to return multiple hits?
-                    if (hit.Self == null) {
+                    if (hit.BaseSelf == null) {
                         hit = actualHit;
                     }
                 }
@@ -192,7 +194,7 @@ namespace Instant2D.EC.Components {
             // now apply the motion to actual entity
             Entity.Transform.Position += velocity;
 
-            return hit.Self != null;
+            return hit.BaseSelf != null;
         }
 
         /// <summary>

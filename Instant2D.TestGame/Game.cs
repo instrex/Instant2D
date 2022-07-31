@@ -25,7 +25,7 @@ namespace Instant2D.TestGame {
         protected override void SetupSystems() {
             AddSystem<AssetManager>(assets => {
                 assets.SetupHotReload("./Instant2D.TestGame/Assets/");
-                assets.AddLoader<DevSpriteLoader>();
+                assets.AddLoader<SpriteLoader>();
             });
 
             AddSystem<InputManager>();

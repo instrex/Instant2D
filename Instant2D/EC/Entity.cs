@@ -239,6 +239,7 @@ namespace Instant2D.EC {
             component.Entity = this;
             component.Initialize();
 
+            // add component to the list
             _components.Add(component);
 
             // register updatable components
@@ -251,17 +252,15 @@ namespace Instant2D.EC {
                 _updatedComponents.Add(updatable);
             }
 
-            // set default render layer for Renderables
-            if (component is RenderableComponent renderable) {
-                renderable.RenderLayer ??= Scene.DefaultRenderLayer;
-            }
-
-            // finally call Component.OnEnabled
             if (_isActive) {
+                // finally call Component.OnEnabled
+                // to simulate it being enabled
                 component.OnEnabled();
             }
 
             if (_isInitialized) {
+                // call post initialize immediately
+                // when active and already initialized
                 component.PostInitialize();
             }
 

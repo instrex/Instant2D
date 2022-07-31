@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Assets.Loaders {
-    public abstract class FontLoader : IAssetLoader {
+    public abstract class LegacyFontLoader : IAssetLoader {
         public struct FontDescription {
             public int lineSpacing;
             public char defaultChar;
@@ -51,6 +51,6 @@ namespace Instant2D.Assets.Loaders {
             }
         }
 
-        public abstract IEnumerable<Asset> Load(AssetManager assets, LoadingProgress progress);
+        public abstract IEnumerable<Asset> Load(AssetManager assets);
     }
 }
