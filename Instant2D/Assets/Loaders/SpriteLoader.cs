@@ -158,7 +158,8 @@ namespace Instant2D.Assets.Loaders {
 
                         // and what does split by count get?
                         default:
-                            var newRect = new Rectangle(0, texture.Height / asset.Children.Count * i, texture.Width, texture.Height);
+                            var height = texture.Height / asset.Children.Count;
+                            var newRect = new Rectangle(0, height * i, texture.Width, height);
                             var splitByCountSprite = new Sprite(texture, newRect, SpriteDef.TransformOrigin(def.origin, newRect, def.manifest));
                             child.Content = splitByCountSprite;
                             frameBuffer?.Add(splitByCountSprite);
