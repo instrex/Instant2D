@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 
 namespace Instant2D.Assets.Sprites {
-    public struct AnimationEvent {
+    public record struct AnimationEvent {
         /// <summary>
         /// The frame on which the event(s) occurs.
         /// </summary>
@@ -67,7 +67,7 @@ namespace Instant2D.Assets.Sprites {
         }
     }
 
-    public struct SpriteAnimationDef {
+    public record struct SpriteAnimationDef {
         /// <summary>
         /// Animation speed in frames per second.
         /// </summary>

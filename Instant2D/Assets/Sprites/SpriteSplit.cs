@@ -27,7 +27,7 @@ namespace Instant2D.Assets.Sprites {
         Manual
     }
 
-    public struct ManualSplitItem {
+    public record struct ManualSplitItem {
         [JsonConverter(typeof(RectangleConverter))]
         public Rectangle rect;
 
@@ -52,7 +52,7 @@ namespace Instant2D.Assets.Sprites {
         }
     }
 
-    public struct SpriteSplit {
+    public record struct SpriteSplit {
         public SpriteSplitOptions type;
         public int widthOrFrameCount, height;
         public ManualSplitItem[] manual;

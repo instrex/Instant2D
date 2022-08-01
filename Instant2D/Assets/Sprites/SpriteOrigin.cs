@@ -20,7 +20,7 @@ namespace Instant2D.Assets.Sprites {
         Absolute
     }
 
-    public struct SpriteOrigin {
+    public record struct SpriteOrigin {
         public SpriteOriginType type;
         public Vector2 value;
 

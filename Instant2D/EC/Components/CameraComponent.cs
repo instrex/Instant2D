@@ -1,4 +1,5 @@
-﻿using Instant2D.Graphics;
+﻿using Instant2D.EC.Events;
+using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
 using Instant2D.Utils.Math;
@@ -160,10 +161,18 @@ namespace Instant2D.EC {
             _matricesDirty = true;
         }
 
-        // happens when the window is resized,
-        // we should recalculate bounds/projection
-        // and set the origin accordingly
-        internal void OnClientSizeChanged() {
+        public override void Initialize() {
+            Scene.Events.Subscribe<SceneResolutionChanged>(OnClientSizeChanged);
+        }
+
+        public override void OnRemovedFromEntity() {
+            Scene.Events.Unsubscribe<SceneResolutionChanged>(OnClientSizeChanged);
+        }
+
+        /// <summary>
+        /// Is called when the window is resized, adjust bounds/projections and origin there accordingly.
+        /// </summary>
+        public virtual void OnClientSizeChanged(SceneResolutionChanged ev) {
             _projectionDirty = true;
             _matricesDirty = true;
             _boundsDirty = true;
@@ -171,7 +180,7 @@ namespace Instant2D.EC {
             var old = _origin;
 
             // calculate new origin and offset the Entity to compensate resize effect
-            _origin = new(Scene.Resolution.renderTargetSize.X / 2, Scene.Resolution.renderTargetSize.Y / 2);
+            _origin = new(ev.Resolution.renderTargetSize.X / 2, ev.Resolution.renderTargetSize.Y / 2);
             Entity.Transform.LocalPosition += _origin - old;
         }
     }

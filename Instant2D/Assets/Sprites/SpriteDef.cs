@@ -1,10 +1,11 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 
 namespace Instant2D.Assets.Sprites {
     /// <summary>
     /// An item definition stored in <see cref="SpriteManifest"/>, note that it might be an individual sprite or sprite collection.
     /// </summary>
-    public record SpriteDef {
+    public sealed record SpriteDef {
         /// <summary>
         /// This sprite's path relative to 'Assets/sprite/'
         /// </summary>
@@ -47,6 +48,18 @@ namespace Instant2D.Assets.Sprites {
             && split.type == SpriteSplitOptions.None
             && origin.type == SpriteOriginType.Default
             && animation == null;
+
+        public bool Equals(SpriteDef other) {
+            return other.key == key && other.fileName == fileName &&
+                other.type == type &&
+                other.split == split &&
+                other.origin == origin &&
+                other.animation == animation;
+        }
+
+        public override int GetHashCode() {
+            return HashCode.Combine(key, fileName, type, split, origin, animation);
+        }
 
         /// <summary>
         /// Helper method for easily formatting frame keys. If <see cref="manifest"/> is null, <see cref="SpriteManifest.DEFAULT_FRAME_FORMAT"/> will be used.

@@ -14,6 +14,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Instant2D.Collisions;
 using Instant2D.EC.Components;
+using Instant2D.EC.Events;
 
 namespace Instant2D.EC {
     public abstract class Scene : ICoroutineTarget {
@@ -69,6 +70,11 @@ namespace Instant2D.EC {
         /// Optional collision manager for this scene, must be initialized before using <see cref="CollisionComponent"/>.
         /// </summary>
         public SpatialHash<CollisionComponent> Collisions;
+
+        /// <summary>
+        /// Special events that may trigger throughout scene's lifetime. You can even define your own.
+        /// </summary>
+        public readonly EventBus Events = new();
 
         /// <summary>
         /// Scaled resolution used for this scene. If <see cref="SceneManager.ResolutionScaler"/> is null, returns the whole screen.
@@ -281,28 +287,36 @@ namespace Instant2D.EC {
         internal void ResizeRenderTargets(ScaledResolution resolution) {
             var gd = InstantGame.Instance.GraphicsDevice;
 
-            Resolution = resolution;
+            var previous = Resolution;
 
-            // get Scene size
-            var (width, height) = (resolution.renderTargetSize.X, resolution.renderTargetSize.Y);
-            _sceneSize = new(width, height);
+            // resize RenderTargets when needed
+            if (_sceneSize == default || previous.renderTargetSize != resolution.renderTargetSize) {
+                // get Scene size
+                var (width, height) = (resolution.renderTargetSize.X, resolution.renderTargetSize.Y);
+                _sceneSize = new(width, height);
 
-            // dispose of the existing RTs
-            _sceneTarget?.Dispose();
-            _tempTarget?.Dispose();
+                // dispose of the existing RTs
+                _sceneTarget?.Dispose();
+                _tempTarget?.Dispose();
 
-            // allocate new scene targets
-            _sceneTarget = new RenderTarget2D(gd, width, height);
-            _tempTarget = new RenderTarget2D(gd, width, height);
+                // allocate new scene targets
+                _sceneTarget = new RenderTarget2D(gd, width, height);
+                _tempTarget = new RenderTarget2D(gd, width, height);
 
-            // reallocate new RTs for layers
-            for (var i = 0; i < _layers.Count; i++) {
-                _layers[i]._renderTarget?.Dispose();
-                _layers[i]._renderTarget = new RenderTarget2D(gd, width, height);
+                // reallocate new RTs for layers
+                for (var i = 0; i < _layers.Count; i++) {
+                    _layers[i]._renderTarget?.Dispose();
+                    _layers[i]._renderTarget = new RenderTarget2D(gd, width, height);
+                }
             }
 
-            // notify the main Camera of change
-            Camera?.OnClientSizeChanged();
+            Resolution = resolution;
+
+            // notify about the change
+            Events.Raise(new SceneResolutionChanged {
+                PreviousResolution = previous,
+                Resolution = resolution
+            });
         }
 
         #region Scene Lifecycle
