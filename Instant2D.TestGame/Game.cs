@@ -19,6 +19,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using static System.Formats.Asn1.AsnWriter;
+using Instant2D.TestGame.Scenes;
 
 namespace Instant2D.TestGame {
     public class Game : InstantGame {
@@ -26,6 +27,7 @@ namespace Instant2D.TestGame {
             AddSystem<AssetManager>(assets => {
                 assets.SetupHotReload("./Instant2D.TestGame/Assets/");
                 assets.AddLoader<SpriteLoader>();
+                assets.AddLoader<LoaderTest.CustomLoader>();
             });
 
             AddSystem<InputManager>();

@@ -26,9 +26,9 @@ namespace Instant2D.Utils {
         /// <summary>
         /// Raise all events which accept <paramref name="eventData"/> as parameter.
         /// </summary>
-        public void Raise<T>(T eventData) {
+        public bool Raise<T>(T eventData) {
             if (!_events.TryGetValue(typeof(T), out var ev)) {
-                throw new InvalidOperationException($"Attempted to raise unknown event type: {typeof(T).Name}");
+                return false;
             }
 
             switch (ev) {
@@ -39,16 +39,17 @@ namespace Instant2D.Utils {
                         sub?.Invoke(eventData);
                     }
 
-                    break;
+                    return true;
 
                 case HandledEvent<T> { Subscribers: var handlers }:
                     foreach (var handler in handlers) {
                         // stop after first successful handler
                         if (handler?.Invoke(eventData) == true)
-                            break;
+                            return true;
                     }
 
-                    break;
+                    // the event wasn't handled...
+                    return false;
             }
         }
 

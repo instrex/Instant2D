@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Assets\levels\beach.txt" />
     <None Remove="Assets\sprites\manifest.json" />
   </ItemGroup>
 </Project>

@@ -162,17 +162,17 @@ namespace Instant2D.EC {
         }
 
         public override void Initialize() {
-            Scene.Events.Subscribe<SceneResolutionChanged>(OnClientSizeChanged);
+            Scene.Events.Subscribe<SceneResolutionChangedEvent>(OnClientSizeChanged);
         }
 
         public override void OnRemovedFromEntity() {
-            Scene.Events.Unsubscribe<SceneResolutionChanged>(OnClientSizeChanged);
+            Scene.Events.Unsubscribe<SceneResolutionChangedEvent>(OnClientSizeChanged);
         }
 
         /// <summary>
         /// Is called when the window is resized, adjust bounds/projections and origin there accordingly.
         /// </summary>
-        public virtual void OnClientSizeChanged(SceneResolutionChanged ev) {
+        public virtual void OnClientSizeChanged(SceneResolutionChangedEvent ev) {
             _projectionDirty = true;
             _matricesDirty = true;
             _boundsDirty = true;

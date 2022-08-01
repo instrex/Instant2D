@@ -14,20 +14,9 @@ using Instant2D.Assets.Repositories;
 using System.Runtime.CompilerServices;
 using Instant2D.Assets.Containers;
 using System.Text.RegularExpressions;
+using Instant2D.EC;
 
 namespace Instant2D {
-    public interface IHotReloader {
-        /// <summary>
-        /// Gets the file formats that this loader will look for.
-        /// </summary>
-        IEnumerable<string> GetFileFormats();
-
-        /// <summary>
-        /// Happens whenever something changes in the asset folder. Will run on each loader implementing <see cref="IHotReloader"/> until one of them returns <see langword="true"/>.
-        /// </summary>
-        bool TryReload(string assetKey, string filename);
-    }
-
     public class AssetManager : SubSystem, IAssetRepository {
         public static AssetManager Instance { get; set; }
 
@@ -155,7 +144,6 @@ namespace Instant2D {
 
         void OnFileEdited(object sender, FileSystemEventArgs e) {
             var assetKey = e.Name.Replace('\\', '/');
-            var fullPath = e.FullPath.Replace('\\', '/');
 
             // stop existing timer
             if (_hotReloadTimers.TryGetValue(assetKey, out var timer))
@@ -166,11 +154,16 @@ namespace Instant2D {
             _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.Schedule(0.5f, timer => {
                 var format = Path.GetExtension(assetKey);
                 foreach (var loader in _loaders.Select(p => p.Item2)
-                    .OfType<IHotReloader>()
-                    .Where(reloader => reloader.GetFileFormats().Contains(format))) {
+                    .OfType<IHotReloader>()) {
 
-                    if (loader.TryReload(assetKey, fullPath)) {
-                        Logger.WriteLine($"Hot Reload: handled '{assetKey}'");
+                    if (loader.TryReload(assetKey, out var updatedAssets)) {
+                        Logger.WriteLine($"Hot Reload: updated {updatedAssets.Count()} assets.");
+
+                        // call events for EC to handle the asset change
+                        if (SceneManager.Instance?.Current is Scene scene) {
+                            scene.OnAssetsUpdated(updatedAssets);
+                        }
+
                         break;
                     }
                 }
@@ -190,8 +183,8 @@ namespace Instant2D {
             _loaders.Sort((a, b) => a.order.CompareTo(b.order));
             foreach (var (_, loader) in _loaders) {
                 if (loader is IHotReloader hotReloadable)
-                    foreach (var format in hotReloadable.GetFileFormats()) {
-                        _hotReloadWatcher?.Filters.Add(format);
+                    foreach (var pattern in hotReloadable.WatcherPatterns) {
+                        _hotReloadWatcher?.Filters.Add(pattern);
                     }
 
                 // run all loaders in order, saving assets
@@ -224,7 +217,29 @@ namespace Instant2D {
         /// <summary>
         /// Remove asset from the asset system.
         /// </summary>
-        public bool Remove(string key) => _assets.Remove(key);
+        public void Remove(string key) {
+            if (_assets.Remove(key, out var removedAsset) && removedAsset.Children != null) {
+                foreach (var child in removedAsset.Children) {
+                    Remove(child.Key);
+                }
+            }
+        }
+        
+
+        /// <summary>
+        /// Register an asset container manually.
+        /// </summary>
+        public void Register(string key, Asset asset, bool registerChildren = true) {
+            if (!_assets.TryAdd(key, asset)) {
+                Logger.WriteLine($"Asset with key '{key}' was already added, skipping.", Logger.Severity.Warning);
+            }
+
+            if (registerChildren && asset.Children != null) {
+                foreach (var child in asset.Children) {
+                    Register(child.Key, child);
+                }
+            }
+        }
 
         /// <summary>
         /// Perform an asset search using the <paramref name="pattern"/>. For convenience purposes, provided pattern will be automatically transformed into a regex. <br/>

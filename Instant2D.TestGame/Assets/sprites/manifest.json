@@ -16,7 +16,7 @@
         "split": 60,
         "origin": [32, 46],
         "animation": {
-            "fps": 30
+            "fps": 60
         }
     },
 

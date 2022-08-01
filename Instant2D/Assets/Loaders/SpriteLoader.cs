@@ -1,4 +1,5 @@
-﻿using Instant2D.Assets.Sprites;
+﻿using Instant2D.Assets.Containers;
+using Instant2D.Assets.Sprites;
 using Instant2D.Core;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
@@ -7,6 +8,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Instant2D.Assets.Loaders {
     public class SpriteLoader : IAssetLoader, ILazyAssetLoader, IHotReloader {
@@ -25,6 +27,7 @@ namespace Instant2D.Assets.Loaders {
 
                     // deserialize and save the manifest
                     var manifest = JsonConvert.DeserializeObject<SpriteManifest>(reader.ReadToEnd(), new SpriteManifest.Converter());
+                    manifest.Name = path;
                     _manifests.Add(manifest);
 
                     // save sprite definitions
@@ -56,12 +59,14 @@ namespace Instant2D.Assets.Loaders {
             }
 
             // produce assets
-            foreach (var (key, def) in _definitions) {
+            foreach (var asset in ProcessAssets(_definitions))
+                yield return asset;
+        }
+
+        IEnumerable<Asset> ProcessAssets(Dictionary<string, SpriteDef> definitions) {
+            foreach (var (key, def) in definitions) {
                 Asset baseAsset = def.animation != null ? new LazyAsset<SpriteAnimation>(key, this) : new LazyAsset<Sprite>(key, this);
                 baseAsset.Data = def;
-
-                // yield base asset now
-                yield return baseAsset;
 
                 // switch blocks are dumb ;-;
                 var i = 0;
@@ -117,6 +122,9 @@ namespace Instant2D.Assets.Loaders {
 
                         break;
                 }
+
+                // yield base asset now
+                yield return baseAsset;
             }
         }
 
@@ -169,7 +177,7 @@ namespace Instant2D.Assets.Loaders {
             }
 
             // add the texture for later disposal
-            _textures.Add(texture);
+            // _textures.Add(texture);
 
             // save asset data
             switch (asset) {
@@ -217,13 +225,109 @@ namespace Instant2D.Assets.Loaders {
 
         #region Hot Reloading
 
-        IEnumerable<string> IHotReloader.GetFileFormats() {
-            yield return ".json";
-            yield return ".png";
-        }
+        IEnumerable<string> IHotReloader.WatcherPatterns { get; } = new[] { "*.png", "*.json" };
 
-        bool IHotReloader.TryReload(string assetKey, string filename) {
-            throw new NotImplementedException();
+        bool IHotReloader.TryReload(string assetKey, out IEnumerable<Asset> updatedAssets) {
+            if (!assetKey.StartsWith(DIRECTORY + "/")) {
+                updatedAssets = null;
+                return false;
+            }
+
+            var extension = Path.GetExtension(assetKey);
+            var key = assetKey.Replace(extension, "");
+
+            // ooh boy 
+            if (extension == ".json") {
+                var oldManifest = _manifests.FirstOrDefault(m => m.Name == assetKey);
+
+                var removedDefs = ListPool<SpriteDef>.Get();
+
+                var changedDefs = new Dictionary<string, SpriteDef>();
+
+                // wipe the old manifest from existence
+                _manifests.Remove(oldManifest);
+                foreach (var item in oldManifest.Items) {
+                    var defKey = $"{DIRECTORY}/{item.key}";
+
+                    // clear sprite defs, keeping track of updated ones
+                    if (_definitions.Remove(defKey, out var removedDef)) {
+                        removedDefs.Add(removedDef);
+
+                        // try to remove assets too
+                        AssetManager.Instance.Remove(defKey);
+                    }
+                }
+
+                // read stream once again
+                using var stream = AssetManager.Instance.OpenStream(assetKey);
+                using var reader = new StreamReader(stream);
+
+                // deserialize and save the manifest
+                var manifest = JsonConvert.DeserializeObject<SpriteManifest>(reader.ReadToEnd(), new SpriteManifest.Converter());
+                manifest.Name = assetKey;
+                _manifests.Add(manifest);
+
+                // save sprite definitions
+                foreach (var item in manifest.Items) {
+                    var defKey = $"sprites/{item.key}";
+                    var newDef = item with {
+                        manifest = manifest,
+                        key = defKey,
+                    };
+
+                    _definitions.Add(defKey, newDef);
+
+                    // if it's an existing def, add it into updated pool
+                    if (removedDefs.Find(d => d.key == defKey) is SpriteDef changedDef) {
+                        changedDefs.Add(defKey, newDef);
+                        removedDefs.Remove(changedDef);
+                    }
+                }
+
+                // clear removed defs
+                removedDefs.ForEach(r => AssetManager.Instance.Remove(r.key));
+                ListPool<SpriteDef>.Return(removedDefs);
+
+                // re-add new sprite assets
+                var newAssets = ProcessAssets(changedDefs).ToList();
+                foreach (var asset in newAssets) {
+                    AssetManager.Instance.Register(asset.Key, asset, false);
+                }
+
+                // output
+                updatedAssets = newAssets;
+                return true;
+            }
+
+            if (extension == ".png") {
+                // if it's just an image, that'll be easy
+                var container = AssetManager.Instance.GetContainer(assetKey.Replace(".png", "")) as LazyAsset;
+
+                // dispose of previous texture to free some space
+                if (container.IsLoaded) {
+                    switch (container) {
+                        case IAssetContainer<Sprite> sprite:
+                            sprite.Content.Texture.Dispose();
+                            break;
+
+                        case IAssetContainer<SpriteAnimation> spriteAnimation:
+                            spriteAnimation.Content.Frames.FirstOrDefault().Texture?.Dispose();
+                            break;
+                    }
+                }
+
+                container.Unload();
+
+                // add children
+                updatedAssets = container.Children == null ?
+                    new[] { container } :
+                    container.Children.Prepend(container);
+
+                return true;
+            }
+
+            updatedAssets = null;
+            return false;
         }
 
         #endregion

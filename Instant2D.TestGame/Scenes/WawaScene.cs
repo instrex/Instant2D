@@ -181,7 +181,7 @@ namespace Instant2D.TestGame.Scenes {
                 .Entity.AddComponent<HitboxComponent>();
 
             // create burning hell
-            for (var i = 0; i < 0; i++) {
+            for (var i = 0; i < 12; i++) {
                 var entity = scene.CreateEntity($"fire_{i}", new Vector2(Random.Shared.Next(640), Random.Shared.Next(320)));
                 entity.Transform.Scale = new Vector2(0.5f + Random.Shared.NextSingle() * 5);
                 entity.AddComponent<SpriteAnimationComponent>()

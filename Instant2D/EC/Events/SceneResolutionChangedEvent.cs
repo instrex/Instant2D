@@ -6,7 +6,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.EC.Events {
-    public record SceneResolutionChanged {
+    /// <summary>
+    /// An event that triggers when user resizes the game window.
+    /// </summary>
+    public record SceneResolutionChangedEvent {
         /// <summary>
         /// Previously applied resolution.
         /// </summary>

@@ -15,6 +15,8 @@ using System.Runtime.CompilerServices;
 using Instant2D.Collisions;
 using Instant2D.EC.Components;
 using Instant2D.EC.Events;
+using Instant2D.Assets;
+using Instant2D.Assets.Containers;
 
 namespace Instant2D.EC {
     public abstract class Scene : ICoroutineTarget {
@@ -271,6 +273,27 @@ namespace Instant2D.EC {
             drawing.Pop(true);
         }
 
+        internal void OnAssetsUpdated(IEnumerable<Asset> assets) {
+            // loop over unhandled asset changes, thus giving freedom to modify the way assets are reloaded when needed
+            foreach (var asset in assets.Where(asset => !Events.Raise(new AssetReloadedEvent { UpdatedAsset = asset }))) {
+                switch (asset) {
+                    // replace changed sprites inside SpriteRenderers
+                    case IAssetContainer<Sprite> spriteAsset:
+                        foreach (var spriteRenderer in FindComponentsOfType<SpriteComponent>().Where(s => s.Sprite.Key == spriteAsset.Content.Key))
+                            spriteRenderer.SetSprite(spriteAsset.Content);
+
+                        break;
+
+                    // replace changed sprite animations inside SpriteAnimators
+                    case IAssetContainer<SpriteAnimation> animationAsset:
+                        foreach (var spriteRenderer in FindComponentsOfType<SpriteAnimationComponent>().Where(s => s.Animation.Key == animationAsset.Content.Key))
+                            spriteRenderer.SetAnimation(animationAsset.Content);
+
+                        break;
+                }
+            }
+        }
+
         internal void Cleanup() {
             // destroy all entities before switching scenes
             for (var i = 0; i < _entities.Count; i++) {
@@ -283,6 +306,7 @@ namespace Instant2D.EC {
             // farewell
             _isCleanedUp = true;
         }
+
 
         internal void ResizeRenderTargets(ScaledResolution resolution) {
             var gd = InstantGame.Instance.GraphicsDevice;
@@ -313,7 +337,7 @@ namespace Instant2D.EC {
             Resolution = resolution;
 
             // notify about the change
-            Events.Raise(new SceneResolutionChanged {
+            Events.Raise(new SceneResolutionChangedEvent {
                 PreviousResolution = previous,
                 Resolution = resolution
             });
