@@ -37,8 +37,8 @@ namespace Instant2D.EC.Components {
             }
         }
 
-        public override void AutoSize(RectangleF bounds) {
-            SetRadius(MathF.Min(bounds.Width, bounds.Height) * 0.5f);
+        public override void AutoResize(RectangleF bounds) {
+            SetRadius(MathF.Min(bounds.Width / Entity.Transform.Scale.X, bounds.Height / Entity.Transform.Scale.X) * 0.5f);
         }
 
         public override void UpdateCollider() {

@@ -153,7 +153,7 @@ namespace Instant2D.EC.Components {
         /// <summary>
         /// Automatically assign size values using <see cref="RenderableComponent.Bounds"/> as reference.
         /// </summary>
-        public virtual void AutoSize(RectangleF bounds) { }
+        public virtual void AutoResize(RectangleF bounds) { }
 
         /// <summary>
         /// Attempts to move the object by <paramref name="velocity"/> amount. If it collides into something, <paramref name="hit"/> will be populated with collision data,

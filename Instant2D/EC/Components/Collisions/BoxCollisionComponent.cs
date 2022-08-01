@@ -51,8 +51,8 @@ namespace Instant2D.EC.Components {
 
         public override void UpdateCollider() => UpdateBoxCollider();
 
-        public override void AutoSize(RectangleF bounds) {
-            SetSize(bounds.Size);
+        public override void AutoResize(RectangleF bounds) {
+            SetSize(bounds.Size / Entity.Transform.Scale);
         }
 
         public override void OnTransformUpdated(TransformComponentType components) {

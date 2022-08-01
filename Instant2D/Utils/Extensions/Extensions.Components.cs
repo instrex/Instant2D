@@ -169,7 +169,7 @@ namespace Instant2D.EC {
         public static T AutoResize<T>(this T collisionComponent) where T : CollisionComponent {
             // use renderables when possible
             if (collisionComponent.Entity.TryGetComponent<RenderableComponent>(out var renderableComponent))
-                collisionComponent.AutoSize(renderableComponent.Bounds);
+                collisionComponent.AutoResize(renderableComponent.Bounds);
 
             return collisionComponent;
         }
