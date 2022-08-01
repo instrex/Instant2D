@@ -281,6 +281,8 @@ namespace Instant2D {
             _localPosition = default;
             _position = default;
             _scale = Vector2.One;
+            _localScale = Vector2.One;
+            _localRotation = 0;
             _rotation = 0;
             _children?.Clear();
             _parent = null;
