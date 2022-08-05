@@ -1,4 +1,5 @@
 ﻿using Instant2D.Core;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,14 +11,13 @@ namespace Instant2D.Audio {
     public class AudioManager : SubSystem, IDisposable {
         public readonly IntPtr AudioHandle;
 
-        public readonly IntPtr MasteringHandle;
-
         public readonly FAudioDeviceDetails DeviceDetails;
 
         public readonly IntPtr MasteringVoice;
 
-        public float DopplerScale;
+        public float DopplerScale = 1.0f;
 
+        internal List<WeakReference<StreamingAudioInstance>> _streamingInstances = new();
         bool _isDisposed;
 
         public unsafe AudioManager() {
@@ -51,6 +51,18 @@ namespace Instant2D.Audio {
             if (FAudio_CreateMasteringVoice(AudioHandle, out MasteringVoice, FAUDIO_DEFAULT_CHANNELS, FAUDIO_DEFAULT_SAMPLERATE, 0, deviceIndex, IntPtr.Zero) != 0) {
                 FAudio_Release(AudioHandle);
                 throw new InvalidOperationException("Couldn't create mastering voice.");
+            }
+        }
+
+        public override void Initialize() {
+            IsUpdatable = true;
+        }
+
+        public override void Update(GameTime time) {
+            for (var i = _streamingInstances.Count - 1; i >= 0; i--) {
+                if (_streamingInstances[i].TryGetTarget(out var instance))
+                    instance.Update();
+                else _streamingInstances.RemoveAt(i);
             }
         }
 

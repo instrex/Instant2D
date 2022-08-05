@@ -12,7 +12,7 @@ namespace Instant2D.Audio {
     /// <summary>
     /// An audio instance.
     /// </summary>
-    public abstract class AudioInstance {
+    public abstract class AudioInstance : IDisposable {
         internal IntPtr _instanceHandle;
         internal FAudioWaveFormatEx _format;
         internal AudioManager _manager;
@@ -20,16 +20,19 @@ namespace Instant2D.Audio {
 		// playback values
 		protected F3DAUDIO_DSP_SETTINGS _dspSettings;
 		protected PlaybackState _playbackState = PlaybackState.Stopped;
-        float _volume = 1, _pan, _pitch = 1;
+        float _volume = 1, _pan, _pitch = 0;
+        bool _isDisposed;
 
-		/// <summary>
-		/// The volume of this sound.
-		/// </summary>
-		public float Volume {
+        /// <summary>
+        /// The volume of this sound.
+        /// </summary>
+        public float Volume {
 			get => _volume;
 			set {
 				_volume = value;
-				FAudioVoice_SetVolume(_instanceHandle, _volume, 0);
+				if (_instanceHandle != IntPtr.Zero) {
+					FAudioVoice_SetVolume(_instanceHandle, _volume, 0);
+				}
             }
         }
 
@@ -42,6 +45,14 @@ namespace Instant2D.Audio {
                 _pan = Math.Clamp(value, -1.0f, 1.0f);
 				if (_instanceHandle != IntPtr.Zero) {
 					SetPanMatrixCoefficients();
+					FAudioVoice_SetOutputMatrix(
+						_instanceHandle,
+						_manager.MasteringVoice,
+						_dspSettings.SrcChannelCount,
+						_dspSettings.DstChannelCount,
+						_dspSettings.pMatrixCoefficients,
+						0
+					);
 				}
 			}
         }
@@ -59,16 +70,19 @@ namespace Instant2D.Audio {
 			}
         }
 
-        /// <summary>
-        /// State of this audio instance.
-        /// </summary>
-        public abstract PlaybackState PlaybackState { get; }
+		/// <summary>
+		/// State of this audio instance.
+		/// </summary>
+		public virtual PlaybackState PlaybackState => _playbackState;
 
 		/// <summary>
 		/// Gets the playback position in seconds.
 		/// </summary>
-		public float Position {
+		public virtual float Position {
 			get {
+				if (_instanceHandle == IntPtr.Zero)
+					return 0f;
+
 				FAudioSourceVoice_GetState(
 					_instanceHandle,
 					out var state,
@@ -79,7 +93,7 @@ namespace Instant2D.Audio {
 			}
 
 			set => Seek(value);
-        }
+		}
 
         /// <summary>
         /// Should this audio instance loop.
@@ -97,14 +111,35 @@ namespace Instant2D.Audio {
 		public abstract void Pause();
 
 		/// <summary>
-		/// Stop the playback.
+		/// Stop the playback. <paramref name="immediate"/> indicates whether or not the instance should wait before the loop is done.
 		/// </summary>
-		public abstract void Stop(bool immediate = false);
+		public abstract void Stop(bool immediate = true);
 
 		/// <summary>
 		/// Adjust playback position to amount in <paramref name="seconds"/>.
 		/// </summary>
 		public abstract void Seek(float seconds);
+
+		protected void CreateSourceVoice() {
+			FAudio_CreateSourceVoice(
+				_manager.AudioHandle,
+				out _instanceHandle,
+				ref _format,
+				FAUDIO_VOICE_USEFILTER,
+				FAUDIO_DEFAULT_FREQ_RATIO,
+				IntPtr.Zero,
+				IntPtr.Zero,
+				IntPtr.Zero
+			);
+
+			// guh..
+			if (_instanceHandle == IntPtr.Zero) {
+				throw new InvalidOperationException("AudioInstance failed to initialize.");
+			}
+
+			InitDSPSettings(_format.nChannels);
+			_playbackState = PlaybackState.Stopped;
+        }
 
         #region FNA methods
 
@@ -184,6 +219,40 @@ namespace Instant2D.Audio {
 				}
 			}
 		}
+
+		#endregion
+
+		#region Disposal
+
+		protected virtual void OnDisposed() { }
+
+        protected virtual void Dispose(bool disposing) {
+            if (!_isDisposed) {
+				// stop the playback so no bad stuff happens (not a threat)
+				Stop(true);
+
+				//free the resources
+				FAudioVoice_DestroyVoice(_instanceHandle);
+				Marshal.FreeHGlobal(_dspSettings.pMatrixCoefficients);
+
+				// invoke callbacks
+				OnDisposed();
+
+                _isDisposed = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        ~AudioInstance() {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose() {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
 
         #endregion
     }

@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <None Remove="Assets\levels\beach.txt" />
+    <None Remove="Assets\music\stage_1.ogg" />
     <None Remove="Assets\sprites\manifest.json" />
   </ItemGroup>
 </Project>
