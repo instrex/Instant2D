@@ -28,8 +28,6 @@ namespace Instant2D.TestGame.Scenes {
                 using var stream = AssetManager.Instance.OpenStream("music/stage_1.ogg");
                 _audioInstance = new StreamingAudioInstance(stream, InstantGame.Instance.GetSystem<AudioManager>());
                 _audioInstance.Play(true);
-
-                _audioInstance.Position = 0;
             }
 
             if (_audioInstance != null) {
@@ -45,6 +43,12 @@ namespace Instant2D.TestGame.Scenes {
                 if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.D1)) {
                     _audioInstance.Pitch = Random.Shared.NextFloat(-1f, 1f);
                     _audioInstance.Pan = Random.Shared.NextFloat(-1f, 1f);
+                }
+
+                if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.S)) {
+                    if (_audioInstance.PlaybackState == PlaybackState.Playing) {
+                        _audioInstance.Stop();
+                    } else _audioInstance.Play(_audioInstance.IsLooping);
                 }
 
                 if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R)) {
@@ -65,7 +69,22 @@ namespace Instant2D.TestGame.Scenes {
             base.Render(drawing);
 
             if (_audioInstance != null) {
-                drawing.DrawString($"Position: {_audioInstance.Position}sec", new(5), Color.White, Vector2.One, 0);
+                var audioPosition = _audioInstance.Position;
+                drawing.DrawString($"Position: {audioPosition}sec", new(5), Color.White, Vector2.One, 0);
+
+                var progressBar = new RectangleF(5, 32, 320, 8);
+                drawing.DrawRectangle(progressBar, Color.Gray);
+                drawing.DrawRectangle(progressBar with { Size = progressBar.Size * new Vector2(audioPosition / _audioInstance.Length, 1) }, Color.Cyan);
+
+                if (progressBar.Contains(InputManager.RawMousePosition)) {
+                    var f = (InputManager.RawMousePosition.X - progressBar.Left) / progressBar.Width;
+                    drawing.DrawPoint(new Vector2(progressBar.Left + f * progressBar.Width, progressBar.Center.Y), Color.LightCyan, 12);
+
+                    if (InputManager.LeftMousePressed) {
+                        
+                        _audioInstance.Seek(f * _audioInstance.Length);
+                    }
+                }
             }
         }
     }

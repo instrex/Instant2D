@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 using static FAudio;
 
 namespace Instant2D.Audio {
-    /// <summary>
-    /// An audio instance.
-    /// </summary>
-    public abstract class AudioInstance : IDisposable {
+	/// <summary>
+	/// An audio instance.
+	/// </summary>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1806:Do not ignore method results", Justification = "<Pending>")]
+	public abstract class AudioInstance : IDisposable {
         internal IntPtr _instanceHandle;
         internal FAudioWaveFormatEx _format;
         internal AudioManager _manager;
@@ -22,6 +23,9 @@ namespace Instant2D.Audio {
 		protected PlaybackState _playbackState = PlaybackState.Stopped;
         float _volume = 1, _pan, _pitch = 0;
         bool _isDisposed;
+
+		// hacky way to fix streaming position issues
+		protected ulong _positionOffset;
 
         /// <summary>
         /// The volume of this sound.
@@ -76,9 +80,14 @@ namespace Instant2D.Audio {
 		public virtual PlaybackState PlaybackState => _playbackState;
 
 		/// <summary>
+		/// Length of this sound in seconds.
+		/// </summary>
+		public float Length { get; protected set; }
+
+		/// <summary>
 		/// Gets the playback position in seconds.
 		/// </summary>
-		public virtual float Position {
+		public float Position {
 			get {
 				if (_instanceHandle == IntPtr.Zero)
 					return 0f;
@@ -89,7 +98,7 @@ namespace Instant2D.Audio {
 					0
 				);
 
-				return state.SamplesPlayed / (float)_format.nSamplesPerSec;
+				return (state.SamplesPlayed - _positionOffset) / (float)_format.nSamplesPerSec;
 			}
 
 			set => Seek(value);
@@ -144,12 +153,13 @@ namespace Instant2D.Audio {
         #region FNA methods
 
         internal void InitDSPSettings(uint srcChannels) {
-			_dspSettings = new F3DAUDIO_DSP_SETTINGS();
-			_dspSettings.DopplerFactor = 1.0f;
-			_dspSettings.SrcChannelCount = srcChannels;
-			_dspSettings.DstChannelCount = _manager.DeviceDetails.OutputFormat.Format.nChannels;
+            _dspSettings = new F3DAUDIO_DSP_SETTINGS {
+                DopplerFactor = 1.0f,
+                SrcChannelCount = srcChannels,
+                DstChannelCount = _manager.DeviceDetails.OutputFormat.Format.nChannels
+            };
 
-			int memsize = (4 *
+            int memsize = (4 *
 				(int)_dspSettings.SrcChannelCount *
 				(int)_dspSettings.DstChannelCount
 			);
@@ -231,9 +241,11 @@ namespace Instant2D.Audio {
 				// stop the playback so no bad stuff happens (not a threat)
 				Stop(true);
 
-				//free the resources
-				FAudioVoice_DestroyVoice(_instanceHandle);
-				Marshal.FreeHGlobal(_dspSettings.pMatrixCoefficients);
+				if (_instanceHandle != IntPtr.Zero) {
+					// free the resources
+					FAudioVoice_DestroyVoice(_instanceHandle);
+					Marshal.FreeHGlobal(_dspSettings.pMatrixCoefficients);
+				}
 
 				// invoke callbacks
 				OnDisposed();

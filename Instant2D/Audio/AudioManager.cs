@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using static FAudio;
 
 namespace Instant2D.Audio {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1806:Do not ignore method results", Justification = "<Pending>")]
     public class AudioManager : SubSystem, IDisposable {
         public readonly IntPtr AudioHandle;
 

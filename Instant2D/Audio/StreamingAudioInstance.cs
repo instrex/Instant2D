@@ -4,6 +4,7 @@ using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace Instant2D.Audio {
     /// <summary>
     /// An audio instance used to stream long playback. Uses <see cref="FAudio"/> and OGG format exclusively.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1806:Do not ignore method results", Justification = "<Pending>")]
     public class StreamingAudioInstance : AudioInstance {
         const int MAX_BUFFER_SIZE = 1024 * 128;
         const int BUFFER_THRESHOLD = 3;
@@ -21,18 +23,18 @@ namespace Instant2D.Audio {
         /// <summary>
         /// Struct used to store pending buffer information.
         /// </summary>
-        protected record struct StreamingBuffer(IntPtr Pointer, uint Size); 
+        protected record struct StreamingBuffer(IntPtr Pointer, uint Size, bool IsEnding); 
 
         // decoded bytes
-        float[] _buffer;
+        readonly float[] _buffer;
 
         // file handles
+        readonly IntPtr _vorbisHandle;
+        readonly IntPtr _rawDataHandle;
         stb_vorbis_info _vorbisInfo;
-        IntPtr _vorbisHandle;
-        IntPtr _rawDataHandle;
 
         // buffers we'll send to FAudio 
-        protected Queue<StreamingBuffer> _bufferQueue = new();
+        protected readonly Queue<StreamingBuffer> _bufferQueue = new();
 
         /// <summary>
         /// Creates a streaming audio instance using OGG file stream.
@@ -65,12 +67,12 @@ namespace Instant2D.Audio {
                 nSamplesPerSec = _vorbisInfo.sample_rate
             };
 
+            // set length information
+            Length = stb_vorbis_stream_length_in_seconds(_vorbisHandle);
+
             // register the instance
             manager._streamingInstances.Add(new(this));
             _manager = manager;
-
-            // create the voice
-            CreateSourceVoice();
         }
 
         internal void Update() {
@@ -87,11 +89,16 @@ namespace Instant2D.Audio {
             while (_bufferQueue.Count > voiceState.BuffersQueued) {
                 var buffer = _bufferQueue.Dequeue();
                 Marshal.FreeHGlobal(buffer.Pointer);
+
+                if (buffer.IsEnding) {
+                    UpdatePositionOffset(0);
+                }
             }
 
             QueueBuffers();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void FreeBuffers() {
             var count = _bufferQueue.Count;
             for (var i = 0; i < count; i++) {
@@ -100,6 +107,7 @@ namespace Instant2D.Audio {
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void QueueBuffers() {
             for (var i = BUFFER_THRESHOLD - _bufferQueue.Count; i > 0; i--) {
                 // decode samples
@@ -116,7 +124,7 @@ namespace Instant2D.Audio {
                 Marshal.Copy(_buffer, 0, nextBuffer, (int)sampleCount);
 
                 // and enqueue it
-                _bufferQueue.Enqueue(new(nextBuffer, byteLength));
+                _bufferQueue.Enqueue(new(nextBuffer, byteLength, isEnding));
                 
                 // submit the buffer to FAudio
                 if (PlaybackState != PlaybackState.Stopped) {
@@ -132,10 +140,29 @@ namespace Instant2D.Audio {
                 // if it's the end, either seek to start when looping
                 // or end the playback
                 if (isEnding) {
-                    if (IsLooping) stb_vorbis_seek_start(_vorbisHandle);
-                    else Stop(false);
+                    if (IsLooping) {
+                        stb_vorbis_seek_start(_vorbisHandle);
+                    } else Stop(false);
                 }
             }
+        }
+
+        // we need to run this after seeking to keep accurate position available
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void UpdatePositionOffset(uint newPosition) {
+            // uh ohh
+            if (_instanceHandle == IntPtr.Zero)
+                return;
+
+            FAudioSourceVoice_GetState(
+                _instanceHandle,
+                out var state,
+                0
+            );
+
+            // now we have to get voice state and update
+            // the variable with current sample position
+            _positionOffset = state.SamplesPlayed - newPosition;
         }
 
         #region SoundInstance Implementation
@@ -161,6 +188,11 @@ namespace Instant2D.Audio {
                 Stop(true);
             }
 
+            if (_instanceHandle == IntPtr.Zero) {
+                // create the voice
+                CreateSourceVoice();
+            }
+
             IsLooping = isLooping;
             _playbackState = PlaybackState.Playing;
 
@@ -181,15 +213,18 @@ namespace Instant2D.Audio {
             // free buffers
             FAudioSourceVoice_FlushSourceBuffers(_instanceHandle);
             FreeBuffers();
-            Update();
 
             // and then queue new buffers
             stb_vorbis_seek(_vorbisHandle, samplePosition);
+            Update();
 
             // restart the playback
             if (PlaybackState == PlaybackState.Playing) {
-                Play(IsLooping);
+                FAudioSourceVoice_Start(_instanceHandle, 0, 0);
             }
+
+            // fix the position
+            UpdatePositionOffset(samplePosition);
         }
 
         public override void Stop(bool immediate = true) {
@@ -197,6 +232,10 @@ namespace Instant2D.Audio {
                 FAudioSourceVoice_Stop(_instanceHandle, 0, 0);
                 FAudioSourceVoice_FlushSourceBuffers(_instanceHandle);
                 FreeBuffers();
+
+                // reset the vorbis
+                stb_vorbis_seek_start(_vorbisHandle);
+                UpdatePositionOffset(0);
             }
 
             _playbackState = PlaybackState.Stopped;
