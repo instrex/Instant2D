@@ -1,5 +1,6 @@
 ﻿using Instant2D.Assets.Sprites;
 using Microsoft.Xna.Framework;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,7 +43,7 @@ namespace Instant2D.EC {
         float _timePerFrame, _duration;
         SpriteAnimation _animation;
         LoopType _loopType;
-        int _frameIndex;
+        int _frameIndex = -1;
 
         /// <summary>
         /// Sets the animation of this animator. Will not reset the time.
@@ -63,29 +64,7 @@ namespace Instant2D.EC {
         /// </summary>
         public int Frame {
             get => _frameIndex;
-            set {
-                var clampedIndex = Math.Clamp(value, 0, _animation.Frames.Length - 1);
-
-                // set the frame
-                Sprite = _animation.Frames[clampedIndex];
-                _frameIndex = clampedIndex;
-
-                // don't do anything if frames are the same
-                if (clampedIndex == value)
-                    return;
-
-                // call the events (if there are any)
-                if (_animation.Events != null)
-                    for (var i = 0; i < _animation.Events.Length; i++) {
-                        var ev = _animation.Events[i];
-
-                        // it's not your time yet...
-                        if (ev.frame != value)
-                            continue;
-
-                        OnAnimationEvent?.Invoke(this, ev.key, ev.args);
-                    }
-            }
+            set => SetFrame(value);
         }
 
         public delegate void AnimationEventHandler(SpriteAnimationComponent animator, string ev, object[] args);
@@ -124,8 +103,29 @@ namespace Instant2D.EC {
         #region Setters
 
         /// <inheritdoc cref="Frame"/>
-        public SpriteAnimationComponent SetFrame(int frame) {
-            Frame = frame;
+        public SpriteAnimationComponent SetFrame(int frame, bool triggerEvents = true) {
+            var clampedIndex = Math.Clamp(frame, 0, _animation.Frames.Length - 1);
+
+            // set the frame
+            Sprite = _animation.Frames[clampedIndex];
+            _frameIndex = clampedIndex;
+
+            // don't do anything if frames are the same
+            if (clampedIndex == frame)
+                return this;
+
+            // call the events (if there are any)
+            if (triggerEvents && _animation.Events != null)
+                for (var i = 0; i < _animation.Events.Length; i++) {
+                    var ev = _animation.Events[i];
+
+                    // it's not your time yet...
+                    if (ev.frame != frame)
+                        continue;
+
+                    OnAnimationEvent?.Invoke(this, ev.key, ev.args);
+                }
+
             return this;
         }
 
@@ -156,6 +156,15 @@ namespace Instant2D.EC {
         }
 
         #endregion
+
+        public override void PostInitialize() {
+            base.PostInitialize();
+
+            // if frame wasn't assigned, we set it to 0 (without invoking events)
+            if (_frameIndex == -1 && _animation != default) {
+                SetFrame(0, false);
+            }
+        }
 
         public void Update() {
             if (State != AnimatorState.Running)

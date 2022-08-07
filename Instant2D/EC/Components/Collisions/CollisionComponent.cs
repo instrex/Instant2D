@@ -8,8 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.EC.Components {
-    public delegate void CollisionCallback(CollisionHit<CollisionComponent> collision);
-
     /// <summary>
     /// Base class for all collider components. Contains useful methods for overlap checking and moving with callback support.
     /// </summary>
@@ -99,11 +97,6 @@ namespace Instant2D.EC.Components {
             get => BaseCollider.LayerMask;
             set => BaseCollider.LayerMask = value;
         }
-
-        /// <summary>
-        /// Is fired when two objects collide with each other.
-        /// </summary>
-        public event CollisionCallback OnCollisionOccured;
 
         public override void Initialize() {
             // check BaseCollider
