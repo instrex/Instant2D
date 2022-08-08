@@ -14,7 +14,7 @@ namespace Instant2D.Audio {
 	/// </summary>
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1806:Do not ignore method results", Justification = "<Pending>")]
 	public abstract class AudioInstance : IDisposable {
-        internal IntPtr _instanceHandle;
+        internal IntPtr _sourceVoiceHandle;
         internal FAudioWaveFormatEx _format;
         internal AudioManager _manager;
 
@@ -34,8 +34,8 @@ namespace Instant2D.Audio {
 			get => _volume;
 			set {
 				_volume = value;
-				if (_instanceHandle != IntPtr.Zero) {
-					FAudioVoice_SetVolume(_instanceHandle, _volume, 0);
+				if (_sourceVoiceHandle != IntPtr.Zero) {
+					FAudioVoice_SetVolume(_sourceVoiceHandle, _volume, 0);
 				}
             }
         }
@@ -47,10 +47,10 @@ namespace Instant2D.Audio {
             get => _pan;
             set {
                 _pan = Math.Clamp(value, -1.0f, 1.0f);
-				if (_instanceHandle != IntPtr.Zero) {
+				if (_sourceVoiceHandle != IntPtr.Zero) {
 					SetPanMatrixCoefficients();
 					FAudioVoice_SetOutputMatrix(
-						_instanceHandle,
+						_sourceVoiceHandle,
 						_manager.MasteringVoice,
 						_dspSettings.SrcChannelCount,
 						_dspSettings.DstChannelCount,
@@ -68,7 +68,7 @@ namespace Instant2D.Audio {
 			get => _pitch;
 			set {
 				_pitch = Math.Clamp(value, -1.0f, 1.0f);
-				if (_instanceHandle != IntPtr.Zero) {
+				if (_sourceVoiceHandle != IntPtr.Zero) {
 					UpdatePitch();
 				}
 			}
@@ -89,11 +89,11 @@ namespace Instant2D.Audio {
 		/// </summary>
 		public float Position {
 			get {
-				if (_instanceHandle == IntPtr.Zero)
+				if (_sourceVoiceHandle == IntPtr.Zero)
 					return 0f;
 
 				FAudioSourceVoice_GetState(
-					_instanceHandle,
+					_sourceVoiceHandle,
 					out var state,
 					0
 				);
@@ -132,7 +132,7 @@ namespace Instant2D.Audio {
 		protected void CreateSourceVoice() {
 			FAudio_CreateSourceVoice(
 				_manager.AudioHandle,
-				out _instanceHandle,
+				out _sourceVoiceHandle,
 				ref _format,
 				FAUDIO_VOICE_USEFILTER,
 				FAUDIO_DEFAULT_FREQ_RATIO,
@@ -142,7 +142,7 @@ namespace Instant2D.Audio {
 			);
 
 			// guh..
-			if (_instanceHandle == IntPtr.Zero) {
+			if (_sourceVoiceHandle == IntPtr.Zero) {
 				throw new InvalidOperationException("AudioInstance failed to initialize.");
 			}
 
@@ -183,7 +183,7 @@ namespace Instant2D.Audio {
 			}
 
 			FAudioSourceVoice_SetFrequencyRatio(
-				_instanceHandle,
+				_sourceVoiceHandle,
 				(float)Math.Pow(2.0, _pitch) * doppler,
 				0
 			);
@@ -241,9 +241,9 @@ namespace Instant2D.Audio {
 				// stop the playback so no bad stuff happens (not a threat)
 				Stop(true);
 
-				if (_instanceHandle != IntPtr.Zero) {
+				if (_sourceVoiceHandle != IntPtr.Zero) {
 					// free the resources
-					FAudioVoice_DestroyVoice(_instanceHandle);
+					FAudioVoice_DestroyVoice(_sourceVoiceHandle);
 					Marshal.FreeHGlobal(_dspSettings.pMatrixCoefficients);
 				}
 

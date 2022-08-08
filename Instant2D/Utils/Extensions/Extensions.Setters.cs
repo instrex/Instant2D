@@ -1,4 +1,5 @@
-﻿using Instant2D.EC.Components;
+﻿using Instant2D.Audio;
+using Instant2D.EC.Components;
 using Instant2D.Graphics;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
@@ -172,6 +173,28 @@ namespace Instant2D.EC {
                 collisionComponent.AutoResize(renderableComponent.Bounds);
 
             return collisionComponent;
+        }
+
+        #endregion
+
+        #region Audio
+
+        /// <inheritdoc cref="AudioInstance.Volume"/>
+        public static T SetVolume<T>(this T audio, float volume) where T: AudioInstance {
+            audio.Volume = volume;
+            return audio;
+        }
+
+        /// <inheritdoc cref="AudioInstance.Pitch"/>
+        public static T SetPitch<T>(this T audio, float pitch) where T : AudioInstance {
+            audio.Pitch = pitch;
+            return audio;
+        }
+
+        /// <inheritdoc cref="AudioInstance.Pan"/>
+        public static T SetPan<T>(this T audio, float pan) where T : AudioInstance {
+            audio.Pan = pan;
+            return audio;
         }
 
         #endregion

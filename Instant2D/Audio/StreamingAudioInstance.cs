@@ -36,14 +36,23 @@ namespace Instant2D.Audio {
         // buffers we'll send to FAudio 
         protected readonly Queue<StreamingBuffer> _bufferQueue = new();
 
+        // helper func for Stream constructor overload
+        static byte[] ReadStream(Stream stream) {
+            var data = new byte[stream.Length];
+            stream.Read(data);
+
+            return data;
+        }
+
         /// <summary>
         /// Creates a streaming audio instance using OGG file stream.
         /// </summary>
-        public StreamingAudioInstance(Stream dataStream, AudioManager manager) {
-            // read the data from stream first
-            var data = new byte[dataStream.Length];
-            dataStream.Read(data);
+        public StreamingAudioInstance(Stream dataStream, AudioManager manager) : this(ReadStream(dataStream), manager) { }
 
+        /// <summary>
+        /// Creates a streaming audio instance using OGG file data.
+        /// </summary>
+        public StreamingAudioInstance(byte[] data, AudioManager manager) {
             // then do some black magic to allocate unmanaged stuff
             _rawDataHandle = Marshal.AllocHGlobal(data.Length);
             Marshal.Copy(data, 0, _rawDataHandle, data.Length);
@@ -80,7 +89,7 @@ namespace Instant2D.Audio {
                 return;
 
             FAudioSourceVoice_GetState(
-                _instanceHandle,
+                _sourceVoiceHandle,
                 out var voiceState,
                 FAUDIO_VOICE_NOSAMPLESPLAYED
             );
@@ -134,7 +143,7 @@ namespace Instant2D.Audio {
                         PlayLength = byteLength / _format.nChannels / (uint)(_format.wBitsPerSample / 8)
                     };
 
-                    FAudioSourceVoice_SubmitSourceBuffer(_instanceHandle, ref audioBuffer, IntPtr.Zero);
+                    FAudioSourceVoice_SubmitSourceBuffer(_sourceVoiceHandle, ref audioBuffer, IntPtr.Zero);
                 }
 
                 // if it's the end, either seek to start when looping
@@ -151,11 +160,11 @@ namespace Instant2D.Audio {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void UpdatePositionOffset(uint newPosition) {
             // uh ohh
-            if (_instanceHandle == IntPtr.Zero)
+            if (_sourceVoiceHandle == IntPtr.Zero)
                 return;
 
             FAudioSourceVoice_GetState(
-                _instanceHandle,
+                _sourceVoiceHandle,
                 out var state,
                 0
             );
@@ -179,7 +188,7 @@ namespace Instant2D.Audio {
             if (PlaybackState != PlaybackState.Playing)
                 return;
 
-            FAudioSourceVoice_Stop(_instanceHandle, 0, 0);
+            FAudioSourceVoice_Stop(_sourceVoiceHandle, 0, 0);
             _playbackState = PlaybackState.Paused;
         }
 
@@ -188,7 +197,7 @@ namespace Instant2D.Audio {
                 Stop(true);
             }
 
-            if (_instanceHandle == IntPtr.Zero) {
+            if (_sourceVoiceHandle == IntPtr.Zero) {
                 // create the voice
                 CreateSourceVoice();
             }
@@ -199,7 +208,7 @@ namespace Instant2D.Audio {
             Update();
 
             // start the voice
-            FAudioSourceVoice_Start(_instanceHandle, 0, 0);
+            FAudioSourceVoice_Start(_sourceVoiceHandle, 0, 0);
         }
 
         public override void Seek(float seconds) {
@@ -207,11 +216,11 @@ namespace Instant2D.Audio {
 
             // stop the playback first
             if (PlaybackState == PlaybackState.Playing) {
-                FAudioSourceVoice_Stop(_instanceHandle, 0, 0);
+                FAudioSourceVoice_Stop(_sourceVoiceHandle, 0, 0);
             }
 
             // free buffers
-            FAudioSourceVoice_FlushSourceBuffers(_instanceHandle);
+            FAudioSourceVoice_FlushSourceBuffers(_sourceVoiceHandle);
             FreeBuffers();
 
             // and then queue new buffers
@@ -220,7 +229,7 @@ namespace Instant2D.Audio {
 
             // restart the playback
             if (PlaybackState == PlaybackState.Playing) {
-                FAudioSourceVoice_Start(_instanceHandle, 0, 0);
+                FAudioSourceVoice_Start(_sourceVoiceHandle, 0, 0);
             }
 
             // fix the position
@@ -229,8 +238,8 @@ namespace Instant2D.Audio {
 
         public override void Stop(bool immediate = true) {
             if (PlaybackState != PlaybackState.Stopped && immediate) {
-                FAudioSourceVoice_Stop(_instanceHandle, 0, 0);
-                FAudioSourceVoice_FlushSourceBuffers(_instanceHandle);
+                FAudioSourceVoice_Stop(_sourceVoiceHandle, 0, 0);
+                FAudioSourceVoice_FlushSourceBuffers(_sourceVoiceHandle);
                 FreeBuffers();
 
                 // reset the vorbis

@@ -2,6 +2,7 @@
 using Instant2D.Core;
 using Instant2D.EC;
 using Instant2D.Input;
+using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -16,17 +17,31 @@ namespace Instant2D.TestGame.Scenes {
         }
 
         StreamingAudioInstance _audioInstance;
+        StaticAudioInstance _staticInstance;
 
         public override void Update() {
             base.Update();
+
+            if (_staticInstance != null) {
+                if (_staticInstance.PlaybackState != PlaybackState.Playing) {
+                    Logger.WriteLine("Instance was pooled");
+                    _staticInstance.Pool();
+                    _staticInstance = null;
+                }
+            }
+
+            if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.D2)) {
+                _staticInstance = AssetManager.Instance.Get<Sound>("sfx/hat_1").CreateStaticInstance()
+                    .SetPitch(1f);
+                _staticInstance.Play();
+            }
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.E)) {
                 if (_audioInstance != null) {
                     _audioInstance.Dispose();
                 }
 
-                using var stream = AssetManager.Instance.OpenStream("music/stage_1.ogg");
-                _audioInstance = new StreamingAudioInstance(stream, InstantGame.Instance.GetSystem<AudioManager>());
+                _audioInstance = AssetManager.Instance.Get<Sound>("music/stage_1").CreateStreamingInstance();
                 _audioInstance.Play(true);
             }
 

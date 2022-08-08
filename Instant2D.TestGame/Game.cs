@@ -28,6 +28,7 @@ namespace Instant2D.TestGame {
             AddSystem<AssetManager>(assets => {
                 assets.SetupHotReload("./Instant2D.TestGame/Assets/");
                 assets.AddLoader<SpriteLoader>();
+                assets.AddLoader<SoundLoader>();
                 assets.AddLoader<LoaderTest.CustomLoader>();
             });
 
