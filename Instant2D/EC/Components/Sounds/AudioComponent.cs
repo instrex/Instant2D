@@ -173,7 +173,7 @@ namespace Instant2D.EC.Components {
 
                 // dispose of any stray streaming instances
                 case StreamingAudioInstance:
-                    Dispose();
+                    _instance.Dispose();
                     break;
 
                 // return static sounds to the pool for reuse

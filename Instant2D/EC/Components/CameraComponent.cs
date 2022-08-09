@@ -177,12 +177,8 @@ namespace Instant2D.EC {
             _matricesDirty = true;
             _boundsDirty = true;
 
-            var old = _origin;
-
             // calculate new origin and offset the Entity to compensate resize effect
             _origin = new(ev.Resolution.renderTargetSize.X / 2, ev.Resolution.renderTargetSize.Y / 2);
-            //_origin -= (_origin - old) * 0.5f;
-            //Entity.Transform.LocalPosition += _origin - old;
         }
     }
 }
