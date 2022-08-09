@@ -1,6 +1,8 @@
 ﻿using Instant2D.Audio;
 using Instant2D.Core;
+using Instant2D.Coroutines;
 using Instant2D.EC;
+using Instant2D.EC.Components;
 using Instant2D.Input;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
@@ -12,95 +14,61 @@ using System.Threading.Tasks;
 
 namespace Instant2D.TestGame.Scenes {
     public class AudioTest : Scene {
+        Entity _saul;
+
         public override void Initialize() {
-            
+            CreateLayer("default").BackgroundColor = Color.Black;
+
+            _saul = CreateEntity("saul")
+                .AddComponent(new SpriteComponent {
+                    Sprite = AssetManager.Instance.Get<Sprite>("sprites/saul")
+                });
+
+            _saul.AddComponent(new AudioComponent {
+                IsLooped = true,
+                Sound = AssetManager.Instance.Get<Sound>("music/saul"),
+                IsStreaming = true,
+                Volume = 0.0f
+            });
+
         }
 
-        StreamingAudioInstance _audioInstance;
-        StaticAudioInstance _staticInstance;
+        float _shake;
 
         public override void Update() {
-            base.Update();
-
-            if (_staticInstance != null) {
-                if (_staticInstance.PlaybackState != PlaybackState.Playing) {
-                    Logger.WriteLine("Instance was pooled");
-                    _staticInstance.Pool();
-                    _staticInstance = null;
-                }
+            if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.A)) {
+                _saul.Transform.Position += new Vector2(-10, 0);
             }
 
-            if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.D2)) {
-                _staticInstance = AssetManager.Instance.Get<Sound>("sfx/hat_1").CreateStaticInstance()
-                    .SetPitch(1f);
-                _staticInstance.Play();
+            if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.D)) {
+                _saul.Transform.Position += new Vector2(10, 0);
             }
 
-            if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.E)) {
-                if (_audioInstance != null) {
-                    _audioInstance.Dispose();
-                }
-
-                _audioInstance = AssetManager.Instance.Get<Sound>("music/stage_1").CreateStreamingInstance();
-                _audioInstance.Play(true);
+            if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.W)) {
+                _saul.Transform.Position += new Vector2(0, -5);
             }
 
-            if (_audioInstance != null) {
-                if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.Q)) {
-                    _audioInstance.Position = 2f;
-                }
+            if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.S)) {
+                _saul.Transform.Position += new Vector2(0, 5);
+            }
 
-                if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.W)) {
-                    _audioInstance.Dispose();
-                    _audioInstance = null;
-                }
+            if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R)) {
+                PlaySound(AssetManager.Instance.Get<Sound>("sfx/hat_2"), _saul.Transform.Position, followEntity: _saul);
+                _shake = 32;
+            }
 
-                if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.D1)) {
-                    _audioInstance.Pitch = Random.Shared.NextFloat(-1f, 1f);
-                    _audioInstance.Pan = Random.Shared.NextFloat(-1f, 1f);
-                }
-
-                if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.S)) {
-                    if (_audioInstance.PlaybackState == PlaybackState.Playing) {
-                        _audioInstance.Stop();
-                    } else _audioInstance.Play(_audioInstance.IsLooping);
-                }
-
-                if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R)) {
-                    switch (_audioInstance.PlaybackState) {
-                        case PlaybackState.Playing:
-                            _audioInstance.Pause();
-                            break;
-
-                        case PlaybackState.Paused:
-                            _audioInstance.Play(_audioInstance.IsLooping);
-                            break;
-                    }
-                }
+            if (_shake > 0) {
+                Camera.Transform.Position = Random.Shared.NextDirection(_shake);
+                Camera.Transform.Rotation = Random.Shared.NextFloat(-_shake, _shake) * 0.01f;
+                _shake -= 4;
+            } else {
+                Camera.Transform.Position = Vector2.Zero;
+                Camera.Transform.Rotation = 0;
             }
         }
 
         public override void Render(IDrawingBackend drawing) {
             base.Render(drawing);
-
-            if (_audioInstance != null) {
-                var audioPosition = _audioInstance.Position;
-                drawing.DrawString($"Position: {audioPosition}sec", new(5), Color.White, Vector2.One, 0);
-
-                var progressBar = new RectangleF(5, 32, 320, 8);
-                drawing.DrawRectangle(progressBar, Color.Gray);
-                drawing.DrawRectangle(progressBar with { Size = progressBar.Size * new Vector2(audioPosition / _audioInstance.Length, 1) }, Color.Cyan);
-
-                if (progressBar.Contains(InputManager.RawMousePosition)) {
-                    var f = (InputManager.RawMousePosition.X - progressBar.Left) / progressBar.Width;
-                    drawing.DrawPoint(new Vector2(progressBar.Left + f * progressBar.Width, progressBar.Center.Y), Color.LightCyan, 12);
-
-                    if (InputManager.LeftMousePressed) {
-                        
-                        _audioInstance.Seek(f * _audioInstance.Length);
-                    }
-                }
-            }
         }
     }
 }

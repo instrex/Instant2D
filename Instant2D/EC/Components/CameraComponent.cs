@@ -107,7 +107,7 @@ namespace Instant2D.EC {
             if (!_matricesDirty)
                 return;
 
-            _transformMatrix = Matrix2D.CreateTranslation(-Entity.Transform.Position.Floor() + _origin);
+            _transformMatrix = Matrix2D.CreateTranslation(-Entity.Transform.Position.Floor());
 
             // apply the zoom when needed
             if (_zoom != 1.0f) {
@@ -181,7 +181,8 @@ namespace Instant2D.EC {
 
             // calculate new origin and offset the Entity to compensate resize effect
             _origin = new(ev.Resolution.renderTargetSize.X / 2, ev.Resolution.renderTargetSize.Y / 2);
-            Entity.Transform.LocalPosition += _origin - old;
+            //_origin -= (_origin - old) * 0.5f;
+            //Entity.Transform.LocalPosition += _origin - old;
         }
     }
 }

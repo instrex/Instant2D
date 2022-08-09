@@ -17,6 +17,7 @@ using Instant2D.EC.Components;
 using Instant2D.EC.Events;
 using Instant2D.Assets;
 using Instant2D.Assets.Containers;
+using Instant2D.Audio;
 
 namespace Instant2D.EC {
     public abstract class Scene : ICoroutineTarget {
@@ -57,6 +58,11 @@ namespace Instant2D.EC {
         /// Amount of time that has passed since beginning this scene, taking <see cref="TimeScale"/> into account.
         /// </summary>
         public float TotalTime;
+
+        /// <summary>
+        /// The listener object to use with spatial sounds. By default, it is assigned to <see cref="Camera"/>'s Entity.
+        /// </summary>
+        public Entity Listener;
 
         /// <summary>
         /// Default RenderLayer used for components with nothing specified.
@@ -143,6 +149,8 @@ namespace Instant2D.EC {
                 if (Camera is null) {
                     Camera = CreateEntity("camera", Vector2.Zero)
                         .AddComponent<CameraComponent>();
+
+                    Listener = Camera.Entity;
                 }
 
                 Initialize();
@@ -307,7 +315,6 @@ namespace Instant2D.EC {
             _isCleanedUp = true;
         }
 
-
         internal void ResizeRenderTargets(ScaledResolution resolution) {
             var gd = InstantGame.Instance.GraphicsDevice;
 
@@ -387,6 +394,47 @@ namespace Instant2D.EC {
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Plays one-shot sound effect and automatically recycles it with optional cool features: <list type="bullet">
+        /// <item> You can position the sound in world-space using <paramref name="position"/> parameter. In order for it to work, <paramref name="rolloff"/> should not be <see langword="default"/>. </item>
+        /// <item> 
+        /// You can control the way audio rolloff is applied to this sound using <paramref name="rolloff"/> parameter. <br/>
+        /// By default, depending on if <paramref name="position"/> is set, the sound will either use default rolloff of MaxDistance = 200 or not use it at all. <br/>
+        /// Pass in <see cref="AudioRolloff.None"/> to make the sound global (or just dont pass <paramref name="position"/> lol, not much use for it in this case). 
+        /// </item>
+        /// <item> 
+        /// <paramref name="volume"/>, <paramref name="pan"/> and <paramref name="pitch"/> can be used to adjust characteristics of the sound. <br/>
+        /// Note that <paramref name="pan"/> will be overriden if AudioRolloff is enabled.
+        /// </item>
+        /// <item> 
+        /// The sound may be attached to a moving entity (meaning it will continuosly update position) using <paramref name="followEntity"/> parameter. <br/>
+        /// If <paramref name="followEntity"/> is destroyed during the sound playback, it will remain on the last position it had.
+        /// </item>
+        /// </list>
+        /// </summary>
+        public CoroutineInstance PlaySound(Sound sound, Vector2? position = default, AudioRolloff? rolloff = default, float volume = 1.0f, float pan = 0f, float pitch = 0f, Entity followEntity = default) {
+            var instance = sound.CreateStaticInstance();
+            instance.Pitch = pitch;
+            instance.Pan = pan;
+
+            // determine rolloff for this
+            var actualRolloff = (position, rolloff) switch {
+                // in case rolloff is explicitly provided, just use it
+                (_, AudioRolloff setRolloff) => setRolloff,
+
+                // if position is provided, but not the rolloff initialize the default instance
+                (Vector2 setPosition, null) => new AudioRolloff(),
+
+                // guh!
+                _ => AudioRolloff.None
+            };
+
+            return this.RunCoroutine(
+                AudioComponent.OneShotSound(instance, position, actualRolloff, volume, followEntity),
+                _ => instance.Pool()
+            );
         }
 
         // ICoroutineTarget impl
