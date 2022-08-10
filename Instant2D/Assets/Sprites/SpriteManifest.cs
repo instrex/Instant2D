@@ -82,7 +82,6 @@ namespace Instant2D.Assets.Sprites {
                     allowMetaElements = false;
 
                     var def = serializer.Deserialize<SpriteDef>(reader);
-                    def.fileName ??= key;
                     def.key ??= key;
 
                     _spriteBuffer.Add(def);

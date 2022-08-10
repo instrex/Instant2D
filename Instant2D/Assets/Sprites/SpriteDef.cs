@@ -7,11 +7,6 @@ namespace Instant2D.Assets.Sprites {
     /// </summary>
     public sealed record SpriteDef {
         /// <summary>
-        /// This sprite's path relative to 'Assets/sprite/'
-        /// </summary>
-        public string fileName;
-
-        /// <summary>
         /// Key of this sprite used to access it, defaults to <see cref="fileName"/>.
         /// </summary>
         public string key;
@@ -50,7 +45,7 @@ namespace Instant2D.Assets.Sprites {
             && animation == null;
 
         public bool Equals(SpriteDef other) {
-            return other.key == key && other.fileName == fileName &&
+            return other.key == key &&
                 other.type == type &&
                 other.split == split &&
                 other.origin == origin &&
@@ -58,7 +53,7 @@ namespace Instant2D.Assets.Sprites {
         }
 
         public override int GetHashCode() {
-            return HashCode.Combine(key, fileName, type, split, origin, animation);
+            return HashCode.Combine(key, type, split, origin, animation);
         }
 
         /// <summary>

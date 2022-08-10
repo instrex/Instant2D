@@ -53,7 +53,6 @@ namespace Instant2D.Assets.Loaders {
                     continue;
 
                 _definitions.TryAdd(key, new SpriteDef {
-                    fileName = key,
                     key = key
                 });
             }
@@ -101,7 +100,7 @@ namespace Instant2D.Assets.Loaders {
 
                     // split using frame size (requires image dimensions)
                     case { type: SpriteSplitOptions.BySize, widthOrFrameCount: var width, height: var height }:
-                        if (!TryGetPngSize(def.fileName, out var imageDimensions)) {
+                        if (!TryGetPngSize(def.key, out var imageDimensions)) {
                             Logger.WriteLine($"Couldn't get image dimensions for sprite '{key}'", Logger.Severity.Warning);
                             break;
                         }

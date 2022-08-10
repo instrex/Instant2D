@@ -1,4 +1,8 @@
 ﻿using Instant2D.Assets;
+using Instant2D.Audio;
+using Instant2D.Coroutines;
+using Instant2D.Graphics;
+using Instant2D.Input;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
@@ -123,6 +127,16 @@ namespace Instant2D.Core {
         protected virtual new void Initialize() { }
 
         #endregion
+
+        /// <summary>
+        /// Setups <see cref="InputManager"/>, <see cref="CoroutineManager"/>, <see cref="GraphicsManager"/> and <see cref="AudioManager"/>.
+        /// </summary>
+        protected void SetupDefaultSystems() {
+            AddSystem<InputManager>();
+            AddSystem<CoroutineManager>();
+            AddSystem<GraphicsManager>();
+            AddSystem<AudioManager>();
+        }
 
         protected sealed override void LoadContent() {
             base.LoadContent();
