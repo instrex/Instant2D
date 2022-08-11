@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Instant2D.Utils;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +22,14 @@ namespace Instant2D {
         public static void AddOrSet<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value) {
             if (!dictionary.TryAdd(key, value))
                 dictionary[key] = value;
+        }
+
+        /// <summary>
+        /// Returns the list to <see cref="ListPool{T}"/>. Call <see cref="ListPool{T}.Get"/> to get a reused list.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Pool<T>(this List<T> value) {
+            ListPool<T>.Return(value);
         }
     }
 }

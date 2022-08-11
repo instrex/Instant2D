@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace Instant2D.Collisions {
@@ -44,23 +45,40 @@ namespace Instant2D.Collisions {
 
                 // unrotated box-to-box collision
                 case BoxCollider<T> box: {
-                    var (a, b) = (new RectangleF(Position - Size * 0.5f, Size), new RectangleF(other.Position - box.Size * 0.5f, box.Size));
+                    var diff = MinkowskiDifference(this, box);
+                    if (diff.Contains(Vector2.Zero)) {
+                        hit.PenetrationVector = GetClosestPointOnBoundsToOrigin(diff, Vector2.Zero);
 
-                    // get intersection between two boxes
-                    var intersection = a.GetIntersection(b);
+                        // no penetration = no collision
+                        if (hit.PenetrationVector == Vector2.Zero)
+                            return false;
 
-                    // no collision...
-                    if (intersection == default) {
-                        return false;
+                        hit.Normal = hit.PenetrationVector * -1;
+                        hit.Normal.Normalize();
+
+                        return true;
                     }
 
-                    // calculate penetration vector
-                    hit.PenetrationVector = intersection.Width < intersection.Height ?
-                        new(a.Center.X < b.Center.X ? intersection.Width : -intersection.Width, 0) :
-                        new(0, a.Center.Y < b.Center.Y ? intersection.Height : -intersection.Height);
-                    hit.Normal = hit.PenetrationVector.SafeNormalize() * -1;
+                    return false;
 
-                    return hit.PenetrationVector != default;
+                    // OLD approach (weird!)
+                    //var (a, b) = (new RectangleF(Position - Size * 0.5f, Size), new RectangleF(other.Position - box.Size * 0.5f, box.Size));
+
+                    //// get intersection between two boxes
+                    //var intersection = a.GetIntersection(b);
+
+                    //// no collision...
+                    //if (intersection == default) {
+                    //    return false;
+                    //}
+
+                    //// calculate penetration vector
+                    //hit.PenetrationVector = intersection.Width < intersection.Height ?
+                    //    new(a.Center.X < b.Center.X ? intersection.Width : -intersection.Width, 0) :
+                    //    new(0, a.Center.Y < b.Center.Y ? intersection.Height : -intersection.Height);
+                    //hit.Normal = hit.PenetrationVector.SafeNormalize() * -1;
+
+                    //return hit.PenetrationVector != default;
                 }
 
                 // unrotated box-to-circle collision
@@ -80,5 +98,68 @@ namespace Instant2D.Collisions {
 
             throw new NotImplementedException();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static RectangleF MinkowskiDifference(BoxCollider<T> first, BoxCollider<T> second) {
+            // we need the top-left of our first box but it must include our motion. Collider only modifies position with the motion so we
+            // need to figure out what the motion was using just the position.
+            var positionOffset = first.Position - (first.Bounds.Position + first.Bounds.Size / 2f);
+            var topLeft = first.Bounds.Position + positionOffset - second.Bounds.BottomRight;
+            var fullSize = first.Bounds.Size + second.Bounds.Size;
+
+            return new RectangleF(topLeft.X, topLeft.Y, fullSize.X, fullSize.Y);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static Vector2 GetClosestPointOnBoundsToOrigin(RectangleF rect, Vector2 point) {
+            var minDist = Math.Abs(point.X - rect.X);
+            var boundsPoint = new Vector2(rect.X, point.Y);
+
+            if (Math.Abs(rect.Right - point.X) < minDist) {
+                minDist = Math.Abs(rect.Right);
+                boundsPoint.X = rect.Right;
+                boundsPoint.Y = 0f;
+            }
+
+            if (Math.Abs(rect.Bottom - point.Y) < minDist) {
+                minDist = Math.Abs(rect.Bottom);
+                boundsPoint.X = 0f;
+                boundsPoint.Y = rect.Bottom;
+            }
+
+            if (Math.Abs(rect.Y - point.Y) < minDist) {
+                minDist = Math.Abs(rect.Position.Y);
+                boundsPoint.X = 0;
+                boundsPoint.Y = rect.Y;
+            }
+
+            return boundsPoint;
+
+            //var max = rect.BottomRight;
+            //var minDist = Math.Abs(rect.Position.X);
+            //var boundsPoint = new Vector2(rect.Position.X, 0);
+
+            //if (Math.Abs(max.X) < minDist) {
+            //    minDist = Math.Abs(max.X);
+            //    boundsPoint.X = max.X;
+            //    boundsPoint.Y = 0f;
+            //}
+
+            //if (Math.Abs(max.Y) < minDist) {
+            //    minDist = Math.Abs(max.Y);
+            //    boundsPoint.X = 0f;
+            //    boundsPoint.Y = max.Y;
+            //}
+
+            //if (Math.Abs(rect.Y) < minDist) {
+            //    minDist = Math.Abs(rect.Position.Y);
+            //    boundsPoint.X = 0;
+            //    boundsPoint.Y = rect.Y;
+            //}
+
+            //return boundsPoint;
+        }
+
+
     }
 }

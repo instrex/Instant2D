@@ -21,7 +21,6 @@ namespace Instant2D.EC.Components {
         /// Since most of colliders are centered, origin must be adjusted to fit that.
         /// </summary>
         protected Vector2 _origin;
-        Vector2 _rawOrigin = new(0.5f);
 
         /// <summary>
         /// Indicate whether or not collider size was explicitly provided by user. If <see langword="true"/>, autosizing will take place. <br/>
@@ -31,13 +30,12 @@ namespace Instant2D.EC.Components {
         bool _scaleWithTransform = true, _rotateWithTransform = true;
 
         /// <summary>
-        /// Origin of this collider. Defaults to {0.5, 0.5}.
+        /// Origin of this collider. Defaults to the center of collider.
         /// </summary>
         public Vector2 Origin {
-            get => _rawOrigin;
+            get => _origin;
             set {
-                _origin = value - new Vector2(0.5f);
-                _rawOrigin = value;
+                _origin = value;
 
                 // update internal values
                 UpdateCollider();
@@ -149,20 +147,16 @@ namespace Instant2D.EC.Components {
         public virtual void AutoResize(RectangleF bounds) { }
 
         /// <summary>
-        /// Attempts to move the object by <paramref name="velocity"/> amount. If it collides into something, <paramref name="hit"/> will be populated with collision data,
+        /// Calculates movement of the object based on <paramref name="velocity"/>. If it collides into something, <paramref name="hits"/> will be populated with collision data,
         /// as well as <paramref name="velocity"/> will be recalculated to prevent the collision. <br/> 
-        /// This method won't call <see cref="OnCollisionOccured"/>, so all of the collisions should be handled manually.
+        /// You'll have to return the <paramref name="hits"/> list back into the pool using <c><paramref name="hits"/>.Pool()</c> and move the entity by <paramref name="velocity"/> yourself.
         /// </summary>
-        public bool TryMove(Vector2 velocity, out CollisionHit<CollisionComponent> hit) {
-            hit = new();
+        public bool CalculateMovementCollisions(ref Vector2 velocity, out List<CollisionHit<CollisionComponent>> hits) {
+            hits = null;
 
             // generate bounds updated by the movement
             var bounds = BaseCollider.Bounds;
             bounds.Position += velocity;
-
-            // now move the collider in hopes it wont collide with anything
-            var oldPos = BaseCollider.Position;
-            BaseCollider.Position += velocity;
 
             // do a broad sweep to find all the potential collisions
             var nearby = Scene.Collisions.Broadphase(bounds, CollidesWithMask);
@@ -170,24 +164,36 @@ namespace Instant2D.EC.Components {
                 var other = nearby[i];
 
                 // check for collision
-                if (other != BaseCollider && BaseCollider.CheckCollision(other, out var actualHit)) {
-                    velocity -= actualHit.PenetrationVector;
+                if (other != BaseCollider && CollidesWith(other.Entity, velocity, out var hit)) {
+                    velocity -= hit.PenetrationVector;
 
-                    // move the collider to prevent jittering
-                    BaseCollider.Position = oldPos + velocity;
-
-                    // assign the first hit
-                    // TODO: introduce a way to return multiple hits?
-                    if (hit.BaseSelf == null) {
-                        hit = actualHit;
-                    }
+                    // add the hit to hits array
+                    hits ??= ListPool<CollisionHit<CollisionComponent>>.Get();
+                    hits.Add(hit);
                 }
             }
 
-            // now apply the motion to actual entity
-            Entity.Transform.Position += velocity;
+            // return true only if we did something
+            return hits != null;
+        }
 
-            return hit.BaseSelf != null;
+        /// <summary>
+        /// Checks if two collision components collide and returns important collision information as <paramref name="hit"/>.
+        /// </summary>
+        public bool CollidesWith(CollisionComponent other, out CollisionHit<CollisionComponent> hit) => BaseCollider.CheckCollision(other.BaseCollider, out hit);
+
+        /// <summary>
+        /// Checks of two collision components could collider with <paramref name="velocity"/> applied to them.
+        /// </summary>
+        public bool CollidesWith(CollisionComponent other, Vector2 velocity, out CollisionHit<CollisionComponent> hit) {
+            var oldPosition = BaseCollider.Position;
+            BaseCollider.Position += velocity;
+
+            // offset the BaseCollider and check for collision, then reset
+            var result = BaseCollider.CheckCollision(other.BaseCollider, out hit);
+            BaseCollider.Position = oldPosition;
+
+            return result;
         }
 
         /// <summary>

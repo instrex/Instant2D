@@ -71,8 +71,8 @@ namespace Instant2D.Coroutines {
                 }
 
                 // clear out the key
-                ListPool<ICoroutineObject>.Return(list);
                 CoroutinesByTarget.Remove(target);
+                list.Pool();
             }
         }
 
@@ -83,8 +83,8 @@ namespace Instant2D.Coroutines {
 
             if (list.Remove(obj) && list.Count == 0) {
                 // if the list is empty now, return it
-                ListPool<ICoroutineObject>.Return(list);
                 CoroutinesByTarget.Remove(target);
+                list.Pool();
             }
         }
 

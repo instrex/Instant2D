@@ -285,7 +285,7 @@ namespace Instant2D.Assets.Loaders {
 
                 // clear removed defs
                 removedDefs.ForEach(r => AssetManager.Instance.Remove(r.key));
-                ListPool<SpriteDef>.Return(removedDefs);
+                removedDefs.Pool();
 
                 // re-add new sprite assets
                 var newAssets = ProcessAssets(changedDefs).ToList();

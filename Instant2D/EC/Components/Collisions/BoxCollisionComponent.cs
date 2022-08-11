@@ -40,10 +40,10 @@ namespace Instant2D.EC.Components {
                 return;
 
             var size = ShouldScaleWithTransform ? _unscaledSize * Transform.Scale : _unscaledSize;
-            _offset = size * _origin;
+            _offset = _origin * Transform.Scale;
 
             // offset the position by origin amount
-            BaseCollider.Position = Transform.Position - _offset;
+            BaseCollider.Position = Transform.Position + _offset;
             BaseCollider.Size = size;
             // TODO: BaseCollider.Rotation = Transform.Rotation;
             BaseCollider.Update();
@@ -66,18 +66,27 @@ namespace Instant2D.EC.Components {
 
             // else, just update the position
             if ((components & TransformComponentType.Position) != 0) {
-                BaseCollider.Position = Entity.Transform.Position;
+                BaseCollider.Position = Entity.Transform.Position + _offset;
                 BaseCollider.Update();
             }
         }
 
         /// <inheritdoc cref="Size"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BoxCollisionComponent SetSize(float size) => SetSize(new Vector2(size));
+        public BoxCollisionComponent SetSize(float size, bool centerOrigin = true) => SetSize(new Vector2(size), centerOrigin);
 
         /// <inheritdoc cref="Size"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BoxCollisionComponent SetSize(Vector2 size) {
+        public BoxCollisionComponent SetSize(float width, float height, bool centerOrigin = true) => SetSize(new Vector2(width, height), centerOrigin);
+
+        /// <inheritdoc cref="Size"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BoxCollisionComponent SetSize(Vector2 size, bool centerOrigin = true) {
+            if (centerOrigin) {
+                // use backing field to avoid unnecessary updates
+                _origin = size * 0.5f;
+            }
+
             Size = size;
             return this;
         }
