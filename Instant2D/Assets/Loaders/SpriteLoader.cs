@@ -302,6 +302,12 @@ namespace Instant2D.Assets.Loaders {
                 // if it's just an image, that'll be easy
                 var container = AssetManager.Instance.GetContainer(assetKey.Replace(".png", "")) as LazyAsset;
 
+                // if a new file is added, just skip
+                if (container == null) {
+                    updatedAssets = null;
+                    return false;
+                }
+
                 // dispose of previous texture to free some space
                 if (container.IsLoaded) {
                     switch (container) {

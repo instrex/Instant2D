@@ -88,6 +88,8 @@ namespace Instant2D.EC.Components {
             }
 
             Size = size;
+            UpdateBoxCollider();
+
             return this;
         }
     }

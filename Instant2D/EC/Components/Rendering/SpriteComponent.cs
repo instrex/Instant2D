@@ -67,7 +67,7 @@ namespace Instant2D.EC {
 
             drawing.Draw(
                 Sprite, 
-                Entity.Transform.Position, 
+                Entity.Transform.Position + Offset, 
                 Color, 
                 Entity.Transform.Rotation, 
                 Entity.Transform.Scale,

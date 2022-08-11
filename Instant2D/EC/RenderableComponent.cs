@@ -27,6 +27,11 @@ namespace Instant2D.EC {
         public Color Color = Color.White;
 
         /// <summary>
+        /// An additional offset applied when rendering. Note that this doesn't rotate nor scale with <see cref="Entity.Transform"/>.
+        /// </summary>
+        public Vector2 Offset;
+
+        /// <summary>
         /// Whether or not this RenderableComponent was visible during last render.
         /// </summary>
         public bool IsVisible {

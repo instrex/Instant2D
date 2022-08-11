@@ -94,7 +94,7 @@ namespace Instant2D.EC {
 
         /// <inheritdoc cref="SpriteComponent.SpriteEffects"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T SetSpriteEffects<T>(this T spriteRenderer, SpriteEffects spriteEffects) where T : SpriteComponent {
+        public static T SetSpriteEffects<T>(this T spriteRenderer, SpriteEffects spriteEffects) where T : SpriteComponent { 
             spriteRenderer.SpriteEffects = spriteEffects;
             return spriteRenderer;
         }

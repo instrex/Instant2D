@@ -94,9 +94,18 @@ namespace Instant2D.EC {
             _elapsedTime = 0;
             _loopType = loop;
 
+            _frameIndex = -1;
             State = AnimatorState.Running;
             Frame = 0;
 
+            return this;
+        }
+
+        /// <summary>
+        /// Pause the frame animation.
+        /// </summary>
+        public SpriteAnimationComponent Pause() {
+            State = AnimatorState.Paused;
             return this;
         }
 
@@ -106,13 +115,13 @@ namespace Instant2D.EC {
         public SpriteAnimationComponent SetFrame(int frame, bool triggerEvents = true) {
             var clampedIndex = Math.Clamp(frame, 0, _animation.Frames.Length - 1);
 
+            // don't do anything if frames are the same
+            if (clampedIndex == _frameIndex)
+                return this;
+
             // set the frame
             Sprite = _animation.Frames[clampedIndex];
             _frameIndex = clampedIndex;
-
-            // don't do anything if frames are the same
-            if (clampedIndex == frame)
-                return this;
 
             // call the events (if there are any)
             if (triggerEvents && _animation.Events != null)
