@@ -1,4 +1,5 @@
 ﻿using Instant2D.Audio;
+using Instant2D.EC.Collisions;
 using Instant2D.EC.Components;
 using Instant2D.Graphics;
 using Instant2D.Utils;
@@ -165,12 +166,14 @@ namespace Instant2D.EC {
         }
 
         /// <inheritdoc cref="CollisionComponent.Origin"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T SetOrigin<T>(this T collisionComponent, Vector2 origin) where T : CollisionComponent {
             collisionComponent.Origin = origin;
             return collisionComponent;
         }
 
         /// <inheritdoc cref="CollisionComponent.Origin"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T SetOrigin<T>(this T collisionComponent, float originX, float originY) where T : CollisionComponent {
             collisionComponent.Origin = new(originX, originY);
             return collisionComponent;
@@ -179,10 +182,49 @@ namespace Instant2D.EC {
         /// <summary>
         /// Attempts to automatically determine collider size using renderables attached to entity.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T AutoResize<T>(this T collisionComponent) where T : CollisionComponent {
             // use renderables when possible
             if (collisionComponent.Entity.TryGetComponent<RenderableComponent>(out var renderableComponent))
                 collisionComponent.AutoResize(renderableComponent.Bounds);
+
+            return collisionComponent;
+        }
+
+        /// <inheritdoc cref="CollisionComponent.IsTrigger"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetIsTrigger<T>(this T collisionComponent, bool isTrigger = true) where T : CollisionComponent {
+            collisionComponent.IsTrigger = isTrigger;
+            return collisionComponent;
+        }
+
+        /// <summary>
+        /// Adds specified <paramref name="triggerHandler"/> to the collection of handlers. Provided object will now react to events after <see cref="CollisionComponent.UpdateTriggers"/> is called.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T AddTriggerHandler<T>(this T collisionComponent, ITriggerCallbacksHandler triggerHandler) where T : CollisionComponent {
+            if (collisionComponent._triggerHandlers == null) {
+                // initialize a new list when needed
+                collisionComponent._triggerHandlers = ListPool<ITriggerCallbacksHandler>.Get();
+            }
+
+            collisionComponent._triggerHandlers.Add(triggerHandler);
+            return collisionComponent;
+        }
+
+        /// <summary>
+        /// Removes the <paramref name="triggerHandler"/> from the collection of handlers and frees the list if there's nothing left.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T RemoveTriggerHandler<T>(this T collisionComponent, ITriggerCallbacksHandler triggerHandler) where T : CollisionComponent {
+            if (collisionComponent._triggerHandlers == null)
+                return collisionComponent;
+
+            // free the list if it's the last thing
+            if (collisionComponent._triggerHandlers.Remove(triggerHandler) && collisionComponent._triggerHandlers.Count == 0) {
+                collisionComponent._triggerHandlers.Pool();
+                collisionComponent._triggerHandlers = null;
+            }
 
             return collisionComponent;
         }

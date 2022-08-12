@@ -285,15 +285,27 @@ namespace Instant2D {
         /// <summary>
         /// Attempts to get the asset content with given key and type. Will throw if no asset is to be found.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Get<T>(string key) {
+            if (!TryGet<T>(key, out var asset)) {
+                throw new InvalidOperationException($"Asset of type '{typeof(T).Name}' with key '{key}' wasn't found.");
+            }
+
+            return asset;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGet<T>(string key, out T value) {
             if (_assets.TryGetValue(key, out var asset)) {
                 if (asset is not IAssetContainer<T> typedAsset)
                     throw new InvalidOperationException($"Cannot get asset '{key}' with type '{typeof(T).Name}', as its actual type is '{asset.GetType().Name}'.");
 
-                return typedAsset.Content;
+                value = typedAsset.Content;
+                return true;
             }
 
-            throw new InvalidOperationException($"Asset of type '{typeof(T).Name}' with key '{key}' wasn't found.");
+            value = default;
+            return false;
         }
 
         #endregion

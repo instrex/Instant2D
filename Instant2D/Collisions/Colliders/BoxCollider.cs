@@ -60,25 +60,6 @@ namespace Instant2D.Collisions {
                     }
 
                     return false;
-
-                    // OLD approach (weird!)
-                    //var (a, b) = (new RectangleF(Position - Size * 0.5f, Size), new RectangleF(other.Position - box.Size * 0.5f, box.Size));
-
-                    //// get intersection between two boxes
-                    //var intersection = a.GetIntersection(b);
-
-                    //// no collision...
-                    //if (intersection == default) {
-                    //    return false;
-                    //}
-
-                    //// calculate penetration vector
-                    //hit.PenetrationVector = intersection.Width < intersection.Height ?
-                    //    new(a.Center.X < b.Center.X ? intersection.Width : -intersection.Width, 0) :
-                    //    new(0, a.Center.Y < b.Center.Y ? intersection.Height : -intersection.Height);
-                    //hit.Normal = hit.PenetrationVector.SafeNormalize() * -1;
-
-                    //return hit.PenetrationVector != default;
                 }
 
                 // unrotated box-to-circle collision
@@ -86,6 +67,7 @@ namespace Instant2D.Collisions {
                     if (circle.CheckCollision(this, out hit)) {
                         Vector2.Negate(ref hit.PenetrationVector, out hit.PenetrationVector);
                         Vector2.Negate(ref hit.Normal, out hit.Normal);
+                        return true;
                     }
 
                     return false;

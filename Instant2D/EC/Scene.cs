@@ -18,6 +18,7 @@ using Instant2D.EC.Events;
 using Instant2D.Assets;
 using Instant2D.Assets.Containers;
 using Instant2D.Audio;
+using System.Text;
 
 namespace Instant2D.EC {
     public abstract class Scene : ICoroutineTarget {
@@ -221,64 +222,82 @@ namespace Instant2D.EC {
 
             // render some debug stuff
             if (_debugRender) {
-                // render bounds & culling data
-                drawing.Push(Material.Default, SceneToScreenTransform);
-
-                for (var i = 0; i < _layers.Count; i++) {
-                    var layer = _layers[i];
-                    for (var k = 0; k < layer.Objects.Count; k++) {
-                        var obj = layer.Objects[k];
-                        var color = obj.IsVisible ? Color.Green : Color.Red;
-                        var bounds = obj.Bounds with { Position = obj.Bounds.Position };
-
-                        for (var j = 0; j < 4; j++) {
-                            var offset = new Vector2(2, 0).RotatedBy(j * MathHelper.PiOver2);
-                            drawing.DrawRectangle(bounds with { Position = bounds.Position + offset }, Color.Transparent, Color.Black, 2);
-                        }
-
-                        var innerColor = Color.Transparent;
-                        if (bounds.Contains(Camera.ScreenToWorldPosition(InputManager.MousePosition))) {
-                            innerColor = color * (0.25f + 0.125f * MathF.Sin(TimeManager.TotalTime * 4 + i));
-                        }
-
-                        drawing.DrawRectangle(bounds, innerColor, color, 2);
-                        drawing.DrawPoint(obj.Entity.Transform.Position, Color.Black, 12);
-                        drawing.DrawPoint(obj.Entity.Transform.Position, color, 8);
-                        drawing.DrawString(obj.Entity.Name, new Vector2(bounds.Left, bounds.Top - 24), color, Vector2.One * 2, 0, drawOutline: true);
-                    }
-                }
-
-                drawing.DrawPoint(Vector2.Zero, Color.Green, 16);
-
-                drawing.Push(Material.Default, Matrix.Identity);
-
-                // render layers preview
-                for (var i = 0; i < _layers.Count; i++) {
-                    var drawScale = 0.5f;
-                    if (new RectangleF(16, 16 + _sceneSize.Y * 0.5f * i, _sceneSize.X * 0.5f, _sceneSize.Y * 0.5f).Contains(InputManager.RawMousePosition)) {
-                        drawing.DrawRectangle(new(0, 0, Resolution.rawScreenSize.X, Resolution.rawScreenSize.Y), Color.Black * 0.5f);
-                        drawScale = 2f;
-                    }
-
-                    drawing.DrawRectangle(new RectangleF(16, 16 + _sceneSize.Y * 0.5f * i, _sceneSize.X * drawScale, _sceneSize.Y * drawScale), Color.Black * 0.5f);
-
-                    drawing.Draw(
-                        new Sprite(_layers[i].RenderTarget, new(0, 0, _sceneSize.X, _sceneSize.Y), Vector2.Zero),
-                        new Vector2(16, 16 + _sceneSize.Y * 0.5f * i), 
-                        Color.White, 
-                        0f,
-                        drawScale
-                    );
-
-                    if (drawScale > 1f)
-                        break;
-
-                    drawing.DrawString($"#{i} '{_layers[i].Name}'", new Vector2(24 + _sceneSize.X * 0.5f, 18 + _sceneSize.Y * 0.5f * i).Round(),
-                        Color.White, Vector2.One * 2f, 0, drawOutline: true);
-                }
+                DebugRender(drawing);
             }
 
             drawing.Pop(true);
+        }
+
+        StringBuilder _debugInfoText = new();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void DebugRender(IDrawingBackend drawing) {
+            drawing.DrawString($"Collision Debug", new(10), Color.LightBlue, new Vector2(3), 0, drawOutline: true);
+
+            _debugInfoText.Clear();
+            CollisionsDebugLayer(drawing, _debugInfoText);
+
+            drawing.Pop();
+
+            drawing.DrawString(_debugInfoText.ToString(), new(14, 42), Color.LightBlue, new Vector2(2), 0, drawOutline: true);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void CollisionsDebugLayer(IDrawingBackend drawing, StringBuilder info) {
+            drawing.Push(Material.Default, SceneToScreenTransform);
+
+            var shiftHeld = InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftShift);
+            var mousePos = Camera.MouseToWorldPosition();
+            var colliderIndex = 0;
+
+            foreach (var collider in FindComponentsOfType<CollisionComponent>()) {
+                var bounds = collider.BaseCollider.Bounds;
+
+                // cull the off-screen colliders
+                if (!Camera.Bounds.Intersects(bounds))
+                    continue;
+
+                if (bounds.Contains(mousePos)) {
+                    info.AppendLine($"#{colliderIndex++} '{collider.Entity.Name}': {collider.GetType().Name}");
+
+                    // visualize the bitmasks
+                    for (var j = 0; j < 2; j++) {
+                        var mask = j == 0 ? collider.LayerMask : collider.CollidesWithMask;
+                        info.Append($" - {(j == 0 ? "LayerMask" : "CollidesWith")}: {mask} (Set Flags: ");
+
+                        // don't list all flags
+                        if (mask == -1) {
+                            info.AppendLine("ALL)");
+                            continue;
+                        }
+
+                        var begun = false;
+                        for (var i = 0; i < 32; i++) {
+                            if (IntFlags.IsFlagSet(mask, i)) {
+                                if (!begun) begun = true;
+                                else info.Append(", ");
+                                info.Append(i);
+                            }
+                        }
+
+                        info.AppendLine(")");
+                    }
+
+                    info.AppendLine($" - Origin: {collider.Origin}");
+
+                    info.AppendLine();
+                }
+
+                // draw bounds
+                drawing.DrawRectangle(bounds, Color.Transparent, new Color(1f, 1f, 1f, bounds.Contains(mousePos) ? 1f : 0.5f));
+
+                // draw actual collider shape
+                switch (collider) {
+                    case CircleCollisionComponent circle:
+                        drawing.DrawCircle(collider.Transform.Position, circle.Radius, Color.Red, resolution: 24);
+                        break;
+                }
+            }
         }
 
         internal void OnAssetsUpdated(IEnumerable<Asset> assets) {

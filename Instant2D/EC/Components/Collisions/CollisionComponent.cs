@@ -1,9 +1,11 @@
 ﻿using Instant2D.Collisions;
+using Instant2D.EC.Collisions;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -28,6 +30,13 @@ namespace Instant2D.EC.Components {
         /// </summary>
         protected bool _wasSizeSet;
         bool _scaleWithTransform = true, _rotateWithTransform = true;
+        internal List<ITriggerCallbacksHandler> _triggerHandlers;
+        HashSet<BaseCollider<CollisionComponent>> _contactTriggers, _tempTriggerSet;
+
+        /// <summary>
+        /// If <see langword="true"/>, this collider will not be considered solid and instead cause trigger callbacks to be emitted by other colliders when moving.
+        /// </summary>
+        public bool IsTrigger;
 
         /// <summary>
         /// Origin of this collider. Defaults to the center of collider.
@@ -116,6 +125,12 @@ namespace Instant2D.EC.Components {
 
         public override void OnRemovedFromEntity() {
             Scene.Collisions.RemoveCollider(BaseCollider);
+
+            // dispose of handlers
+            if (_triggerHandlers != null) {
+                _triggerHandlers.Pool();
+                _triggerHandlers = null;
+            }
         }
 
         public override void PostInitialize() {
@@ -163,8 +178,8 @@ namespace Instant2D.EC.Components {
             for (var i = 0; i < nearby.Count; i++) {
                 var other = nearby[i];
 
-                // check for collision
-                if (other != BaseCollider && CollidesWith(other.Entity, velocity, out var hit)) {
+                // check for collision, skipping self and triggers
+                if (other != BaseCollider && !other.Entity.IsTrigger && CollidesWith(other.Entity, velocity, out var hit)) {
                     velocity -= hit.PenetrationVector;
 
                     // add the hit to hits array
@@ -176,6 +191,8 @@ namespace Instant2D.EC.Components {
             // return true only if we did something
             return hits != null;
         }
+
+        #region Collision Methods
 
         /// <summary>
         /// Checks if two collision components collide and returns important collision information as <paramref name="hit"/>.
@@ -223,5 +240,69 @@ namespace Instant2D.EC.Components {
             // go for more precise approach and call stuff
             return BaseCollider.CheckOverlap(other.BaseCollider);
         }
+
+        #endregion
+
+        #region Trigger Handling
+
+        void TriggerCallbacks(CollisionComponent trigger, bool isEntering) {
+            if (_triggerHandlers == null)
+                return;
+
+            for (var i = 0; i < _triggerHandlers.Count; i++) {
+                if (isEntering) {
+                    _triggerHandlers[i].OnTriggerEnter(this, trigger);
+                } else {
+                    _triggerHandlers[i].OnTriggerExit(this, trigger);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update method for the triggers. Will push the events to all <see cref="ITriggerCallbacksHandler"/> attached to this collider and triggers.
+        /// </summary>
+        public void UpdateTriggers() {
+            // initialize the sets
+            if (_tempTriggerSet == null) {
+                _contactTriggers = new();
+                _tempTriggerSet = new();
+            }
+
+            // scan nearby area for overlapping triggers
+            var nearby = Scene.Collisions.Broadphase(BaseCollider.Bounds, CollidesWithMask);
+            for (var i = 0; i < nearby.Count; i++) {
+                var trigger = nearby[i];
+
+                // either object has to be the trigger
+                // I'm not sure how useful is it to test two triggers colliding though
+                if (!IsTrigger && !trigger.Entity.IsTrigger)
+                    continue;
+
+                if (BaseCollider.CheckOverlap(trigger)) {
+                    // OnTriggerEnter
+                    if (_contactTriggers.Add(trigger)) {
+                        TriggerCallbacks(trigger.Entity, true);
+                        trigger.Entity.TriggerCallbacks(this, true);
+                    }
+
+                    // store handled triggers for later
+                    _tempTriggerSet.Add(trigger);
+                }
+            }
+
+            // call exit events
+            foreach (var trigger in _contactTriggers) {
+                // OnTriggerExit
+                if (!_tempTriggerSet.Contains(trigger)) {
+                    TriggerCallbacks(trigger.Entity, false);
+                    trigger.Entity.TriggerCallbacks(this, false);
+                    _contactTriggers.Remove(trigger);
+                }
+            }
+
+            _tempTriggerSet.Clear();
+        }
+
+        #endregion
     }
 }

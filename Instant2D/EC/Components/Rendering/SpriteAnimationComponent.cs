@@ -102,7 +102,20 @@ namespace Instant2D.EC {
         }
 
         /// <summary>
-        /// Pause the frame animation.
+        /// Resumes (or begins) the animation.
+        /// </summary>
+        public SpriteAnimationComponent Play(bool restartAnimation = false) {
+            if (restartAnimation) {
+                Play(_animation, _loopType);
+                return this;
+            }
+
+            State = AnimatorState.Running;
+            return this;
+        }
+
+        /// <summary>
+        /// Pause the frame animation. Could be used to manually control frames.
         /// </summary>
         public SpriteAnimationComponent Pause() {
             State = AnimatorState.Paused;

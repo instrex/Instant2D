@@ -33,6 +33,23 @@ namespace Instant2D {
         }
 
         /// <summary>
+        /// Draws a circle with specified <paramref name="radius"/> and <paramref name="color"/>. 
+        /// <paramref name="resolution"/> can be used to control how many steps will be taken.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void DrawCircle(this IDrawingBackend drawing, Vector2 position, float radius, Color color, float thickness = 1f, int resolution = 12) {
+            var step = MathHelper.TwoPi / resolution;
+            for (var i = 1; i <= resolution; i++) {
+                var (from, to) = (
+                    position + VectorUtils.ToVector2(step * (i - 1)) * radius,
+                    position + VectorUtils.ToVector2(step * i) * radius
+                );
+
+                DrawLine(drawing, from, to, color, thickness);
+            }
+        }
+
+        /// <summary>
         /// Draws a rectangle with optional outline.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
