@@ -37,6 +37,9 @@ namespace Instant2D.EC {
     }
 
     public class SpriteAnimationComponent : SpriteComponent, IUpdatableComponent {
+        /// <summary>
+        /// State of animation playback.
+        /// </summary>
         public AnimatorState State { get; private set; }
 
         float _elapsedTime;
@@ -102,7 +105,7 @@ namespace Instant2D.EC {
         }
 
         /// <summary>
-        /// Resumes (or begins) the animation.
+        /// Resumes (or begins if <paramref name="restartAnimation"/> is set) the animation.
         /// </summary>
         public SpriteAnimationComponent Play(bool restartAnimation = false) {
             if (restartAnimation) {

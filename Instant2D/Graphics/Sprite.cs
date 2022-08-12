@@ -14,6 +14,7 @@ namespace Instant2D {
     public readonly struct Sprite {
         public Texture2D Texture { get; init; }
         public Rectangle SourceRect { get; init; }
+        public Dictionary<string, Point> Points { get; init; }
         public string Key { get; init; }
 
         readonly Vector2 _origin;
@@ -41,6 +42,7 @@ namespace Instant2D {
         public Sprite(Texture2D texture, string key = default) {
             Texture = texture;
             SourceRect = new(0, 0, Texture.Width, Texture.Height);
+            Points = null;
             Key = key;
 
             _origin = new(Texture.Width / 2, Texture.Height / 2);
@@ -49,6 +51,7 @@ namespace Instant2D {
         public Sprite(Texture2D texture, Rectangle sourceRect, Vector2 origin, string key = default) {
             Texture = texture;
             SourceRect = sourceRect;
+            Points = null;
             Key = key;
 
             _origin = origin.Round();

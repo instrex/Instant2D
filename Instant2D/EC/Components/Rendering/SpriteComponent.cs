@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -50,6 +51,42 @@ namespace Instant2D.EC {
             get => _spriteFx;
             set => _spriteFx = value;
         }
+
+        #region Point handling
+
+        /// <summary>
+        /// Attempts to get the sprite point with Entity tranformations applied. If it fails, Entity position is returned instead. <br/>
+        /// If you need to get a raw point in sprite space, set <paramref name="dontApplyTransform"/> to <see langword="true"/>.
+        /// </summary>
+        public virtual bool TryGetPoint(string key, out Vector2 point, bool dontApplyTransform = false) {
+            if (!_isSpriteSet || _sprite.Points == null || !_sprite.Points.TryGetValue(key, out var rawPoint)) {
+                point = Transform.Position;
+                return false;
+            }
+
+            var offset = rawPoint.ToVector2() - _sprite.Origin;
+            point = Entity.Transform.Position + (dontApplyTransform ? offset : TransformPointOffset(offset));
+            return true;
+        }
+
+        /// <summary>
+        /// Gets a sprite point using <see cref="TryGetPoint(string, out Vector2)"/>. If point with such key doesn't exist, <c>Transform.Position</c> is returned.
+        /// </summary>
+        public Vector2 this[string key] {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get {
+                TryGetPoint(key, out var point);
+                return point;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected Vector2 TransformPointOffset(Vector2 offset) => 
+            offset.RotatedBy(Entity.Transform.Rotation) * Entity.Transform.Scale
+            * new Vector2(FlipX ? 1 : -1, FlipY ? 1 : -1)
+            + Offset;
+
+        #endregion
 
         protected override void RecalculateBounds(ref RectangleF bounds) {
             if (!_isSpriteSet) {

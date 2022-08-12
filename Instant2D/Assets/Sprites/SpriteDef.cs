@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using System.Collections.Generic;
 
 namespace Instant2D.Assets.Sprites {
     /// <summary>
@@ -37,11 +38,17 @@ namespace Instant2D.Assets.Sprites {
         public SpriteManifest manifest;
 
         /// <summary>
+        /// Collection of named sprite points.
+        /// </summary>
+        public Dictionary<string, Vector2> points;
+
+        /// <summary>
         /// Checks if this definition is default - has nothing defined other than fileName and key.
         /// </summary>
         public bool IsDefault => manifest == null
             && split.type == SpriteSplitOptions.None
             && origin.type == SpriteOriginType.Default
+            && points == null
             && animation == null;
 
         public bool Equals(SpriteDef other) {
@@ -49,11 +56,12 @@ namespace Instant2D.Assets.Sprites {
                 other.type == type &&
                 other.split == split &&
                 other.origin == origin &&
+                other.points == points &&
                 other.animation == animation;
         }
 
         public override int GetHashCode() {
-            return HashCode.Combine(key, type, split, origin, animation);
+            return HashCode.Combine(key, type, split, origin, animation, points);
         }
 
         /// <summary>

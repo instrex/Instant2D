@@ -141,7 +141,9 @@ namespace Instant2D.Assets.Loaders {
 
             // make cool sprite
             var def = asset.Data as SpriteDef;
-            var sprite = new Sprite(texture, new Rectangle(0, 0, texture.Width, texture.Height), new Vector2(texture.Width, texture.Height) * 0.5f, asset.Key);
+            var sprite = new Sprite(texture, new Rectangle(0, 0, texture.Width, texture.Height), new Vector2(texture.Width, texture.Height) * 0.5f, asset.Key) {
+                Points = def.points?.ToDictionary(p => p.Key, p => p.Value.RoundToPoint())
+            };
 
             // obtain the framebuffer when animation is needed
             var frameBuffer = def.animation != null && def.split.type != SpriteSplitOptions.Manual ? ListPool<Sprite>.Get() : null;
