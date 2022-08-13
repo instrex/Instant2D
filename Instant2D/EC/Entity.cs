@@ -411,7 +411,7 @@ namespace Instant2D.EC {
                     _components[i].PostInitialize();
                 }
 
-                _isInitialized = false;
+                _isInitialized = true;
             }
 
             if (_shouldDestroy) {
