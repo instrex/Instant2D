@@ -17,6 +17,11 @@ namespace Instant2D.EC {
         /// </summary>
         protected internal List<RenderableComponent> Objects = new(128);
 
+        internal RenderTarget2D _renderTarget;
+        internal bool _orderDirty;
+        internal Scene _scene;
+        Material _currentMaterial;
+
         /// <summary>
         /// An identifier of this Layer.
         /// </summary>
@@ -32,15 +37,15 @@ namespace Instant2D.EC {
         /// </summary>
         public RenderTarget2D RenderTarget => _renderTarget;
 
-        internal RenderTarget2D _renderTarget;
-        internal bool _orderDirty;
-        internal Scene _scene;
-        Material _currentMaterial;
-
         /// <summary>
         /// The camera this layer uses. If it's <see langword="null"/>, Scene's camera will be used.
         /// </summary>
         public CameraComponent Camera;
+
+        /// <summary>
+        /// When <see langword="true"/>, objects outside the view of the <see cref="Camera"/> will not be rendered.
+        /// </summary>
+        public bool EnableCulling = true;
 
         /// <summary>
         /// A color which the RenderTarget will be cleared to. Defaults to <see cref="Color.Transparent"/>.
@@ -49,6 +54,10 @@ namespace Instant2D.EC {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void InternalDraw() {
+            // there's nothing to render...
+            if (Objects.Count == 0)
+                return;
+
             // first, sort the objects if needed
             if (_orderDirty) {
                 _orderDirty = false;
@@ -58,7 +67,7 @@ namespace Instant2D.EC {
             var drawing = GraphicsManager.Backend;
             var camera = Camera ?? _scene.Camera;
             var bounds = camera.Bounds;
-            var cullingEnabled = bounds != default;
+            var cullingEnabled = EnableCulling && bounds != default;
 
             // begin the batch
             drawing.Push(_currentMaterial = Material.Default, camera.TransformMatrix);
@@ -71,13 +80,9 @@ namespace Instant2D.EC {
                 if (!obj._isActive)
                     continue;
 
-                if (cullingEnabled) {
-                    obj.IsVisible = bounds.Intersects(obj.Bounds);
-                    //drawing.DrawHollowRect(obj.Bounds, obj.IsVisible ? Color.Green : Color.Red, 2);
-
-                    // don't draw the objects outside view
-                    if (!obj.IsVisible)
-                        continue;
+                // skip out-of-bounds objects
+                if (cullingEnabled && !(obj.IsVisible = bounds.Intersects(obj.Bounds))) {
+                    continue;
                 }
 
                 // swap the material when needed
