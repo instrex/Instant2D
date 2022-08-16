@@ -7,7 +7,6 @@ using Instant2D.Utils.Math;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
@@ -329,6 +328,9 @@ namespace Instant2D.EC {
 
             // release all the coroutines attached to this scene
             CoroutineManager.StopByTarget(this);
+
+            // raise the cleanup event
+            Events.Raise<SceneCleanupEvent>(default);
 
             // farewell
             _isCleanedUp = true;

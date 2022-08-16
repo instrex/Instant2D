@@ -355,6 +355,42 @@ namespace Instant2D.EC {
         }
 
         /// <inheritdoc cref="Transform.Position"/>
+        public Vector2 Position {
+            get => Transform.Position;
+            set => SetPosition(value);
+        }
+
+        /// <inheritdoc cref="Transform.LocalPosition"/>
+        public Vector2 LocalPosition {
+            get => Transform.LocalPosition;
+            set => SetLocalPosition(value);
+        }
+
+        /// <inheritdoc cref="Transform.Scale"/>
+        public Vector2 Scale {
+            get => Transform.Scale;
+            set => SetScale(value);
+        }
+
+        /// <inheritdoc cref="Transform.Scale"/>
+        public Vector2 LocalScale {
+            get => Transform.LocalScale;
+            set => SetLocalScale(value);
+        }
+
+        /// <inheritdoc cref="Transform.Rotation"/>
+        public float Rotation {
+            get => Transform.Rotation;
+            set => SetRotation(value);
+        }
+
+        /// <inheritdoc cref="Transform.LocalRotation"/>
+        public float LocalRotation {
+            get => Transform.LocalRotation;
+            set => SetLocalRotation(value);
+        }
+
+        /// <inheritdoc cref="Transform.Position"/>
         public Entity SetPosition(Vector2 position) {
             Transform.Position = position;
             return this;
@@ -399,6 +435,18 @@ namespace Instant2D.EC {
         /// <inheritdoc cref="Transform.LocalRotation"/>
         public Entity SetLocalRotation(float rotation) {
             Transform.LocalRotation = rotation;
+            return this;
+        }
+
+        /// <inheritdoc cref="IsActive"/>
+        public Entity SetActive(bool isActive) {
+            IsActive = isActive;
+            return this;
+        }
+
+        /// <inheritdoc cref="TimeScale"/>
+        public Entity SetTimeScale(float timeScale = float.NaN) {
+            TimeScale = timeScale;
             return this;
         }
 
