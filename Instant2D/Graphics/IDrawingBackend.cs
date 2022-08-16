@@ -14,6 +14,11 @@ namespace Instant2D {
         void Draw(in Sprite sprite, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects spriteEffects = SpriteEffects.None);
 
         /// <summary>
+        /// Batch up a texture for later rendering.
+        /// </summary>
+        void DrawTexture(Texture2D texture, Vector2 position, Color color, float rotation, Vector2 scale, Vector2 origin, SpriteEffects spriteEffects = SpriteEffects.None, Rectangle? sourceRect = default);
+
+        /// <summary>
         /// Begins new batch with specified <see cref="Material"/>.
         /// </summary>
         void Push(in Material material, Matrix transformMatrix = default);

@@ -48,6 +48,24 @@ namespace Instant2D.Graphics {
             );
         }
 
+        public void DrawTexture(Texture2D texture, Vector2 position, Color color, float rotation, Vector2 scale, Vector2 origin, SpriteEffects spriteEffects = SpriteEffects.None, Rectangle? sourceRect = null) {
+            if (_batchDepth == 0) {
+                throw new InvalidOperationException("Cannot Draw: the batch didn't begin.");
+            }
+
+            _spriteBatch.Draw(
+                texture,
+                position,
+                sourceRect,
+                color,
+                rotation,
+                origin,
+                scale,
+                spriteEffects,
+                0
+            );
+        }
+
         public void Pop(bool endCompletely = false) {
             if (_batchDepth == 0) {
                 throw new InvalidOperationException("Cannot Pop the batch: it didn't begin.");
