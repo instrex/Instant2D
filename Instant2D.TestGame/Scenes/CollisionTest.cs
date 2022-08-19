@@ -43,13 +43,13 @@ namespace Instant2D.TestGame.Scenes {
                     return;
 
                 var velocity = Velocity * Entity.TimeScale * (TimeManager.TimeDelta / (1.0f / 60));
-                if (Collider.TryMove(velocity, out var hit)) {
-                    // push other box
-                    if (hit.Other.Entity.TryGetComponent<FunnyMovingBox>(out var otherBox)) {
-                        otherBox.Velocity = Velocity;
-                    }
+                if (Collider.CalculateMovementCollisions(ref velocity, out var hit)) {
+                    //// push other box
+                    //if (hit..Entity.TryGetComponent<FunnyMovingBox>(out var otherBox)) {
+                    //    otherBox.Velocity = Velocity;
+                    //}
 
-                    Velocity = Vector2.Reflect(Velocity, hit.Normal);
+                    //Velocity = Vector2.Reflect(Velocity, hit.Normal);
                 }
             }
         }

@@ -1,4 +1,5 @@
-﻿using Instant2D.Graphics;
+﻿using Instant2D.EC.Rendering;
+using Instant2D.Graphics;
 using Instant2D.Utils;
 using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
@@ -8,7 +9,7 @@ using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC {
     public abstract class RenderableComponent : Component, IComparable<RenderableComponent> {
-        SceneRenderLayer _layer;
+        RenderLayer _layer;
 
         // used for bounds calculations
         static Matrix2D _tempMatrix, _tempTransform;
@@ -62,14 +63,14 @@ namespace Instant2D.EC {
 
                 // mark the order dirty 
                 if (_layer != null)
-                    _layer._orderDirty = true;
+                    _layer._drawOrderDirty = true;
             }
         }
 
         /// <summary>
         /// The layer this component resides on.
         /// </summary>
-        public SceneRenderLayer RenderLayer {
+        public RenderLayer RenderLayer {
             get => _layer;
             set {
                 // remove the object from the previous layer
@@ -80,7 +81,7 @@ namespace Instant2D.EC {
                 if (_layer != null) {
                     // add the object and update the order
                     _layer.Objects.Add(this);
-                    _layer._orderDirty = true;
+                    _layer._drawOrderDirty = true;
                 }
             }
         }
@@ -97,7 +98,7 @@ namespace Instant2D.EC {
 
                 _z = value;
                 if (_layer != null) {
-                    _layer._orderDirty = true;
+                    _layer._drawOrderDirty = true;
                 }
             }
         }
@@ -117,7 +118,7 @@ namespace Instant2D.EC {
 
                 _depth = clamped;
                 if (_layer != null) {
-                    _layer._orderDirty = true;
+                    _layer._drawOrderDirty = true;
                 }
             }
         }

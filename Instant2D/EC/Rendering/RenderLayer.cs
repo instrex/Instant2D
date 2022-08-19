@@ -13,7 +13,12 @@ using System.Threading.Tasks;
 
 namespace Instant2D.EC.Rendering {
     public class RenderLayer {
-        Scene _scene;
+        /// <summary>
+        /// Name of the master layer that will combine each other layer into a single texture for the scene. <br/>
+        /// This layer will be automatically managed, and you won't be able manipulate it in any way aside from adding post-processing effects.
+        /// </summary>
+        public const string MASTER_LAYER_NAME = "master";
+
         RenderLayer[] _masteredLayers;
         RenderTarget2D _renderTarget;
 
@@ -21,11 +26,11 @@ namespace Instant2D.EC.Rendering {
         internal bool _useRenderTarget;
 
         public RenderLayer(Scene scene, string name) {
-            _scene = scene;
+            Scene = scene;
             Name = name;
 
             // subscribe to SceneResolutionChangedEvent event
-            _scene.Events.Subscribe<SceneResolutionChangedEvent>(ResizeRenderTarget);
+            Scene.Events.Subscribe<SceneResolutionChangedEvent>(ResizeRenderTarget);
         }
 
         /// <summary>
@@ -34,6 +39,8 @@ namespace Instant2D.EC.Rendering {
         public RenderTarget2D RenderTarget {
             get => _renderTarget;
         }
+
+        public readonly Scene Scene;
 
         /// <summary>
         /// The name of this layer.
@@ -58,7 +65,7 @@ namespace Instant2D.EC.Rendering {
         /// <summary>
         /// Color to which the <see cref="RenderTarget"/> will be cleared. Has no effect if this layer doesn't use it.
         /// </summary>
-        public Color BackgroundColor = Color.White;
+        public Color BackgroundColor = Color.Transparent;
 
         /// <summary>
         /// Individual camera for this layer. If this isn't set, <see cref="Scene.Camera"/> will be used. <br/>
@@ -120,7 +127,7 @@ namespace Instant2D.EC.Rendering {
             var drawing = GraphicsManager.Backend;
 
             // we need to force update the camera for the frame
-            var camera = Camera ?? _scene.Camera;
+            var camera = Camera ?? Scene.Camera;
             camera.ForceUpdate();
 
             // cache for culling
@@ -155,7 +162,7 @@ namespace Instant2D.EC.Rendering {
         public void Prepare() {
             if (_useRenderTarget && _renderTarget == null) {
                 // initialize the RenderTarget when needed
-                _renderTarget = new RenderTarget2D(InstantGame.Instance.GraphicsDevice, _scene.Resolution.renderTargetSize.X, _scene.Resolution.renderTargetSize.Y);
+                _renderTarget = new RenderTarget2D(InstantGame.Instance.GraphicsDevice, Scene.Resolution.renderTargetSize.X, Scene.Resolution.renderTargetSize.Y);
             }
 
             // prepare the mastered layers
@@ -176,7 +183,7 @@ namespace Instant2D.EC.Rendering {
             // render all the mastered layers
             if (_masteredLayers != null) {
                 for (var i = 0; i < _masteredLayers.Length; i++) {
-                    _masteredLayers[i].Present(GraphicsManager.Backend, Vector2.Zero, Vector2.One);
+                    _masteredLayers[i].Present(GraphicsManager.Backend);
                 }
             }
 
@@ -187,12 +194,15 @@ namespace Instant2D.EC.Rendering {
         /// <summary>
         /// Presents the layer to the screen. If it uses RenderTarget, all the drawing work would be done via <see cref="Draw"/>, and this step is just rendering the RenderTarget onto the screen.
         /// </summary>
-        public void Present(IDrawingBackend drawing, Vector2 offset, Vector2 scale) {
+        public void Present(IDrawingBackend drawing) {
             if (_useRenderTarget) {
                 // present the rendertexture to the screen and call it a day
-                drawing.DrawTexture(_renderTarget, offset, Color.White, 0, scale, Vector2.Zero);
+                drawing.DrawTexture(_renderTarget, Vector2.Zero, Color.White, 0, Vector2.One, Vector2.Zero);
                 return;
             }
+
+            // imitate the background color clear
+            drawing.DrawRectangle(new(Vector2.Zero, Scene.Resolution.renderTargetSize.ToVector2()), BackgroundColor);
 
             // else, draw the objects as usual
             DrawObjects();

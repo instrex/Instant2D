@@ -18,20 +18,22 @@ using Instant2D.Assets;
 using Instant2D.Assets.Containers;
 using Instant2D.Audio;
 using System.Text;
+using Instant2D.EC.Rendering;
 
 namespace Instant2D.EC {
     public abstract class Scene : ICoroutineTarget {
         internal readonly List<Entity> _entities = new(128);
-        readonly List<SceneRenderLayer> _layers = new(12);
         RenderTarget2D _sceneTarget, _tempTarget;
         bool _isInitialized, _isCleanedUp;
         bool _debugRender;
-        Point _sceneSize;
+
+        readonly List<RenderLayer> _layers = new(12);
+        RenderLayer _masterLayer;
 
         /// <summary>
         /// Represents collection of RenderLayers this scene will use.
         /// </summary>
-        public IReadOnlyList<SceneRenderLayer> RenderLayers => _layers;
+        public IReadOnlyList<RenderLayer> RenderLayers => _layers;
 
         /// <summary>
         /// Returns all entities attached to this scene.
@@ -67,7 +69,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Default RenderLayer used for components with nothing specified.
         /// </summary>
-        public SceneRenderLayer DefaultRenderLayer;
+        public RenderLayer DefaultRenderLayer;
 
         /// <summary>
         /// Camera used to render this scene.
@@ -125,14 +127,13 @@ namespace Instant2D.EC {
             return entity;
         }
 
-        /// <inheritdoc cref="CreateLayer{T}(string)"/>
-        public SceneRenderLayer CreateLayer(string name) => CreateLayer<SceneRenderLayer>(name);
+        #region Layers 
 
         /// <summary>
         /// Create and register <see cref="SceneRenderLayer"/> for rendering objects.
         /// </summary>
-        public T CreateLayer<T>(string name) where T: SceneRenderLayer, new() {
-            var layer = new T() { Name = name, _scene = this };
+        public RenderLayer CreateLayer(string name) {
+            var layer = new RenderLayer(this, name);
             _layers.Add(layer);
 
             // set the default layer to first one
@@ -140,6 +141,8 @@ namespace Instant2D.EC {
 
             return layer;
         }
+
+        #endregion
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void InternalUpdate(GameTime time) {
@@ -183,38 +186,38 @@ namespace Instant2D.EC {
                 return;
             }
             
-            // draw each layer into its own RT
-            var gd = InstantGame.Instance.GraphicsDevice;
+            // prepare all of the layers before drawing them on-screen
             for (var i = 0; i < _layers.Count; i++) {
                 var layer = _layers[i];
 
-                // set the RT and clear it
-                gd.SetRenderTarget(layer._renderTarget);
-                gd.Clear(layer.BackgroundColor);
-
-                Camera.ForceUpdate();
-
-                layer.InternalDraw();
+                // we prepare the layer for presentation there
+                if (layer.Active && layer.ShouldPresent) {
+                    layer.Prepare();
+                }
             }
 
+            // use Scene RT for flattening
+            var gd = InstantGame.Instance.GraphicsDevice;
+            gd.SetRenderTarget(_sceneTarget);
+            gd.Clear(Color.Transparent);
+
+            var drawing = GraphicsManager.Backend;
+            drawing.Push(Material.Default);
+
+            // draw the layers onto the RT
+            for (var i = 0; i < _layers.Count; i++) {
+                _layers[i].Present(drawing);
+            }
+
+            drawing.Pop(true);
+
+            // now draw the flattened layer image to backbuffer
             gd.SetRenderTarget(null);
             gd.Clear(Color.Transparent);
 
-            // draw the layers onto the backbuffer
-            var drawing = GraphicsManager.Backend;
-
             drawing.Push(Material.Default);
-            for (var i = 0; i < _layers.Count; i++) {
-                var layer = _layers[i];
-                drawing.Draw(new Sprite(
-                    _layers[i]._renderTarget,
-                    new(0, 0, _sceneSize.X, _sceneSize.Y), Vector2.Zero),
-                    Resolution.offset,
-                    layer.Color,
-                    0,
-                    Resolution.scaleFactor
-                );
-            }
+
+            drawing.DrawTexture(_sceneTarget, Resolution.offset, Color.White, 0, new(Resolution.scaleFactor), Vector2.Zero);
 
             // invoke the user callback
             Render(drawing);
@@ -342,10 +345,9 @@ namespace Instant2D.EC {
             var previous = Resolution;
 
             // resize RenderTargets when needed
-            if (_sceneSize == default || previous.renderTargetSize != resolution.renderTargetSize) {
+            if (_sceneTarget == null || previous.renderTargetSize != resolution.renderTargetSize) {
                 // get Scene size
                 var (width, height) = (resolution.renderTargetSize.X, resolution.renderTargetSize.Y);
-                _sceneSize = new(width, height);
 
                 // dispose of the existing RTs
                 _sceneTarget?.Dispose();
@@ -354,12 +356,6 @@ namespace Instant2D.EC {
                 // allocate new scene targets
                 _sceneTarget = new RenderTarget2D(gd, width, height);
                 _tempTarget = new RenderTarget2D(gd, width, height);
-
-                // reallocate new RTs for layers
-                for (var i = 0; i < _layers.Count; i++) {
-                    _layers[i]._renderTarget?.Dispose();
-                    _layers[i]._renderTarget = new RenderTarget2D(gd, width, height);
-                }
             }
 
             Resolution = resolution;

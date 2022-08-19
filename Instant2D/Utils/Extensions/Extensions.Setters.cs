@@ -1,6 +1,7 @@
 ﻿using Instant2D.Audio;
 using Instant2D.EC.Collisions;
 using Instant2D.EC.Components;
+using Instant2D.EC.Rendering;
 using Instant2D.Graphics;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
@@ -47,7 +48,7 @@ namespace Instant2D.EC {
 
         /// <inheritdoc cref="RenderableComponent.RenderLayer"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T SetRenderLayer<T>(this T renderableComponent, SceneRenderLayer renderLayer) where T : RenderableComponent {
+        public static T SetRenderLayer<T>(this T renderableComponent, RenderLayer renderLayer) where T : RenderableComponent {
             renderableComponent.RenderLayer = renderLayer;
             return renderableComponent;
         }
