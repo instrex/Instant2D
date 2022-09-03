@@ -174,7 +174,7 @@ namespace Instant2D.TestGame.Scenes {
             //    Stiffness = 1f
             //});
 
-            CreateLayer("default");
+            AddRenderLayer("default");
 
             CreateEntity("verlet-test", Vector2.Zero)
                 .AddComponent(new ChainRenderer {

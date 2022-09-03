@@ -58,13 +58,13 @@ namespace Instant2D.Collisions {
                 case BoxCollider<T> box: {
                     var closestPoint = box.Bounds.GetClosestPoint(Position, out hit.Normal);
 
-                    // the circle is contained inside the box, easy win
-                    if (box.Bounds.Contains(closestPoint)) {
-                        hit.PenetrationVector = Position - (closestPoint + hit.Normal * Radius);
-                        hit.Point = closestPoint;
+                    // TODO: this causes issues sometimes, check if needed later(?)
+                    //if (box.Bounds.Contains(closestPoint)) {
+                    //    hit.PenetrationVector = Position - (closestPoint + hit.Normal * Radius);
+                    //    hit.Point = closestPoint;
 
-                        return true;
-                    }
+                    //    return true;
+                    //}
 
                     var dist = Vector2.DistanceSquared(closestPoint, Position);
 

@@ -17,7 +17,7 @@ namespace Instant2D.TestGame.Scenes {
         Entity _saul;
 
         public override void Initialize() {
-            CreateLayer("default").BackgroundColor = Color.Black;
+            AddRenderLayer("default").BackgroundColor = Color.Black;
 
             _saul = CreateEntity("saul")
                 .AddComponent(new SpriteComponent {

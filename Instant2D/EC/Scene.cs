@@ -130,9 +130,9 @@ namespace Instant2D.EC {
         #region Layers 
 
         /// <summary>
-        /// Create and register <see cref="SceneRenderLayer"/> for rendering objects.
+        /// Create and register <see cref="SceneRenderLayer"/> for rendering objects or mastering other render layers.
         /// </summary>
-        public RenderLayer CreateLayer(string name) {
+        public RenderLayer AddRenderLayer(string name) {
             var layer = new RenderLayer(this, name);
             _layers.Add(layer);
 
@@ -140,6 +140,41 @@ namespace Instant2D.EC {
             DefaultRenderLayer ??= layer;
 
             return layer;
+        }
+
+        /// <summary>
+        /// Adds a master layer to this scene. This layer should not contain any objects and instead be used to draw each other layer, optionally applying post-processing effects. <br/>
+        /// Should be the last layer in hierarchy, is automatically added when you add post-processing effects to the scene.
+        /// </summary>
+        public RenderLayer AddMasterLayer(string name) {
+            var layer = new RenderLayer(this, name);
+            layer.SetMasteredLayers(_layers.ToArray());
+
+            // if there's already a master layer defined,
+            // remove it and dispose of it (brutal)
+            if (_masterLayer != null) {
+                _layers.Remove(_masterLayer);
+                _masterLayer.Dispose();
+            }
+
+            // set the reference for later use
+            _masterLayer = layer;
+            _layers.Add(layer);
+
+            return layer;
+        }
+
+        /// <summary>
+        /// Attempts to get a render layer with provided name.
+        /// </summary>
+        public RenderLayer GetRenderLayer(string name) {
+            for (var i = 0; i < _layers.Count; i++) {
+                if (_layers[i].Name == name) {
+                    return _layers[i];
+                }
+            }
+
+            return null;
         }
 
         #endregion
@@ -153,7 +188,7 @@ namespace Instant2D.EC {
                     Camera = CreateEntity("camera", Vector2.Zero)
                         .AddComponent<CameraComponent>();
 
-                    Listener = Camera.Entity;
+                    Listener = Camera;
                 }
 
                 Initialize();

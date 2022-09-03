@@ -160,10 +160,10 @@ namespace Instant2D.TestGame.Scenes {
             var scene = this;
 
             // setup layers
-            var bg = scene.CreateLayer("background");
+            var bg = scene.AddRenderLayer("background");
             bg.BackgroundColor = Color.DarkRed;
 
-            var objects = scene.CreateLayer("objects");
+            var objects = scene.AddRenderLayer("objects");
 
             // create scaling test
             scene.CreateEntity("scaling-test", Vector2.Zero)

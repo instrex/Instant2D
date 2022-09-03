@@ -48,7 +48,7 @@ namespace Instant2D.TestGame {
             IEnumerable<Type> _sceneTypes;
 
             public override void Initialize() {
-                CreateLayer("default").BackgroundColor = Color.DarkCyan;
+                AddRenderLayer("default").BackgroundColor = Color.DarkCyan;
 
                 // gather all scenes in this project
                 _sceneTypes = typeof(MainScene).Assembly.GetTypes()

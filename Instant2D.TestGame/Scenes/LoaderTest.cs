@@ -80,7 +80,7 @@ namespace Instant2D.TestGame.Scenes {
         }
 
         public override void Initialize() {
-            CreateLayer("default").BackgroundColor = Color.Black;
+            AddRenderLayer("default").BackgroundColor = Color.Black;
 
             Camera.Entity.SetPosition(Resolution.renderTargetSize.ToVector2() * 0.5f);
 

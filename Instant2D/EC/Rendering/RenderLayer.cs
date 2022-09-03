@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.EC.Rendering {
-    public class RenderLayer {
+    public class RenderLayer : IDisposable {
         /// <summary>
         /// Name of the master layer that will combine each other layer into a single texture for the scene. <br/>
         /// This layer will be automatically managed, and you won't be able manipulate it in any way aside from adding post-processing effects.
@@ -99,6 +99,12 @@ namespace Instant2D.EC.Rendering {
             return this;
         }
 
+        /// <inheritdoc cref="BackgroundColor"/>
+        public RenderLayer SetBackgroundColor(Color backgroundColor) {
+            BackgroundColor = backgroundColor;
+            return this;
+        }
+
         #endregion
 
         void ResizeRenderTarget(SceneResolutionChangedEvent ev) {
@@ -154,6 +160,18 @@ namespace Instant2D.EC.Rendering {
             if (currentMaterial != null) {
                 drawing.Pop();
             }
+        }
+
+        /// <summary>
+        /// Disposes of internal render target (if not null).
+        /// </summary>
+        public void Dispose() {
+            if (_renderTarget != null) {
+                ((IDisposable)_renderTarget).Dispose();
+            }
+            
+            // idk why this is needed
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>

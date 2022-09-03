@@ -34,7 +34,7 @@ namespace Instant2D.TestGame.Scenes {
         }
 
         public override void Initialize() {
-            CreateLayer("default").BackgroundColor = Color.DarkCyan;
+            AddRenderLayer("default").BackgroundColor = Color.DarkCyan;
 
             var cat = AssetManager.Instance.Get<Sprite>("sprites/wawa");
 

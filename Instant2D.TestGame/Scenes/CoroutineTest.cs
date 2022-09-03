@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace Instant2D.TestGame.Scenes {
     public class CoroutineTest : Scene {
         public override void Initialize() {
-            CreateLayer("default").BackgroundColor = Color.DarkCyan;
+            AddRenderLayer("default").BackgroundColor = Color.DarkCyan;
 
             Camera.Entity.SetPosition(new(160, 80));
 
