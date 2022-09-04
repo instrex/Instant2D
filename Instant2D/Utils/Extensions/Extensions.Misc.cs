@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -30,6 +31,20 @@ namespace Instant2D {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pool<T>(this List<T> value) {
             ListPool<T>.Return(value);
+        }
+
+        /// <summary>
+        /// Reads all bytes and optionally disposes of <paramref name="stream"/>.
+        /// </summary>
+        public static byte[] ReadBytes(this Stream stream, bool dispose = false) {
+            var buffer = new byte[stream.Length];
+            stream.Read(buffer);
+
+            if (dispose) {
+                stream.Dispose();
+            }
+
+            return buffer;
         }
     }
 }

@@ -35,7 +35,7 @@ namespace Instant2D.Graphics {
                     tex.SetData(new[] { Color.White });
 
                     // create a sprite with default stuff
-                    _pixelSprite = new(tex, new Rectangle(0, 0, 1, 1), Vector2.Zero, ".instant-2d/pixel");
+                    _pixelSprite = new(tex, new Rectangle(0, 0, 1, 1), Vector2.Zero, "i2d/pixel");
                 }
 
                 return _pixelSprite.Value;

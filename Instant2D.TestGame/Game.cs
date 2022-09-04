@@ -35,6 +35,7 @@ namespace Instant2D.TestGame {
             AddSystem<InputManager>();
             AddSystem<CoroutineManager>();
             AddSystem<GraphicsManager>();
+            GraphicsManager.SetBackend<BatchRenderer>();
             AddSystem<AudioManager>();
             AddSystem<SceneManager>(scene => {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()

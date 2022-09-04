@@ -10,12 +10,16 @@
     <None Remove="Resources\default_font.json" />
     <None Remove="Resources\default_font.png" />
     <None Remove="Resources\logo.png" />
+    <None Remove="Resources\sprite_effect.fxb" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\default_font.json" />
     <EmbeddedResource Include="Resources\default_font.png" />
     <EmbeddedResource Include="Resources\logo.png" />
+    <EmbeddedResource Include="Resources\sprite_effect.fxb">
+      <LogicalName>Microsoft.Xna.Framework.Graphics.Effect.Resources.SpriteEffect.fxb</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
