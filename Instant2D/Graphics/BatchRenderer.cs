@@ -17,8 +17,24 @@ namespace Instant2D.Graphics {
     public class BatchRenderer : IDisposable {
 		public readonly GraphicsDevice GraphicsDevice;
 
+		const int MAX_SPRITES = 2048;
+		const int MAX_VERTICES = MAX_SPRITES * 4;
+		const int MAX_INDICES = MAX_SPRITES * 6;
+
+		// helper struct for tracking batch properties
+		record struct BatchInfo {
+			public Material Material;
+			public Matrix TransformMatrix;
+			public bool ImmediateMode;
+		}
+
+		// batching info
+		bool _batchBegun;
+		Stack<BatchInfo> _batchStack = new();
+		Material _currentMaterial;
+
 		// FNA buffers for batching
-        DynamicVertexBuffer _vertexBuffer;
+		DynamicVertexBuffer _vertexBuffer;
         IndexBuffer _indexBuffer;
 
 		// CPU batched data
@@ -28,14 +44,15 @@ namespace Instant2D.Graphics {
 		// drawing info
 		bool _isBatchingDisabled;
 		bool _enableRounding;
-		Material _material;
-		int _spriteIndex;
-		BasicEffect _basicEffect;
+		int _spriteCount;
 		Effect _effect;
 
+		// TODO: use for primitive batching
+		readonly BasicEffect _basicEffect;
+
 		// default sprite effect
-		EffectParameter _spriteMatrixParam;
-		Effect _spriteEffect;
+		readonly EffectParameter _spriteMatrixParam;
+		readonly Effect _spriteEffect;
 
 		// material state
 		BlendState _blendState;
@@ -47,11 +64,8 @@ namespace Instant2D.Graphics {
 		Matrix _transformMatrix, _projectionMatrix;
 		Matrix _tempMatrix;
 
+		// IDisposable
         bool _isDisposed;
-
-        const int MAX_SPRITES = 2048;
-		const int MAX_VERTICES = MAX_SPRITES * 4;
-		const int MAX_INDICES = MAX_SPRITES * 6;
 
 		// Used to calculate texture coordinates
 		readonly float[] _cornerOffsetX = new float[] { 0.0f, 1.0f, 0.0f, 1.0f };
@@ -136,7 +150,7 @@ namespace Instant2D.Graphics {
 		#region Unsafe drawing methods (dangerous territory)
 
 		public unsafe void Flush() {
-			if (_spriteIndex == 0)
+			if (_spriteCount == 0)
 				return;
 
 			Texture currentTexture = null;
@@ -146,11 +160,11 @@ namespace Instant2D.Graphics {
 
 			// update the vertex buffer
 			fixed (VertexPositionColorTexture4* p = &_vertexInfo[0]) {
-				_vertexBuffer.SetDataPointerEXT(0, (IntPtr)p, _spriteIndex * VertexPositionColorTexture4.RealStride, SetDataOptions.Discard);
+				_vertexBuffer.SetDataPointerEXT(0, (IntPtr)p, _spriteCount * VertexPositionColorTexture4.RealStride, SetDataOptions.Discard);
 			}
 
 			currentTexture = _textureInfo[0];
-			for (var i = 0; i < _spriteIndex; i++) {
+			for (var i = 0; i < _spriteCount; i++) {
 				if (_textureInfo[i] != currentTexture) {
 					// when texture changes, flush all of the existing sprites
 					DrawPrimitives(currentTexture, spriteOffset, i - spriteOffset);
@@ -162,9 +176,9 @@ namespace Instant2D.Graphics {
             }
 
 			// draw the final batch and reset the sprite counter
-			DrawPrimitives(currentTexture, spriteOffset, _spriteIndex - spriteOffset);
+			DrawPrimitives(currentTexture, spriteOffset, _spriteCount - spriteOffset);
 
-			_spriteIndex = 0;
+			_spriteCount = 0;
 		}
 
 		// this is a huge chunk of code taken from https://github.com/prime31/Nez/ (I have no idea how it works)
@@ -174,7 +188,7 @@ namespace Instant2D.Graphics {
 						float rotation, float depth, byte effects, bool destSizeInPixels, float skewTopX,
 						float skewBottomX, float skewLeftY, float skewRightY) {
 			// out of space, flush
-			if (_spriteIndex >= MAX_SPRITES)
+			if (_spriteCount >= MAX_SPRITES)
 				Flush();
 
 			if (_enableRounding) {
@@ -243,7 +257,7 @@ namespace Instant2D.Graphics {
                 skewRightY *= -1;
             }
 
-            fixed (VertexPositionColorTexture4* vertexInfo = &_vertexInfo[_spriteIndex]) {
+            fixed (VertexPositionColorTexture4* vertexInfo = &_vertexInfo[_spriteCount]) {
 				// calculate vertices
 				// top-left
 				var cornerX = (_cornerOffsetX[0] - originX) * destinationW + skewTopX;
@@ -325,12 +339,87 @@ namespace Instant2D.Graphics {
 				return;
 			}
 
-			_textureInfo[_spriteIndex++] = texture;
+			_textureInfo[_spriteCount++] = texture;
 		}
 
-        #endregion
+		#endregion
 
-        #region Public API
+		#region Public API
+
+		/// <summary>
+		/// Temporarily replaces current rendering properties with another <paramref name="material"/>, <paramref name="transformMatrix"/> or <paramref name="immediateMode"/> setting. <br/>
+		/// This could be used to render something with a different blend mode, sampler state or etc mid-batch. Note that calling this flushes the current batch though. <br/>
+		/// You must call <see cref="Pop"/> immediately after drawing, otherwise an error would be produced.
+		/// </summary>
+		public void Push(Material material, Matrix? transformMatrix = default, bool? immediateMode = default) {
+			if (!_batchBegun) {
+				throw new InvalidOperationException("Cannot Push when no batch has been started.");
+            }
+
+			// save previous state
+			var prevState = new BatchInfo {
+				Material = _currentMaterial,
+				ImmediateMode = _isBatchingDisabled,
+				TransformMatrix = _transformMatrix
+			};
+
+			End();
+			Begin(material, transformMatrix ?? prevState.TransformMatrix, immediateMode ?? prevState.ImmediateMode);
+
+			// push the prev state to retrieve it later in Pop()
+			_batchStack.Push(prevState);
+        }
+
+		/// <summary>
+		/// Return to previous batch after calling <see cref="Push(Material, Matrix?, bool?)"/>.
+		/// </summary>
+		public void Pop() {
+			if (!_batchStack.TryPop(out var prevBatch)) {
+				throw new InvalidOperationException("No batch to Pop.");
+            }
+
+			End();
+			Begin(prevBatch.Material, prevBatch.TransformMatrix, prevBatch.ImmediateMode);
+        }
+
+		/// <summary>
+		/// Begins a new batch. Pass in <see langword="true"/> for <paramref name="immediateMode"/> to disable batching and draw sprites immediately.
+		/// </summary>
+		public void Begin(Material material, Matrix transformMatrix, bool immediateMode = false) {
+			_batchBegun = true;
+
+			// set material properties
+			_currentMaterial = material;
+			_blendState = material.BlendState;
+			_rasterizerState = material.RasterizerState;
+			_depthStencilState = material.DepthStencilState;
+			_samplerState = material.SamplerState;
+			_effect = material.Effect;
+
+			// set transform matrices
+			_transformMatrix = transformMatrix;
+
+			// prepare render state if batching is disabled
+			if (_isBatchingDisabled = immediateMode) {
+				PrepareRenderState();
+            }
+        }
+
+		/// <summary>
+		/// Ends the current batch, flushing all the sprites (if set to non-immediate mode).
+		/// </summary>
+		public void End() {
+			if (!_batchBegun) {
+				throw new InvalidOperationException("The batch wasn't started.");
+            }
+
+			// flush the batch if not immediate
+			if (!_isBatchingDisabled)
+				Flush();
+
+			_batchBegun = false;
+			_effect = null;
+        }
 
 		/// <summary>
 		/// Renders a texture using provided properties.
