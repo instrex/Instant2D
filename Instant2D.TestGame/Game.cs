@@ -35,7 +35,6 @@ namespace Instant2D.TestGame {
             AddSystem<InputManager>();
             AddSystem<CoroutineManager>();
             AddSystem<GraphicsManager>();
-            GraphicsManager.SetBackend<BatchRenderer>();
             AddSystem<AudioManager>();
             AddSystem<SceneManager>(scene => {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
@@ -49,6 +48,8 @@ namespace Instant2D.TestGame {
             IEnumerable<Type> _sceneTypes;
 
             public override void Initialize() {
+                base.Initialize();
+
                 AddRenderLayer("default").BackgroundColor = Color.DarkCyan;
 
                 // gather all scenes in this project
@@ -56,8 +57,11 @@ namespace Instant2D.TestGame {
                     .Where(t => t != typeof(MainScene) && t.IsSubclassOf(typeof(Scene)));
             }
 
-            public override void Render(IDrawingBackend drawing) {
-                drawing.Push(Material.Default, Matrix2D.CreateScale(Resolution.scaleFactor));
+            public override void Render() {
+                base.Render();
+
+                var drawing = GraphicsManager.Context;
+                drawing.Begin(Material.Default, Matrix2D.CreateScale(Resolution.scaleFactor));
 
                 var y = 6;
                 foreach (var type in _sceneTypes) {
@@ -76,6 +80,8 @@ namespace Instant2D.TestGame {
 
                     y += 18;
                 }
+
+                drawing.End();
             }
         }
 

@@ -96,13 +96,16 @@ namespace Instant2D.TestGame.Scenes {
             return penetration != Vector2.Zero;
         }
 
-        void DrawPolygon(Polygon polygon, Color color, IDrawingBackend drawing) {
+        void DrawPolygon(Polygon polygon, Color color, DrawingContext drawing) {
             for (var i = 0; i < polygon.localVertices.Length; i++) {
                 drawing.DrawLine(polygon.vertices[i] + polygon.offset, polygon.vertices[i + 1 >= polygon.vertices.Length ? 0 : i + 1] + polygon.offset, color);
             }
         }
 
-        public override void Render(IDrawingBackend drawing) {
+        public override void Render() {
+            base.Render();
+
+            var drawing = GraphicsManager.Context;
             drawing.Push(Material.Default, SceneToScreenTransform);
 
             if (InputManager.LeftMouseDown) {

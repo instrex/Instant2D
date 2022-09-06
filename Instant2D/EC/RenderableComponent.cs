@@ -251,6 +251,6 @@ namespace Instant2D.EC {
         /// is called with <see cref="Material"/> and <see cref="ICamera.TransformMatrix"/>. <br/>
         /// Use Push/Pop functions if you happen to need to change the Material mid-rendering.
         /// </summary>
-        public abstract void Draw(IDrawingBackend drawing, CameraComponent camera);
+        public abstract void Draw(DrawingContext drawing, CameraComponent camera);
     }
 }

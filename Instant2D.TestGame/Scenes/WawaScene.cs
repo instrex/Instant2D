@@ -81,7 +81,7 @@ namespace Instant2D.TestGame.Scenes {
             Material = Material.Default with { BlendState = BlendState.Additive };
         }
 
-        public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
+        public override void Draw(DrawingContext drawing, CameraComponent camera) {
             var anim = AssetManager.Instance.Get<SpriteAnimation>("sprites/fire");
             drawing.DrawAnimation(anim, Transform.Position,
                 Color, Transform.Rotation, Transform.Scale);
@@ -157,6 +157,8 @@ namespace Instant2D.TestGame.Scenes {
 
     class WawaScene : Scene {
         public override void Initialize() {
+            base.Initialize();
+
             var scene = this;
 
             // setup layers
@@ -242,19 +244,24 @@ namespace Instant2D.TestGame.Scenes {
         }
 
         public override void Update() {
+            base.Update();
+
             var text = FindComponentOfType<TextComponent>();
             text.Transform.Position = Camera.MouseToWorldPosition();
             text.SetContent(text.Transform.Position.RoundToPoint().ToString());
         }
 
-        public override void Render(IDrawingBackend drawing) {
-            drawing.Push(Material.Default, SceneToScreenTransform);
+        public override void Render() {
+            base.Render();
+
+            var drawing = GraphicsManager.Context;
+            drawing.Begin(Material.Default, SceneToScreenTransform);
 
             foreach (var hitbox in HitboxComponent._hitboxBuffer) {
                 drawing.DrawRectangle(hitbox.Hitbox, Color.Blue * 0.5f, Color.Black);
             }
 
-            drawing.Pop();
+            drawing.End();
         }
     }
 }

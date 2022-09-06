@@ -98,11 +98,11 @@ namespace Instant2D.EC {
                 Transform.Rotation, Transform.Scale);
         }
 
-        public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
+        public override void Draw(DrawingContext drawing, CameraComponent camera) {
             if (!_isSpriteSet)
                 return;
 
-            drawing.Draw(
+            drawing.DrawSprite(
                 Sprite, 
                 Entity.Transform.Position + Offset, 
                 Color, 

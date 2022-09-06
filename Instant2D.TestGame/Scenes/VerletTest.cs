@@ -1,4 +1,5 @@
 ﻿using Instant2D.EC;
+using Instant2D.Graphics;
 using Instant2D.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -136,7 +137,7 @@ namespace Instant2D.TestGame.Scenes {
 
             protected override void RecalculateBounds(ref RectangleF bounds) => bounds = Camera.Bounds;
 
-            public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
+            public override void Draw(DrawingContext drawing, CameraComponent camera) {
                 for (int i = 1; i < Verlet.Particles.Count; i++) {
                     //VerletParticle particle = Verlet.Particles[i];
                     //drawing.DrawPoint(particle.Position, Color, 8);

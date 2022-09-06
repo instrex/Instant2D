@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 
 namespace Instant2D.Graphics {
     /// <summary>
-    /// 
+    /// An extension of FNA's <see cref="SpriteBatch"/> class with a couple of useful features.
     /// </summary>
-    public class BatchRenderer : IDisposable {
+    public class DrawingContext : IDisposable {
 		public readonly GraphicsDevice GraphicsDevice;
 
 		const int MAX_SPRITES = 2048;
@@ -27,6 +27,12 @@ namespace Instant2D.Graphics {
 			public Matrix TransformMatrix;
 			public bool ImmediateMode;
 		}
+
+		/// <summary>
+		/// When set to <see langword="true"/>, destination positions of Draw methods will be rounded before submitting. <br/>
+		/// Works best for pixel art, in other cases it shouldn't really matter if this is set.
+		/// </summary>
+		public bool EnableRounding = true;
 
 		// batching info
 		bool _batchBegun;
@@ -43,7 +49,6 @@ namespace Instant2D.Graphics {
 
 		// drawing info
 		bool _isBatchingDisabled;
-		bool _enableRounding;
 		int _spriteCount;
 		Effect _effect;
 
@@ -72,8 +77,8 @@ namespace Instant2D.Graphics {
 		readonly float[] _cornerOffsetY = new float[] { 0.0f, 0.0f, 1.0f, 1.0f };
 		readonly short[] _indexData;
 
-		public BatchRenderer() : this(InstantGame.Instance.GraphicsDevice) { }
-		public BatchRenderer(GraphicsDevice graphicsDevice) {
+		public DrawingContext() : this(InstantGame.Instance.GraphicsDevice) { }
+		public DrawingContext(GraphicsDevice graphicsDevice) {
 			GraphicsDevice = graphicsDevice;
 
 			// generate index array
@@ -97,7 +102,7 @@ namespace Instant2D.Graphics {
 			_textureInfo = new Texture2D[MAX_SPRITES];
 
 			// initialize default effect
-			_spriteEffect = new Effect(GraphicsDevice, typeof(BatchRenderer).Assembly.GetManifestResourceStream("Microsoft.Xna.Framework.Graphics.Effect.Resources.SpriteEffect.fxb").ReadBytes(true));
+			_spriteEffect = new Effect(GraphicsDevice, typeof(DrawingContext).Assembly.GetManifestResourceStream("Microsoft.Xna.Framework.Graphics.Effect.Resources.SpriteEffect.fxb").ReadBytes(true));
 			_spriteMatrixParam = _spriteEffect.Parameters["MatrixTransform"];
 			_basicEffect = new BasicEffect(graphicsDevice) {
 				VertexColorEnabled = true,
@@ -147,6 +152,12 @@ namespace Instant2D.Graphics {
 			GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, index * 4, 0, batchSize * 4, 0, batchSize * 2);
 		}
 
+		void CheckBegin() {
+			if (!_batchBegun) {
+				throw new InvalidOperationException("The batch wasn't started.");
+            }
+        }
+
 		#region Unsafe drawing methods (dangerous territory)
 
 		public unsafe void Flush() {
@@ -191,7 +202,7 @@ namespace Instant2D.Graphics {
 			if (_spriteCount >= MAX_SPRITES)
 				Flush();
 
-			if (_enableRounding) {
+			if (EnableRounding) {
 				destinationX = MathF.Round(destinationX);
 				destinationY = MathF.Round(destinationY);
 			}
@@ -353,8 +364,9 @@ namespace Instant2D.Graphics {
 		/// </summary>
 		public void Push(Material material, Matrix? transformMatrix = default, bool? immediateMode = default) {
 			if (!_batchBegun) {
-				throw new InvalidOperationException("Cannot Push when no batch has been started.");
-            }
+				Begin(material, transformMatrix ?? Matrix.Identity, immediateMode ?? false);
+				return;
+			}
 
 			// save previous state
 			var prevState = new BatchInfo {
@@ -375,7 +387,9 @@ namespace Instant2D.Graphics {
 		/// </summary>
 		public void Pop() {
 			if (!_batchStack.TryPop(out var prevBatch)) {
-				throw new InvalidOperationException("No batch to Pop.");
+				//throw new InvalidOperationException("No batch to Pop.");
+				End();
+				return;
             }
 
 			End();
@@ -433,7 +447,7 @@ namespace Instant2D.Graphics {
 			Vector2 scale,
 			SpriteEffects spriteEffects = SpriteEffects.None,
 			float layerDepth = 0f) {
-
+			CheckBegin();
 			PushSprite(
 				texture,
 				sourceRectangle,
@@ -455,6 +469,7 @@ namespace Instant2D.Graphics {
 		/// Renders a sprite using provided properties.
 		/// </summary>
 		public void DrawSprite(in Sprite sprite, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects spriteEffects = SpriteEffects.None, float layerDepth = 0f) {
+			CheckBegin();
 			PushSprite(
 				sprite.Texture,
 				sprite.SourceRect,
@@ -510,7 +525,7 @@ namespace Instant2D.Graphics {
         }
 
         // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-        ~BatchRenderer() {
+        ~DrawingContext() {
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: false);
         }

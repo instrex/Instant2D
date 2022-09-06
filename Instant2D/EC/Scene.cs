@@ -182,160 +182,104 @@ namespace Instant2D.EC {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void InternalUpdate(GameTime time) {
             // initialize the scene first
+            // TODO: move initialiation into SceneManager instead?
             if (!_isInitialized) {
                 _isInitialized = true;
-                if (Camera is null) {
-                    Camera = CreateEntity("camera", Vector2.Zero)
-                        .AddComponent<CameraComponent>();
-
-                    Listener = Camera;
-                }
-
                 Initialize();
-
-                // initialize RTs for newly added layers
-                ResizeRenderTargets(Resolution);
             }
 
             TotalTime += (float)time.ElapsedGameTime.TotalSeconds * TimeScale;
 
             // switch debug render
+            // TODO: move to a component
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.OemTilde)) {
                 _debugRender = !_debugRender;
             }
 
-            if (!IsActive)
-                return;
-
-            // update entities before anything else
-            for (var i = 0; i < _entities.Count; i++) {
-                _entities[i].Update();
-            }
-
-            // invoke the update callback
-            Update();
+            if (IsActive) 
+                Update();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void InternalRender() {
             if (!IsVisible || !_isInitialized) {
                 return;
             }
-            
-            // prepare all of the layers before drawing them on-screen
-            for (var i = 0; i < _layers.Count; i++) {
-                var layer = _layers[i];
 
-                // we prepare the layer for presentation there
-                if (layer.Active && layer.ShouldPresent) {
-                    layer.Prepare();
-                }
-            }
-
-            // use Scene RT for flattening
-            var gd = InstantGame.Instance.GraphicsDevice;
-            gd.SetRenderTarget(_sceneTarget);
-            gd.Clear(Color.Transparent);
-
-            var drawing = GraphicsManager.Backend;
-            drawing.Push(Material.Default);
-
-            // draw the layers onto the RT
-            for (var i = 0; i < _layers.Count; i++) {
-                _layers[i].Present(drawing);
-            }
-
-            drawing.Pop(true);
-
-            // now draw the flattened layer image to backbuffer
-            gd.SetRenderTarget(null);
-            gd.Clear(Color.Transparent);
-
-            drawing.Push(Material.Default);
-
-            drawing.DrawTexture(_sceneTarget, Resolution.offset, Color.White, 0, new(Resolution.scaleFactor), Vector2.Zero);
-
-            // invoke the user callback
-            Render(drawing);
-
-            // render some debug stuff
-            if (_debugRender) {
-                DebugRender(drawing);
-            }
-
-            drawing.Pop(true);
+            Render();
         }
 
-        StringBuilder _debugInfoText = new();
+        //StringBuilder _debugInfoText = new();
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void DebugRender(IDrawingBackend drawing) {
-            drawing.DrawString($"Collision Debug", new(10), Color.LightBlue, new Vector2(3), 0, drawOutline: true);
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //internal void DebugRender(DrawingContext drawing) {
+        //    drawing.DrawString($"Collision Debug", new(10), Color.LightBlue, new Vector2(3), 0, drawOutline: true);
 
-            _debugInfoText.Clear();
-            CollisionsDebugLayer(drawing, _debugInfoText);
+        //    _debugInfoText.Clear();
+        //    CollisionsDebugLayer(drawing, _debugInfoText);
 
-            drawing.Pop();
+        //    drawing.Pop();
 
-            drawing.DrawString(_debugInfoText.ToString(), new(14, 42), Color.LightBlue, new Vector2(2), 0, drawOutline: true);
-        }
+        //    drawing.DrawString(_debugInfoText.ToString(), new(14, 42), Color.LightBlue, new Vector2(2), 0, drawOutline: true);
+        //}
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CollisionsDebugLayer(IDrawingBackend drawing, StringBuilder info) {
-            drawing.Push(Material.Default, SceneToScreenTransform);
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //void CollisionsDebugLayer(DrawingContext drawing, StringBuilder info) {
+        //    drawing.Push(Material.Default, SceneToScreenTransform);
 
-            var shiftHeld = InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftShift);
-            var mousePos = Camera.MouseToWorldPosition();
-            var colliderIndex = 0;
+        //    var shiftHeld = InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftShift);
+        //    var mousePos = Camera.MouseToWorldPosition();
+        //    var colliderIndex = 0;
 
-            foreach (var collider in FindComponentsOfType<CollisionComponent>()) {
-                var bounds = collider.BaseCollider.Bounds;
+        //    foreach (var collider in FindComponentsOfType<CollisionComponent>()) {
+        //        var bounds = collider.BaseCollider.Bounds;
 
-                // cull the off-screen colliders
-                if (!Camera.Bounds.Intersects(bounds))
-                    continue;
+        //        // cull the off-screen colliders
+        //        if (!Camera.Bounds.Intersects(bounds))
+        //            continue;
 
-                if (bounds.Contains(mousePos)) {
-                    info.AppendLine($"#{colliderIndex++} '{collider.Entity.Name}': {collider.GetType().Name}");
+        //        if (bounds.Contains(mousePos)) {
+        //            info.AppendLine($"#{colliderIndex++} '{collider.Entity.Name}': {collider.GetType().Name}");
 
-                    // visualize the bitmasks
-                    for (var j = 0; j < 2; j++) {
-                        var mask = j == 0 ? collider.LayerMask : collider.CollidesWithMask;
-                        info.Append($" - {(j == 0 ? "LayerMask" : "CollidesWith")}: {mask} (Set Flags: ");
+        //            // visualize the bitmasks
+        //            for (var j = 0; j < 2; j++) {
+        //                var mask = j == 0 ? collider.LayerMask : collider.CollidesWithMask;
+        //                info.Append($" - {(j == 0 ? "LayerMask" : "CollidesWith")}: {mask} (Set Flags: ");
 
-                        // don't list all flags
-                        if (mask == -1) {
-                            info.AppendLine("ALL)");
-                            continue;
-                        }
+        //                // don't list all flags
+        //                if (mask == -1) {
+        //                    info.AppendLine("ALL)");
+        //                    continue;
+        //                }
 
-                        var begun = false;
-                        for (var i = 0; i < 32; i++) {
-                            if (IntFlags.IsFlagSet(mask, i)) {
-                                if (!begun) begun = true;
-                                else info.Append(", ");
-                                info.Append(i);
-                            }
-                        }
+        //                var begun = false;
+        //                for (var i = 0; i < 32; i++) {
+        //                    if (IntFlags.IsFlagSet(mask, i)) {
+        //                        if (!begun) begun = true;
+        //                        else info.Append(", ");
+        //                        info.Append(i);
+        //                    }
+        //                }
 
-                        info.AppendLine(")");
-                    }
+        //                info.AppendLine(")");
+        //            }
 
-                    info.AppendLine($" - Origin: {collider.Origin}");
+        //            info.AppendLine($" - Origin: {collider.Origin}");
 
-                    info.AppendLine();
-                }
+        //            info.AppendLine();
+        //        }
 
-                // draw bounds
-                drawing.DrawRectangle(bounds, Color.Transparent, new Color(1f, 1f, 1f, bounds.Contains(mousePos) ? 1f : 0.5f));
+        //        // draw bounds
+        //        drawing.DrawRectangle(bounds, Color.Transparent, new Color(1f, 1f, 1f, bounds.Contains(mousePos) ? 1f : 0.5f));
 
-                // draw actual collider shape
-                switch (collider) {
-                    case CircleCollisionComponent circle:
-                        drawing.DrawCircle(collider.Transform.Position, circle.Radius, Color.Red, resolution: 24);
-                        break;
-                }
-            }
-        }
+        //        // draw actual collider shape
+        //        switch (collider) {
+        //            case CircleCollisionComponent circle:
+        //                drawing.DrawCircle(collider.Transform.Position, circle.Radius, Color.Red, resolution: 24);
+        //                break;
+        //        }
+        //    }
+        //}
 
         internal void OnAssetsUpdated(IEnumerable<Asset> assets) {
             // loop over unhandled asset changes, thus giving freedom to modify the way assets are reloaded when needed
@@ -405,19 +349,69 @@ namespace Instant2D.EC {
         #region Scene Lifecycle
 
         /// <summary>
-        /// Called when this Scene begins.
+        /// Called each frame when <see cref="IsActive"/>. Make sure to include <c>base.Update();</c> in your override, or include your own entity update routine.
         /// </summary>
-        public virtual void Initialize() { }
+        public virtual void Update() {
+            // update entities before anything else
+            for (var i = 0; i < _entities.Count; i++) {
+                _entities[i].Update();
+            }
+        }
 
         /// <summary>
-        /// Called each frame when this scene is in focus and all components have already been updated this frame.
+        /// Called on the first scene update. 
         /// </summary>
-        public virtual void Update() { }
+        public virtual void Initialize() {
+            if (Camera is null) {
+                Camera = CreateEntity("camera", Vector2.Zero)
+                    .AddComponent<CameraComponent>();
+
+                Listener = Camera;
+            }
+
+            // initialize RTs for newly added layers
+            ResizeRenderTargets(Resolution);
+        }
 
         /// <summary>
-        /// Called after everything is rendered onto the screen.
+        /// Called each frame when <see cref="IsVisible"/> is set and Scene is initialized. Make sure to include <c>base.Render();</c> in your override, or implement your own rendering routine.
         /// </summary>
-        public virtual void Render(IDrawingBackend drawing) { }
+        public virtual void Render() {
+            // prepare all of the layers before drawing them on-screen
+            for (var i = 0; i < _layers.Count; i++) {
+                var layer = _layers[i];
+
+                // we prepare the layer for presentation there
+                if (layer.Active && layer.ShouldPresent) {
+                    layer.Prepare();
+                }
+            }
+
+            // use Scene RT for flattening
+            var gd = InstantGame.Instance.GraphicsDevice;
+            gd.SetRenderTarget(_sceneTarget);
+            gd.Clear(Color.Transparent);
+
+            var drawing = GraphicsManager.Context;
+            drawing.Begin(Material.Default, Matrix.Identity);
+
+            // draw the layers onto the RT
+            for (var i = 0; i < _layers.Count; i++) {
+                _layers[i].Present(drawing);
+            }
+
+            drawing.End();
+
+            // now draw the flattened layer image to backbuffer
+            gd.SetRenderTarget(null);
+            gd.Clear(Color.Transparent);
+
+            drawing.Begin(Material.Default, Matrix.Identity);
+
+            drawing.DrawTexture(_sceneTarget, Resolution.offset, null, Color.White, 0, Vector2.Zero, new(Resolution.scaleFactor));
+
+            drawing.End();
+        }
 
         #endregion
 

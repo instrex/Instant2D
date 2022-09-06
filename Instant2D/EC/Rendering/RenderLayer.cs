@@ -130,7 +130,7 @@ namespace Instant2D.EC.Rendering {
                 Objects.Sort();
             }
 
-            var drawing = GraphicsManager.Backend;
+            var drawing = GraphicsManager.Context;
 
             // we need to force update the camera for the frame
             var camera = Camera ?? Scene.Camera;
@@ -150,6 +150,9 @@ namespace Instant2D.EC.Rendering {
                     continue;
 
                 if (currentMaterial != obj.Material) {
+                    if (currentMaterial != null)
+                        drawing.Pop();
+
                     // swap the material when needed
                     drawing.Push(currentMaterial = obj.Material, camera.TransformMatrix);
                 }
@@ -201,7 +204,7 @@ namespace Instant2D.EC.Rendering {
             // render all the mastered layers
             if (_masteredLayers != null) {
                 for (var i = 0; i < _masteredLayers.Length; i++) {
-                    _masteredLayers[i].Present(GraphicsManager.Backend);
+                    _masteredLayers[i].Present(GraphicsManager.Context);
                 }
             }
 
@@ -212,10 +215,10 @@ namespace Instant2D.EC.Rendering {
         /// <summary>
         /// Presents the layer to the screen. If it uses RenderTarget, all the drawing work would be done via <see cref="Draw"/>, and this step is just rendering the RenderTarget onto the screen.
         /// </summary>
-        public void Present(IDrawingBackend drawing) {
+        public void Present(DrawingContext drawing) {
             if (_useRenderTarget) {
                 // present the rendertexture to the screen and call it a day
-                drawing.DrawTexture(_renderTarget, Vector2.Zero, Color.White, 0, Vector2.One, Vector2.Zero);
+                drawing.DrawTexture(_renderTarget, Vector2.Zero, null, Color.White, 0, Vector2.Zero, Vector2.One);
                 return;
             }
 

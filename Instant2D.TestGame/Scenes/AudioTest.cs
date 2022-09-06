@@ -3,6 +3,7 @@ using Instant2D.Core;
 using Instant2D.Coroutines;
 using Instant2D.EC;
 using Instant2D.EC.Components;
+using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
@@ -65,10 +66,6 @@ namespace Instant2D.TestGame.Scenes {
                 Camera.Transform.Position = Vector2.Zero;
                 Camera.Transform.Rotation = 0;
             }
-        }
-
-        public override void Render(IDrawingBackend drawing) {
-            base.Render(drawing);
         }
     }
 }

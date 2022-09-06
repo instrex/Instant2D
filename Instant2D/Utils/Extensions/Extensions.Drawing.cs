@@ -10,26 +10,35 @@ namespace Instant2D {
     public static partial class Extensions {
         /// <inheritdoc cref="IDrawingBackend.Draw(in Sprite, Vector2, Color, float, Vector2, SpriteEffects)"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Draw(this IDrawingBackend drawing, in Sprite sprite, Vector2 position, Color color, float rotation = 0f, float scale = 1f, SpriteEffects spriteEffects = SpriteEffects.None) =>
-            drawing.Draw(sprite, position, color, rotation, new Vector2(scale), spriteEffects);
+        public static void DrawSprite(this DrawingContext drawing, in Sprite sprite, Vector2 position, Color color, float rotation = 0f, float scale = 1f, SpriteEffects spriteEffects = SpriteEffects.None) =>
+            drawing.DrawSprite(sprite, position, color, rotation, new Vector2(scale), spriteEffects);
 
         /// <summary>
         /// Draws a looped animation using <see cref="TimeManager.TotalTime"/> or <see cref="Scene.TotalTime"/> when available.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawAnimation(this IDrawingBackend drawing, in SpriteAnimation animation, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects spriteEffects = SpriteEffects.None) {
+        public static void DrawAnimation(this DrawingContext drawing, in SpriteAnimation animation, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects spriteEffects = SpriteEffects.None) {
             var timePerFrame = 1.0f / animation.Fps;
             var time = SceneManager.Instance?.Current?.TotalTime ?? TimeManager.TotalTime;
-            drawing.Draw(animation.Frames[(int)(time / timePerFrame % animation.Frames.Length)], position, color, rotation, scale, spriteEffects);
+            drawing.DrawSprite(animation.Frames[(int)(time / timePerFrame % animation.Frames.Length)], position, color, rotation, scale, spriteEffects);
         }
 
         /// <summary>
-        /// Draws a line between two points.
+        /// Draws a simple line between two points.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawLine(this IDrawingBackend drawing, Vector2 a, Vector2 b, Color color, float thickness = 1.0f) {
+        public static void DrawLine(this DrawingContext drawing, Vector2 a, Vector2 b, Color color, float thickness = 1.0f) {
             var dir = b - a;
-            drawing.Draw(GraphicsManager.Pixel, a, color, dir.ToAngle(), new Vector2(dir.Length(), thickness));
+
+            // here we need to supress rounding operations,
+            // since the resulting line may appear incorrect
+            var oldRounding = drawing.EnableRounding;
+            drawing.EnableRounding = false;
+
+            drawing.DrawSprite(GraphicsManager.Pixel, a, color, dir.ToAngle(), new Vector2(dir.Length(), thickness));
+
+            // restore the original value there
+            drawing.EnableRounding = oldRounding;
         }
 
         /// <summary>
@@ -37,7 +46,7 @@ namespace Instant2D {
         /// <paramref name="resolution"/> can be used to control how many steps will be taken.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawCircle(this IDrawingBackend drawing, Vector2 position, float radius, Color color, float thickness = 1f, int resolution = 12) {
+        public static void DrawCircle(this DrawingContext drawing, Vector2 position, float radius, Color color, float thickness = 1f, int resolution = 12) {
             var step = MathHelper.TwoPi / resolution;
             for (var i = 1; i <= resolution; i++) {
                 var (from, to) = (
@@ -53,8 +62,8 @@ namespace Instant2D {
         /// Draws a rectangle with optional outline.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawRectangle(this IDrawingBackend drawing, RectangleF rect, Color fillColor, Color outlineColor = default, float thickness = 1.0f) {
-            drawing.Draw(GraphicsManager.Pixel, rect.Position, fillColor, 0, rect.Size);
+        public static void DrawRectangle(this DrawingContext drawing, RectangleF rect, Color fillColor, Color outlineColor = default, float thickness = 1.0f) {
+            drawing.DrawSprite(GraphicsManager.Pixel, rect.Position, fillColor, 0, rect.Size);
 
             // draw outline
             if (outlineColor != default) {
@@ -69,15 +78,23 @@ namespace Instant2D {
         /// Draw a pixel point of specified color and size.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawPoint(this IDrawingBackend drawing, Vector2 position, Color color, float scale = 1f) {
-            drawing.Draw(GraphicsManager.Pixel, position - new Vector2(scale * 0.5f), color, 0, scale);
+        public static void DrawPoint(this DrawingContext drawing, Vector2 position, Color color, float scale = 1f) {
+            // here we need to supress rounding operations,
+            // since the resulting point may appear incorrectly
+            var oldRounding = drawing.EnableRounding;
+            drawing.EnableRounding = false;
+
+            drawing.DrawSprite(GraphicsManager.Pixel, position - new Vector2(scale * 0.5f), color, 0, scale);
+
+            // restore the original value there
+            drawing.EnableRounding = oldRounding;
         }
 
         /// <summary>
         /// Draws text using specified font.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawString(this IDrawingBackend drawing, ISpriteFont font, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue, bool drawOutline = false) {
+        public static void DrawString(this DrawingContext drawing, ISpriteFont font, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue, bool drawOutline = false) {
             if (drawOutline) {
                 for (var i = 0; i < 4; i++) {
                     font.DrawString(drawing, text, position + new Vector2(1, 0).RotatedBy(i * MathHelper.PiOver2) * scale, Color.Black, scale, rotation, maxDisplayedCharacters);
@@ -91,7 +108,7 @@ namespace Instant2D {
         /// Draws text using <see cref="GraphicsManager.DefaultFont"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawString(this IDrawingBackend drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue, bool drawOutline = false) {
+        public static void DrawString(this DrawingContext drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue, bool drawOutline = false) {
             DrawString(drawing, GraphicsManager.DefaultFont, text, position, color, scale, rotation, maxDisplayedCharacters, drawOutline);
         }
     }

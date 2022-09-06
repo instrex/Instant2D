@@ -18,7 +18,7 @@ namespace Instant2D.Graphics {
         /// <summary>
         /// Renders the <paramref name="text"/> into <paramref name="drawing"/>.
         /// </summary>
-        void DrawString(IDrawingBackend drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue);
+        void DrawString(DrawingContext drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue);
 
         /// <summary>
         /// Get the sprite of a text character.

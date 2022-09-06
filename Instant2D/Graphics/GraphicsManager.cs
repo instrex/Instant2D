@@ -18,9 +18,9 @@ namespace Instant2D.Graphics {
         public static GraphicsManager Instance { get; set; }
 
         /// <summary>
-        /// Backend used for all drawing operations in the game.
+        /// A <see cref="DrawingContext"/> instance used for all drawing operations. 
         /// </summary>
-        public static IDrawingBackend Backend { get; private set; }
+        public static DrawingContext Context { get; private set; }
 
         static Sprite? _pixelSprite;
         static InstantFont _defaultFont;
@@ -68,21 +68,11 @@ namespace Instant2D.Graphics {
             }
         }
 
-        /// <summary>
-        /// Sets the <see cref="Backend"/> property.
-        /// </summary>
-        public static void SetBackend<T>() where T: IDrawingBackend, new() {
-            Backend = new T();
-        }
-
         public override void Initialize() {
             Instance = this;
-            _ = DefaultFont;
 
-            if (Backend == null) {
-                InstantGame.Instance.Logger.Warning("No GraphicsManager backend specified, defaulting to SpriteBatchBackend...");
-                SetBackend<SpriteBatchBackend>();
-            }
+            // initialize drawing context
+            Context = new();
         }
 
     }

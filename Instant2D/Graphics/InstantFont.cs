@@ -9,7 +9,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Graphics {
-    /// <remarks> NOTE: Kerning is WIP </remarks>
+    /// <summary>
+    /// Very simple font implementation that supports string measuring and rendering. <br/>
+    /// If you need any features not implemented there, feel free to exteng it using <see cref="ISpriteFont"/>.
+    /// </summary>
     public class InstantFont : ISpriteFont {
         public struct Glyph {
             public Sprite sprite;
@@ -37,7 +40,7 @@ namespace Instant2D.Graphics {
             get => _glyphs.TryGetValue(character, out var glyph) ? glyph.sprite : null;
         }
 
-        public void DrawString(IDrawingBackend drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue) {
+        public void DrawString(DrawingContext drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue) {
             var length = Math.Min(text.Length, maxDisplayedCharacters);
             var currentPos = new Vector2();
             for (var i = 0; i < length; i++) {
@@ -60,7 +63,7 @@ namespace Instant2D.Graphics {
 
                 // handle drawing
                 var glyphPos = (currentPos + glyph.offset.ToVector2()) * scale;
-                drawing.Draw(glyph.sprite, position + (rotation != 0 ? glyphPos.RotatedBy(rotation) : glyphPos), color, rotation, scale);
+                drawing.DrawSprite(glyph.sprite, position + (rotation != 0 ? glyphPos.RotatedBy(rotation) : glyphPos), color, rotation, scale);
 
                 // advance the rendering
                 currentPos.X += glyph.advanceX;

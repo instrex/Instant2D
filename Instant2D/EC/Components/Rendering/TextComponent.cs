@@ -94,7 +94,7 @@ namespace Instant2D.EC.Components {
             bounds = CalculateBounds(Entity.Transform.Position, _offset, Vector2.Zero, _textSize, Entity.Transform.Rotation, Entity.Transform.Scale);
         }
 
-        public override void Draw(IDrawingBackend drawing, CameraComponent camera) {
+        public override void Draw(DrawingContext drawing, CameraComponent camera) {
             drawing.DrawString(_text, (Entity.Transform.Position + _offset * Entity.Transform.Scale + Offset).Round(),
                 Color, Entity.Transform.Scale, Entity.Transform.Rotation, _displayedCharacters);
         }

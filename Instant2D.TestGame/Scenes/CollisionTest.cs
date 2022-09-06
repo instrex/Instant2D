@@ -79,7 +79,10 @@ namespace Instant2D.TestGame.Scenes {
             }
         }
 
-        public override void Render(IDrawingBackend drawing) {
+        public override void Render() {
+            base.Render();
+
+            var drawing = GraphicsManager.Context;
             drawing.Push(Material.Default, SceneToScreenTransform);
 
             // draw spatial hash chunks
