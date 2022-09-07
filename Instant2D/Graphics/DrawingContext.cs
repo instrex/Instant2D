@@ -126,7 +126,7 @@ namespace Instant2D.Graphics {
 			GraphicsDevice.Indices = _indexBuffer;
 
 			// update projection matrix
-			var viewport = new Rectangle(0, 0, SceneManager.Instance.Current.Resolution.Width, SceneManager.Instance.Current.Resolution.Height);
+			var viewport = GraphicsDevice.Viewport /*new Rectangle(0, 0, SceneManager.Instance.Current.Resolution.Width, SceneManager.Instance.Current.Resolution.Height)*/;
 			(_projectionMatrix.M11, _projectionMatrix.M22) = ((float)(2.0 / (viewport.Width / 2 * 2 - 1)), (float)(-2.0 / (viewport.Height / 2 * 2 - 1)));
 			(_projectionMatrix.M41, _projectionMatrix.M42) = (-1 - 0.5f * _projectionMatrix.M11, 1 - 0.5f * _projectionMatrix.M22);
 

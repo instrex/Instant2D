@@ -58,7 +58,7 @@ namespace Instant2D.TestGame.Scenes {
 
             // move the camera to the focus zone
             if (Vector2.Distance(Scene.Camera.Entity.Transform.Position, _targetPos) > 5) {
-                //Scene.Camera.Entity.Transform.Position = Vector2.Lerp(Scene.Camera.Entity.Transform.Position, _targetPos, 0.1f * Scene.TimeScale);
+                Scene.Camera.Entity.Transform.Position = Vector2.Lerp(Scene.Camera.Entity.Transform.Position, _targetPos, 0.1f * Scene.TimeScale);
             }
 
             if (InputManager.MouseWheelDelta != 0) {
