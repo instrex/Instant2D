@@ -63,6 +63,11 @@ namespace Instant2D {
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void DrawRectangle(this DrawingContext drawing, RectangleF rect, Color fillColor, Color outlineColor = default, float thickness = 1.0f) {
+            // here we need to supress rounding operations,
+            // since the resulting rect may appear incorrect
+            var oldRounding = drawing.EnableRounding;
+            drawing.EnableRounding = false;
+
             drawing.DrawSprite(GraphicsManager.Pixel, rect.Position, fillColor, 0, rect.Size);
 
             // draw outline
@@ -72,6 +77,8 @@ namespace Instant2D {
                 DrawLine(drawing, new Vector2(rect.X + rect.Width, rect.Y + rect.Height), new Vector2(rect.X, rect.Y + rect.Height), outlineColor, thickness);
                 DrawLine(drawing, new Vector2(rect.X, rect.Y + rect.Height), rect.Position, outlineColor, thickness);
             }
+
+            drawing.EnableRounding = oldRounding;
         }
 
         /// <summary>
