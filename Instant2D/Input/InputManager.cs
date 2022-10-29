@@ -107,8 +107,8 @@ namespace Instant2D.Input {
             _mouseWheelDelta = _prevMouseState.ScrollWheelValue - _currentMouseState.ScrollWheelValue;
 
             // optionally scale it to the scene
-            if (_shouldScaleMouse) {
-                var resolution = SceneManager.Instance.Current.Resolution;
+            if (_shouldScaleMouse && SceneManager.Instance.Current is Scene currentScene) {
+                var resolution = currentScene.Resolution;
                 _scaledMousePosition = (_rawMousePosition - resolution.offset) / resolution.scaleFactor;
             }
         }

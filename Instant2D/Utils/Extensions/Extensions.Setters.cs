@@ -173,10 +173,10 @@ namespace Instant2D.EC {
             return collisionComponent;
         }
 
-        /// <inheritdoc cref="CollisionComponent.Origin"/>
+        /// <inheritdoc cref="CollisionComponent.Offset"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T SetOrigin<T>(this T collisionComponent, float originX, float originY) where T : CollisionComponent {
-            collisionComponent.Origin = new(originX, originY);
+        public static T SetOffset<T>(this T collisionComponent, Vector2 offset) where T : CollisionComponent {
+            collisionComponent.Offset = offset;
             return collisionComponent;
         }
 

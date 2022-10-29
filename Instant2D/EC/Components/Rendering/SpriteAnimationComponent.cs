@@ -196,7 +196,7 @@ namespace Instant2D.EC {
                 return;
 
             // advance the animation based on timescale and speed
-            _elapsedTime += TimeManager.TimeDelta * Entity.TimeScale * Speed;
+            _elapsedTime += TimeManager.DeltaTime * Entity.TimeScale * Speed;
             if (_elapsedTime >= _duration) {
                 _elapsedTime = 0;
                 switch (_loopType) {

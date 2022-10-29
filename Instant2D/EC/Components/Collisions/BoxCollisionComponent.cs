@@ -13,21 +13,23 @@ namespace Instant2D.EC.Components {
         /// </summary>
         public readonly new BoxCollider<CollisionComponent> BaseCollider;
 
-        Vector2 _unscaledSize, _offset;
+        // raw size of this collider,
+        // as specified by user without any scale transformations
+        Vector2 _rawSize;
 
         public BoxCollisionComponent() : this(new Vector2(32)) { }
         public BoxCollisionComponent(Vector2 size) : base(new BoxCollider<CollisionComponent>()) {
             BaseCollider = base.BaseCollider as BoxCollider<CollisionComponent>;
-            _unscaledSize = size;
+            _rawSize = size;
         }
 
         /// <summary>
         /// The unscaled size this collider must possess. To get an actual scaled size check <see cref="BoxCollider{T}.Size"/>.
         /// </summary>
         public Vector2 Size {
-            get => _unscaledSize;
+            get => _rawSize;
             set {
-                _unscaledSize = value;
+                _rawSize = value;
                 _wasSizeSet = true;
                 UpdateBoxCollider();
             }
@@ -39,11 +41,13 @@ namespace Instant2D.EC.Components {
             if (Entity == null)
                 return;
 
-            var size = ShouldScaleWithTransform ? _unscaledSize * Transform.Scale : _unscaledSize;
-            _offset = _origin * Transform.Scale;
+            var size = ShouldScaleWithTransform ? _rawSize * Transform.Scale : _rawSize;
+            var offset = ShouldScaleWithTransform ? _offset * Transform.Scale : _offset;
 
-            // offset the position by origin amount
-            BaseCollider.Position = Transform.Position + _offset;
+            // offset the position by corrected origin times size
+            // -0.5 is required to correctly adjust the position with internal collision system
+            // afterwards, apply offset to the end result
+            BaseCollider.Position = Transform.Position - size * (_origin - new Vector2(0.5f)) + offset;
             BaseCollider.Size = size;
             // TODO: BaseCollider.Rotation = Transform.Rotation;
             BaseCollider.Update();
@@ -58,35 +62,27 @@ namespace Instant2D.EC.Components {
         public override void OnTransformUpdated(TransformComponentType components) {
             base.OnTransformUpdated(components);
 
-            // if scale changed, full update is required
-            if (ShouldScaleWithTransform && (components & TransformComponentType.Scale) != 0) {
+            // require update when position changes or any tracked transformations are detected
+            var updateRequired = ((components & TransformComponentType.Position) != 0)
+                || (ShouldScaleWithTransform && (components & TransformComponentType.Scale) != 0);
+
+            if (updateRequired) {
                 UpdateBoxCollider();
                 return;
-            }
-
-            // else, just update the position
-            if ((components & TransformComponentType.Position) != 0) {
-                BaseCollider.Position = Entity.Transform.Position + _offset;
-                BaseCollider.Update();
             }
         }
 
         /// <inheritdoc cref="Size"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BoxCollisionComponent SetSize(float size, bool centerOrigin = true) => SetSize(new Vector2(size), centerOrigin);
+        public BoxCollisionComponent SetSize(float size) => SetSize(new Vector2(size));
 
         /// <inheritdoc cref="Size"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BoxCollisionComponent SetSize(float width, float height, bool centerOrigin = true) => SetSize(new Vector2(width, height), centerOrigin);
+        public BoxCollisionComponent SetSize(float width, float height) => SetSize(new Vector2(width, height));
 
         /// <inheritdoc cref="Size"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BoxCollisionComponent SetSize(Vector2 size, bool centerOrigin = true) {
-            if (centerOrigin) {
-                // use backing field to avoid unnecessary updates
-                _origin = size * 0.5f;
-            }
-
+        public BoxCollisionComponent SetSize(Vector2 size) {
             Size = size;
             UpdateBoxCollider();
 

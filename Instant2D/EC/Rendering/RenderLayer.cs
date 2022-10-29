@@ -53,12 +53,12 @@ namespace Instant2D.EC.Rendering {
         public readonly List<RenderableComponent> Objects = new();
 
         /// <summary>
-        /// When <see langword="true"/>, the layer will be drawn. If you're looking to disable the layer but keep updating RenderTarget, see <see cref="ShouldPresent"/>.
+        /// When <see langword="true"/>, the layer will be drawn. If you're looking to disable the layer from appearing on-screen but want to keep updating RenderTarget, see <see cref="ShouldPresent"/>.
         /// </summary>
         public bool Active = true;
 
         /// <summary>
-        /// When <see langword="true"/>, the layer will be rendered onto the screen on 'Present' phase.
+        /// When <see langword="true"/>, the layer will be rendered onto the screen.
         /// </summary>
         public bool ShouldPresent = true;
 

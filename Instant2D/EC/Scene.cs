@@ -19,6 +19,7 @@ using Instant2D.Assets.Containers;
 using Instant2D.Audio;
 using System.Text;
 using Instant2D.EC.Rendering;
+using System.IO;
 
 namespace Instant2D.EC {
     public abstract class Scene : ICoroutineTarget {
@@ -186,6 +187,9 @@ namespace Instant2D.EC {
             if (!_isInitialized) {
                 _isInitialized = true;
                 Initialize();
+
+                // initialize RTs for newly added layers
+                ResizeRenderTargets(Resolution);
             }
 
             TotalTime += (float)time.ElapsedGameTime.TotalSeconds * TimeScale;
@@ -368,9 +372,6 @@ namespace Instant2D.EC {
 
                 Listener = Camera;
             }
-
-            // initialize RTs for newly added layers
-            ResizeRenderTargets(Resolution);
         }
 
         /// <summary>
@@ -410,9 +411,16 @@ namespace Instant2D.EC {
 
             drawing.DrawTexture(_sceneTarget, Resolution.offset, null, Color.White, 0, Vector2.Zero, new(Resolution.scaleFactor));
 
+            if (!debug) {
+                using (var stream = File.OpenWrite("ass.png"))
+                    _sceneTarget.SaveAsPng(stream, _sceneTarget.Width, _sceneTarget.Height);
+
+                debug = true;
+            }
+
             drawing.End();
         }
-
+        bool debug = false;
         #endregion
 
         /// <summary>

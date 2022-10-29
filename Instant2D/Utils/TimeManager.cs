@@ -16,7 +16,7 @@ namespace Instant2D {
         /// <summary>
         /// Time that has passed since the last frame.
         /// </summary>
-        public static float TimeDelta { get; private set; }
+        public static float DeltaTime { get; private set; }
 
         /// <summary>
         /// Total number of frames passed.
@@ -32,7 +32,7 @@ namespace Instant2D {
         public override void Update(GameTime time) {
             var deltaTime = (float)time.ElapsedGameTime.TotalSeconds;
             TotalTime += deltaTime;
-            TimeDelta = deltaTime;
+            DeltaTime = deltaTime;
             FrameCount++;
         }
     }

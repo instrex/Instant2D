@@ -34,6 +34,7 @@ namespace Instant2D.Utils.ResolutionScaling {
         Point _designResolution;
         DisplayMode _displayMode;
         bool _isPixelPerfect;
+        float _minScale;
 
         /// <summary>
         /// Display mode to use during resolution scaling. Check <see cref="DisplayMode"/> descriptions for more info.
@@ -59,6 +60,14 @@ namespace Instant2D.Utils.ResolutionScaling {
             set => _designResolution = value;
         }
 
+        /// <summary>
+        /// The minimal scaling value.
+        /// </summary>
+        public float MinimalScale {
+            get => _minScale;
+            set => _minScale = value;
+        }
+
         #region Setters
 
         /// <inheritdoc cref="DisplayMode"/>
@@ -79,6 +88,13 @@ namespace Instant2D.Utils.ResolutionScaling {
             return this;
         }
 
+        /// <inheritdoc cref="MinimalScale"/>
+        public DefaultResolutionScaler SetMinimalScale(float minScale) {
+            _minScale = minScale;
+            return this;
+        }
+
+
         #endregion
 
         public ScaledResolution Calculate(Point screenDimensions) {
@@ -88,9 +104,14 @@ namespace Instant2D.Utils.ResolutionScaling {
             var rawScale = MathF.Max(1.0f, MathF.Min(scaleX, scaleY));
             var scale = rawScale;
 
+            // clamp the scale
+            if (_minScale > 0) {
+                scale = MathF.Max(_minScale, scale);
+            }
+
             // correct the scale if pixel-perfect
             if (_isPixelPerfect) {
-                scale = MathF.Floor(rawScale);
+                scale = MathF.Floor(scale);
             }
 
             var result = new ScaledResolution { 

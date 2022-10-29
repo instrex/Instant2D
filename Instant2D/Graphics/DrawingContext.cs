@@ -127,8 +127,13 @@ namespace Instant2D.Graphics {
 
 			// update projection matrix
 			var viewport = GraphicsDevice.Viewport /*new Rectangle(0, 0, SceneManager.Instance.Current.Resolution.Width, SceneManager.Instance.Current.Resolution.Height)*/;
-			(_projectionMatrix.M11, _projectionMatrix.M22) = ((float)(2.0 / (viewport.Width / 2 * 2 - 1)), (float)(-2.0 / (viewport.Height / 2 * 2 - 1)));
-			(_projectionMatrix.M41, _projectionMatrix.M42) = (-1 - 0.5f * _projectionMatrix.M11, 1 - 0.5f * _projectionMatrix.M22);
+            //(_projectionMatrix.M11, _projectionMatrix.M22) = ((float)(2.0 / (viewport.Width / 2 * 2 - 1)), (float)(-2.0 / (viewport.Height / 2 * 2 - 1)));
+            _projectionMatrix.M11 = (float)(2.0 / (double)viewport.Width);
+            _projectionMatrix.M22 = (float)(-2.0 / (double)viewport.Height);
+			// TODO:  wtf is going on here
+            //_projectionMatrix.M11 = (float)(2.0 / (double)(viewport.Width / 2 * 2 - 1));
+            //_projectionMatrix.M22 = (float)(-2.0 / (double)(viewport.Height / 2 * 2 - 1));
+            //(_projectionMatrix.M41, _projectionMatrix.M42) = (-1 - 0.5f * _projectionMatrix.M11, 1 - 0.5f * _projectionMatrix.M22);
 
 			Matrix.Multiply(ref _transformMatrix, ref _projectionMatrix, out _tempMatrix);
 
@@ -203,8 +208,8 @@ namespace Instant2D.Graphics {
 				Flush();
 
 			if (EnableRounding) {
-				destinationX = MathF.Round(destinationX);
-				destinationY = MathF.Round(destinationY);
+				destinationX = MathF.Floor(destinationX);
+				destinationY = MathF.Floor(destinationY);
 			}
 
 			// Source/Destination/Origin Calculations

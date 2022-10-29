@@ -20,15 +20,21 @@ namespace Instant2D.EC.Components {
         public readonly BaseCollider<CollisionComponent> BaseCollider;
 
         /// <summary>
-        /// Since most of colliders are centered, origin must be adjusted to fit that.
+        /// Anchor point of this collider from x=0, y=0 (top-left) to x=1, y=1 (bottom-right).
         /// </summary>
-        protected Vector2 _origin;
+        protected Vector2 _origin = new(0.5f);
+
+        /// <summary>
+        /// Absolute translation applied to collider position, scales/rotates with Transform when <see cref="ShouldScaleWithTransform"/> / <see cref="ShouldRotateWithTransform"/> is set.
+        /// </summary>
+        protected Vector2 _offset;
 
         /// <summary>
         /// Indicate whether or not collider size was explicitly provided by user. If <see langword="true"/>, autosizing will take place. <br/>
         /// You should manually this to <see langword="true"/> when user requests changes to the size.
         /// </summary>
         protected bool _wasSizeSet;
+
         bool _scaleWithTransform = true, _rotateWithTransform = true;
         internal List<ITriggerCallbacksHandler> _triggerHandlers;
         HashSet<BaseCollider<CollisionComponent>> _contactTriggers, _tempTriggerSet;
@@ -39,14 +45,25 @@ namespace Instant2D.EC.Components {
         public bool IsTrigger;
 
         /// <summary>
-        /// Origin of this collider. Defaults to the center of collider.
+        /// Anchor point of this collider. Defaults to the center of collider (0.5, 0.5).
         /// </summary>
         public Vector2 Origin {
             get => _origin;
             set {
                 _origin = value;
 
-                // update internal values
+                // recalculate internal values
+                UpdateCollider();
+            }
+        }
+
+        /// <inheritdoc cref="_offset"/>
+        public Vector2 Offset {
+            get => _offset;
+            set {
+                _offset = value;
+
+                // recalculate internal values
                 UpdateCollider();
             }
         }
@@ -211,6 +228,26 @@ namespace Instant2D.EC.Components {
             BaseCollider.Position = oldPosition;
 
             return result;
+        }
+
+        public bool CollidesWithAny(int layerMask = -1, Vector2 velocity = default) {
+            var oldPosition = BaseCollider.Position;
+            BaseCollider.Position += velocity;
+            BaseCollider._areBoundsDirty = true;
+
+            // broadphase potential hits and check more precisely
+            foreach (var potential in Scene.Collisions.Broadphase(BaseCollider.Bounds, layerMask)) {
+                if (potential != BaseCollider && potential.CheckCollision(BaseCollider, out var hit)) {
+                    BaseCollider.Position = oldPosition;
+                    return true;
+                }
+            }
+
+            // revert to previous position
+            BaseCollider.Position = oldPosition;
+            BaseCollider._areBoundsDirty = true;
+
+            return false;
         }
 
         /// <summary>
