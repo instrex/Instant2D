@@ -18,6 +18,8 @@ namespace Instant2D.TestGame.Scenes {
         Entity _saul;
 
         public override void Initialize() {
+            base.Initialize();
+
             AddRenderLayer("default").BackgroundColor = Color.Black;
 
             _saul = CreateEntity("saul")
@@ -37,6 +39,8 @@ namespace Instant2D.TestGame.Scenes {
         float _shake;
 
         public override void Update() {
+            base.Update();
+
             if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.A)) {
                 _saul.Transform.Position += new Vector2(-10, 0);
             }

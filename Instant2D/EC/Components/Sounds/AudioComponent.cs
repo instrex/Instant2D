@@ -14,7 +14,7 @@ namespace Instant2D.EC.Components {
     /// The main component for playing sounds or music. If you're interested in one-shot sounds, check <see cref="Scene.PlaySound(Sound, Vector2?, AudioRolloff?, float, float, float, Entity)"/>
     /// or <see cref="OneShotSound(StaticAudioInstance, Vector2?, AudioRolloff, float, Entity)"/>.
     /// </summary>
-    public class AudioComponent : Component, IUpdatableComponent {
+    public class AudioComponent : Component, IUpdate {
         Sound _sound;
         AudioInstance _instance;
 
@@ -206,7 +206,7 @@ namespace Instant2D.EC.Components {
 
         #endregion
 
-        public void Update() {
+        public void Update(float dt) {
             if (_instance == null || State != PlaybackState.Playing) {
                 // pool back static instances automatically
                 if (_instance is StaticAudioInstance staticInstance && State == PlaybackState.Stopped) {
@@ -223,7 +223,6 @@ namespace Instant2D.EC.Components {
 
             // calculate volume and  based on distance
             var listenerPosition = Scene.Listener != null ? Scene.Listener.Transform.Position : Vector2.Zero;
-            Console.WriteLine(listenerPosition);
             (_instance.Volume, _instance.Pan) = Rolloff.Calculate(listenerPosition, Transform.Position, _volumeScale);
         }
 
@@ -252,7 +251,6 @@ namespace Instant2D.EC.Components {
                 // apply rolloff volume calculations
                 if (rolloff.Enabled && position is Vector2 pos) {
                     (instance.Volume, instance.Pan) = rolloff.Calculate(SceneManager.Instance.Current.Listener?.Transform.Position ?? Vector2.Zero, pos, volume);
-                    Console.WriteLine(instance.Pan);
                 }
 
                 yield return null;

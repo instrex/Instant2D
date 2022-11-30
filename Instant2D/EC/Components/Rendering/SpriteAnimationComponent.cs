@@ -1,4 +1,5 @@
 ﻿using Instant2D.Assets.Sprites;
+using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Newtonsoft.Json.Linq;
 using System;
@@ -36,7 +37,7 @@ namespace Instant2D.EC {
         Completed
     }
 
-    public class SpriteAnimationComponent : SpriteComponent, IUpdatableComponent {
+    public class SpriteAnimationComponent : SpriteComponent, IUpdate {
         /// <summary>
         /// State of animation playback.
         /// </summary>
@@ -145,8 +146,25 @@ namespace Instant2D.EC {
                     var ev = _animation.Events[i];
 
                     // it's not your time yet...
-                    if (ev.frame != frame)
+                    if (ev.frame != clampedIndex)
                         continue;
+
+                    // update point location instead
+                     if (ev.key == "point") {
+                        // initialize points dict
+                        if (_capturedPoints == null)
+                            _capturedPoints = new();
+
+                        // ass
+                        if (ev.args.Length < 2 || ev.args[0] is not string pointName || ev.args[1] is not Vector2 pointOffset) {
+                            Logger.WriteLine($"Invalid 'point' animation event usage, missing string 'pointName' and Vector2 'pointOffset'.");
+                            continue;
+                        }
+
+                        _capturedPoints.AddOrSet(pointName, pointOffset);
+
+                        continue;
+                    }
 
                     OnAnimationEvent?.Invoke(this, ev.key, ev.args);
                 }
@@ -157,8 +175,12 @@ namespace Instant2D.EC {
         /// <summary>
         /// Sets the animation without reseting it. As an example, this may be used for seamless transitions between aerial/grounded animations.
         /// </summary>
-        public SpriteAnimationComponent SetAnimation(SpriteAnimation animation) {
+        public SpriteAnimationComponent SetAnimation(SpriteAnimation animation, bool resetFrame = false) {
             Animation = animation;
+            if (resetFrame) {
+                _frameIndex = -1;
+            }
+
             return this;
         }
 
@@ -182,6 +204,20 @@ namespace Instant2D.EC {
 
         #endregion
 
+        Dictionary<string, Vector2> _capturedPoints;
+
+        public override bool TryGetPoint(string key, out Vector2 point, bool dontApplyTransform = false) {
+            if (_capturedPoints == null || !_capturedPoints.TryGetValue(key, out var rawPoint)) {
+                point = Entity.Transform.Position;
+                return false;
+            }
+
+            var offset = rawPoint - Sprite.Origin;
+            point = Entity.Transform.Position + (dontApplyTransform ? offset : TransformPointOffset(offset));
+
+            return true;
+        }
+
         public override void PostInitialize() {
             base.PostInitialize();
 
@@ -191,12 +227,12 @@ namespace Instant2D.EC {
             }
         }
 
-        public void Update() {
+        public void Update(float dt) {
             if (State != AnimatorState.Running)
                 return;
 
             // advance the animation based on timescale and speed
-            _elapsedTime += TimeManager.DeltaTime * Entity.TimeScale * Speed;
+            _elapsedTime += dt * Scene.TimeScale * Entity.TimeScale * Speed;
             if (_elapsedTime >= _duration) {
                 _elapsedTime = 0;
                 switch (_loopType) {

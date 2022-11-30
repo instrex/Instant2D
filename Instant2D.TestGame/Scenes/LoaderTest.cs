@@ -104,7 +104,7 @@ namespace Instant2D.TestGame.Scenes {
 
             var f = 0f;
             while (f <= 1f) {
-                f += TimeManager.TimeDelta * 4;
+                f += TimeManager.DeltaTime * 4;
                 tile.SetScale(MathHelper.Clamp(f, 0, 1) * 8);
                 yield return null;
             }

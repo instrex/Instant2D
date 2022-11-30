@@ -230,6 +230,9 @@ namespace Instant2D.EC.Components {
             return result;
         }
 
+        /// <summary>
+        /// Checks for any collisions using specified <paramref name="layerMask"/> and optional <paramref name="velocity"/>.
+        /// </summary>
         public bool CollidesWithAny(int layerMask = -1, Vector2 velocity = default) {
             var oldPosition = BaseCollider.Position;
             BaseCollider.Position += velocity;

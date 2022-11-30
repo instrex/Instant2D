@@ -43,11 +43,7 @@ namespace Instant2D.Utils {
             if (_items.Count == 0)
                 Expand();
 
-            var obj = _items.Dequeue();
-            if (obj is IPooled resettable)
-                resettable.Reset();
-
-            return obj;
+            return _items.Dequeue();
         }
 
         /// <summary>
@@ -55,6 +51,10 @@ namespace Instant2D.Utils {
         /// </summary>
         public void Return(T obj) {
             _items.Enqueue(obj);
+
+            // reset the pooled object
+            if (obj is IPooled resettable)
+                resettable.Reset();
         }
     }
 }

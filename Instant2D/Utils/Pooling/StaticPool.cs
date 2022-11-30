@@ -12,6 +12,6 @@
         public static void Return(T obj) => _pool.Return(obj);
 
         /// <inheritdoc cref="Pool{T}.Expand(int)"/>
-        public static void PreHeat(int objectsToAdd = -1) => _pool.Expand(objectsToAdd);
+        public static void Expand(int objectsToAdd = -1) => _pool.Expand(objectsToAdd);
     }
 }

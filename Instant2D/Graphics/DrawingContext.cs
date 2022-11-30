@@ -32,7 +32,7 @@ namespace Instant2D.Graphics {
 		/// When set to <see langword="true"/>, destination positions of Draw methods will be rounded before submitting. <br/>
 		/// Works best for pixel art, in other cases it shouldn't really matter if this is set.
 		/// </summary>
-		public bool EnableRounding = true;
+		public bool EnableRounding = false;
 
 		// batching info
 		bool _batchBegun;

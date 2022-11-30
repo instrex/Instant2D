@@ -43,7 +43,7 @@ namespace Instant2D.Coroutines {
         /// <see cref="CoroutineInstance.completionHandler"/> takes a <see cref="bool"/> as parameter, which signals if coroutine was stopped manually (<see langword="true"/>), 
         /// or it finished executing (<see langword="false"/>).
         /// </summary>
-        public static CoroutineInstance Run(IEnumerator enumerator, Action<bool> completionHandler = default, ICoroutineTarget target = default) {
+        public static CoroutineInstance Run(IEnumerator enumerator, Action<CoroutineInstance, bool> completionHandler = default, ICoroutineTarget target = default) {
             var instance = new CoroutineInstance {
                 completionHandler = completionHandler,
                 enumerator = enumerator,

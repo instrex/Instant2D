@@ -20,11 +20,13 @@ using Instant2D.Audio;
 using System.Text;
 using Instant2D.EC.Rendering;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Instant2D.EC {
     public abstract class Scene : ICoroutineTarget {
         internal readonly List<Entity> _entities = new(128);
         RenderTarget2D _sceneTarget, _tempTarget;
+        float _fixedTimestepProgress;
         bool _isInitialized, _isCleanedUp;
         bool _debugRender;
 
@@ -56,6 +58,17 @@ namespace Instant2D.EC {
         /// any time-sensitive components should make use of this variable in order to make it useful.
         /// </summary>
         public float TimeScale = 1.0f;
+
+        /// <summary>
+        /// An interval at which components implementing <see cref="IFixedUpdate"/> step forward. Defaults to 1/60.
+        /// </summary>
+        public float FixedTimeStep = 1.0f / 60;
+
+        /// <summary>
+        /// Used for interpolation between FixedUpdate frames, a value in range of 0.0 - 1.0. <br/>
+        /// TODO: come up with a better name for this... ?
+        /// </summary>
+        public float AlphaFrameTime;
 
         /// <summary>
         /// Amount of time that has passed since beginning this scene, taking <see cref="TimeScale"/> into account.
@@ -192,7 +205,46 @@ namespace Instant2D.EC {
                 ResizeRenderTargets(Resolution);
             }
 
-            TotalTime += (float)time.ElapsedGameTime.TotalSeconds * TimeScale;
+            // call PreUpdate first to ensure that no destroyed or uninitialized components are updated
+            for (var i = 0; i < _entities.Count; i++) {
+                _entities[i].PreUpdate();
+            }
+
+            var dt = (float)time.ElapsedGameTime.TotalSeconds;
+            TotalTime += dt * TimeScale;
+
+            var fixedUpdateCount = 0;
+            _fixedTimestepProgress += dt * TimeScale;
+
+            // determine amount of fixed updates
+            while (_fixedTimestepProgress > FixedTimeStep) {
+                _fixedTimestepProgress -= FixedTimeStep;
+                fixedUpdateCount++;
+            }
+
+            // get alpha frame time for interpolations
+            AlphaFrameTime = _fixedTimestepProgress / FixedTimeStep;
+
+            // apply FixedUpdates
+            var span = CollectionsMarshal.AsSpan(_entities);
+            foreach (var entity in span) {
+                if (entity._timescale == 1f) {
+                    entity.FixedUpdateGlobal(fixedUpdateCount);
+                    entity.AlphaFrameTime = AlphaFrameTime;
+                } else {
+                    entity.FixedUpdateCustom(dt);
+                }
+            }
+
+            // apply Updates
+            foreach (var entity in span) {
+                entity.UpdateComponents(dt);
+            }
+
+            // apply LateUpdates
+            foreach (var entity in span) {
+                entity.LateUpdate(dt);
+            }
 
             // switch debug render
             // TODO: move to a component
@@ -358,7 +410,7 @@ namespace Instant2D.EC {
         public virtual void Update() {
             // update entities before anything else
             for (var i = 0; i < _entities.Count; i++) {
-                _entities[i].Update();
+                _entities[i].PreUpdate();
             }
         }
 
@@ -487,8 +539,8 @@ namespace Instant2D.EC {
 
             return this.RunCoroutine(
                 AudioComponent.OneShotSound(instance, position, actualRolloff, volume, followEntity),
-                _ => instance.Pool()
-            );
+                (coroutine, _) => coroutine.Context<StaticAudioInstance>().Pool()
+            ).SetContext(instance);
         }
 
         // ICoroutineTarget impl

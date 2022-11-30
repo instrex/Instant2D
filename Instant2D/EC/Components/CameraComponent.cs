@@ -107,7 +107,7 @@ namespace Instant2D.EC {
             if (!_matricesDirty)
                 return;
 
-            _transformMatrix = Matrix2D.CreateTranslation(-Entity.Transform.Position.Floor());
+            _transformMatrix = Matrix2D.CreateTranslation(-Entity.TransformState.Position);
 
             // apply the zoom when needed
             if (_zoom != 1.0f) {
@@ -117,7 +117,7 @@ namespace Instant2D.EC {
 
             // apply the rotation if parent entity is rotated
             if (Entity.Transform.Rotation != 0) {
-                Matrix2D.CreateRotation(Entity.Transform.Rotation, out _temp);
+                Matrix2D.CreateRotation(Entity.TransformState.Rotation, out _temp);
                 Matrix2D.Multiply(ref _transformMatrix, ref _temp, out _transformMatrix);
             }
 
@@ -162,6 +162,7 @@ namespace Instant2D.EC {
         }
 
         public override void Initialize() {
+            //Entity.InterpolateTransform = false;
             Scene.Events.Subscribe<SceneResolutionChangedEvent>(OnClientSizeChanged);
         }
 

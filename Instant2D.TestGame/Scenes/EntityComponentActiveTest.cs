@@ -14,7 +14,7 @@ namespace Instant2D.TestGame.Scenes {
         class SineWave : Component, IUpdatableComponent {
             float _totalTime = 0;
             public void Update() {
-                _totalTime += TimeManager.TimeDelta * Entity.TimeScale * 2;
+                _totalTime += TimeManager.DeltaTime * Entity.TimeScale * 2;
                 Entity.Transform.Position = Entity.Transform.Position with { Y = Scene.Resolution.renderTargetSize.Y * MathF.Sin(_totalTime) * 0.25f };
             }
         }

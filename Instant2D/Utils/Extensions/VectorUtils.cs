@@ -16,6 +16,10 @@ namespace Instant2D {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 Floor(this Vector2 vector) => new(MathF.Floor(vector.X), MathF.Floor(vector.Y));
 
+        /// <summary> Floors both X and Y components using <see cref="MathF.Floor(float)"/> function. </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector2 Ceil(this Vector2 vector) => new(MathF.Ceiling(vector.X), MathF.Ceiling(vector.Y));
+
         /// <summary> Converts this Vector2 into rotation (in radians). </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ToAngle(this Vector2 vector) => MathF.Atan2(vector.Y, vector.X);
@@ -75,6 +79,22 @@ namespace Instant2D {
                 (vector.X * matrix.M11) + (vector.Y * matrix.M21) + matrix.M31, 
                 (vector.X * matrix.M12) + (vector.Y * matrix.M22) + matrix.M32
             );
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static float Repeat(float t, float length) => t - MathF.Floor(t / length) * length;
+
+        /// <summary>
+        /// Lerps an angle, automatically handling wrapping and taking shortest difference.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float LerpAngle(float value1, float value2, float amount) {
+            float num = Repeat(value2 - value1, MathHelper.TwoPi);
+            if (num > MathHelper.Pi) {
+                num -= MathHelper.TwoPi;
+            }
+
+            return value1 + num * MathHelper.Clamp(amount, 0, 1);
         }
     }
 }

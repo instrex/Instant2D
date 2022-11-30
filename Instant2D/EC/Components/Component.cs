@@ -33,7 +33,7 @@ namespace Instant2D.EC {
         internal bool _isActive = true;
 
         /// <summary>
-        /// While true, <see cref="IUpdatableComponent.Update"/> will be run.
+        /// While true, <see cref="IUpdate.Update"/> will be run.
         /// </summary>
         public bool IsActive {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -33,7 +33,7 @@ namespace Instant2D.TestGame.Scenes {
                     _runningCoroutine.Stop();
 
                 var entity = FindEntityByName("wawa_1");
-                _runningCoroutine = entity.RunCoroutine(Coroutine(entity, Random.Shared.NextRectanglePoint(new(0, 0, 320, 160))), wasStopped => {
+                _runningCoroutine = entity.RunCoroutine(Coroutine(entity, Random.Shared.NextRectanglePoint(new(0, 0, 320, 160))), (_, wasStopped) => {
                     Logger.WriteLine(wasStopped ? "Coroutine was stopped." : "Coroutine has finished.");
                 });
             }

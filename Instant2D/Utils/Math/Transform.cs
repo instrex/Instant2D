@@ -14,9 +14,11 @@ namespace Instant2D {
         void OnTransformUpdated(TransformComponentType components);
     }
 
+    public record struct TransformData(Vector2 Position, Vector2 Scale, float Rotation);
+
     [Flags]
     public enum TransformComponentType {
-        Clean = 0,
+        None = 0,
         Position = 1,
         Scale = 2,
         Rotation = 4,
@@ -206,13 +208,24 @@ namespace Instant2D {
 
         #endregion
 
+        /// <summary>
+        /// Quick retrieval of transform components such as Position, Scale and Rotation.
+        /// </summary>
+        public TransformData Data {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new(Position, Scale, Rotation);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => (Position, Scale, Rotation) = value;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void CalculateTransform() {
-            if (_matricesDirty == TransformComponentType.Clean)
+            if (_matricesDirty == TransformComponentType.None)
                 return;
 
             _parent?.CalculateTransform();
-            if (_localMatricesDirty != TransformComponentType.Clean) {
+            if (_localMatricesDirty != TransformComponentType.None) {
                 if ((_localMatricesDirty & TransformComponentType.Position) != 0) {
                     Matrix2D.CreateTranslation(_localPosition.X, _localPosition.Y, out _translationMatrix);
                     _localMatricesDirty &= ~TransformComponentType.Position;
@@ -250,7 +263,7 @@ namespace Instant2D {
             }
 
             _worldToLocalDirty = true;
-            _matricesDirty = TransformComponentType.Clean;
+            _matricesDirty = TransformComponentType.None;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

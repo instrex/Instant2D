@@ -6,14 +6,12 @@ namespace Instant2D.Utils {
         static readonly Pool<List<T>> _internalPool = new(3);
 
         /// <inheritdoc cref="Pool{T}.Get"/>
-        public static List<T> Get() {
-            var list = _internalPool.Get();
-            list.Clear();
-
-            return list;
-        }
+        public static List<T> Get() => _internalPool.Get();
 
         /// <inheritdoc cref="Pool{T}.Return(T)"/>
-        public static void Return(List<T> obj) => _internalPool.Return(obj);
+        public static void Return(List<T> obj) {
+            _internalPool.Return(obj);
+            obj.Clear();
+        } 
     }
 }

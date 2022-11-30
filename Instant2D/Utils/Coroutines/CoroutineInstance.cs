@@ -54,16 +54,17 @@ namespace Instant2D.Coroutines {
     public class CoroutineInstance : IPooled, ICoroutineObject {
         public IEnumerator enumerator;
         public float? overrideTimeScale;
-        public Action<bool> completionHandler;
+        public Action<CoroutineInstance, bool> completionHandler;
 
         float _waitDuration, _timer;
         ICoroutineObject _waitForObject;
+        object _contextObj;
         internal bool _wasStopped, _isRunning = true;
         internal ICoroutineTarget _target;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Tick(GameTime gameTime) {
-            if (_wasStopped || _target?.IsActive == false) { 
+            if (_wasStopped || _target?.IsActive == false) {
                 return false;
             }
 
@@ -90,7 +91,7 @@ namespace Instant2D.Coroutines {
             // cache the enumeration state in a variable
             // for later use and ICoroutineObject
             if (!(_isRunning = enumerator.MoveNext())) {
-                completionHandler?.Invoke(false);
+                completionHandler?.Invoke(this, false);
                 return false;
             }
 
@@ -134,16 +135,31 @@ namespace Instant2D.Coroutines {
         public void Stop() {
             _wasStopped = true;
             _isRunning = false;
-            completionHandler?.Invoke(true);
+            completionHandler?.Invoke(this, true);
         }
 
+        /// <summary>
+        /// Gets associated context object, casted to appropriate type.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public T Context<T>() => (T)_contextObj;
+
         #region Setters
+
+        /// <summary>
+        /// Attach an optional object to reduce the allocation when used with <see cref="completionHandler"/>.
+        /// </summary>
+        public CoroutineInstance SetContext(object context) {
+            _contextObj = context;
+            return this;
+        }
 
         /// <summary>
         /// Sets an optional event handler to trigger when this coroutine is completed or stopped. <br/>
         /// Takes <see cref="bool"/> as parameter, which signals if the coroutine was stopped manually.
         /// </summary>
-        public CoroutineInstance SetCompletionHandler(Action<bool> handler) {
+        public CoroutineInstance SetCompletionHandler(Action<CoroutineInstance, bool> handler) {
             completionHandler = handler;
             return this;
         }
@@ -167,6 +183,7 @@ namespace Instant2D.Coroutines {
             _timer = 0;
             _wasStopped = false;
             _isRunning = true;
+            _contextObj = null;
         }
 
         // ICoroutineObject impl

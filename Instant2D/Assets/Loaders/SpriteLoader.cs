@@ -141,7 +141,7 @@ namespace Instant2D.Assets.Loaders {
 
             // make cool sprite
             var def = asset.Data as SpriteDef;
-            var sprite = new Sprite(texture, new Rectangle(0, 0, texture.Width, texture.Height), new Vector2(texture.Width, texture.Height) * 0.5f, asset.Key) {
+            var sprite = new Sprite(texture, new Rectangle(0, 0, texture.Width, texture.Height), SpriteDef.TransformOrigin(def.origin, new Rectangle(0, 0, texture.Width, texture.Height), def.manifest), asset.Key) {
                 Points = def.points?.ToDictionary(p => p.Key, p => p.Value.RoundToPoint())
             };
 

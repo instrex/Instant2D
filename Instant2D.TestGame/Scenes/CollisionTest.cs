@@ -42,7 +42,7 @@ namespace Instant2D.TestGame.Scenes {
                 if (Velocity == default)
                     return;
 
-                var velocity = Velocity * Entity.TimeScale * (TimeManager.TimeDelta / (1.0f / 60));
+                var velocity = Velocity * Entity.TimeScale * (TimeManager.DeltaTime / (1.0f / 60));
                 if (Collider.CalculateMovementCollisions(ref velocity, out var hit)) {
                     //// push other box
                     //if (hit..Entity.TryGetComponent<FunnyMovingBox>(out var otherBox)) {

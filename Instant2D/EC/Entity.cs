@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace Instant2D.EC {
     /// <summary>
@@ -25,8 +26,11 @@ namespace Instant2D.EC {
         static uint _entityIdCounter;
 
         readonly List<Component> _components = new(16);
-        internal List<IUpdatableComponent> _updatedComponents;
-        float? _overrideTimeScale;
+        internal List<IUpdate> _updatedComponents;
+        internal List<IFixedUpdate> _fixedUpdateComponents;
+        internal List<ILateUpdate> _lateUpdateComponents;
+        internal float _timestepCounter, _timescale = 1.0f;
+        TransformData _lastTransformState;
         bool _shouldDestroy, _isInitialized;
         Scene _scene;
 
@@ -38,6 +42,17 @@ namespace Instant2D.EC {
 
         /// <summary> Name assigned to this entity. </summary>
         public string Name;
+
+        /// <summary>
+        /// Transform components used for frame interpolation when <see cref="InterpolateTransform"/> is set.
+        /// </summary>
+        public TransformData TransformState;
+
+        /// <summary>
+        /// When <see langword="true"/>, <see cref="TransformState"/> will interpolate based on <see cref="AlphaFrameTime"/>. Useful when the game is running in higher framerate than the fixed update ticks. <br/>
+        /// This effect is purely visual and won't affect <see cref="Transform"/> directly. Make sure to use <see cref="TransformState"/> in your render logic if you want to make use of this feature.
+        /// </summary>
+        public bool InterpolateTransform = true;
 
         public Entity() {
             Transform = new() { Entity = this };
@@ -160,21 +175,25 @@ namespace Instant2D.EC {
         }
 
         /// <summary> 
-        /// Allows objects to have individual timescales. In case it's not set, will return either the parent timescale (if defined) or a global scene timescale. <br/>
-        /// Set this to <see cref="float.NaN"/> to undo the timescale override and use <see cref="Scene.TimeScale"/>.
+        /// Individual timescale of this object. Will be multiplied by <see cref="Scene.TimeScale"/>.
         /// </summary>
         public float TimeScale {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _overrideTimeScale is float ts ? ts : (Parent?.TimeScale ?? Scene.TimeScale);
+            get => _timescale;
             set {
-                if (float.IsNaN(value)) {
-                    _overrideTimeScale = null;
-                    return;
+                _timescale = value;
+                if (_timescale == 1.0f) {
+                    // reset the individual timestep counter
+                    // when timescale is back to 1.0
+                    _timestepCounter = 0f;
                 }
-
-                _overrideTimeScale = value;
             }
         }
+
+        /// <summary>
+        /// Used for interpolation between FixedUpdate frames, a value in range of 0.0 - 1.0. <br/>
+        /// TODO: come up with a better name for this... ?
+        /// </summary>
+        public float AlphaFrameTime;
 
         /// <summary> <see langword="true"/> if this entity was destroyed and detached from its scene. </summary>
         public bool IsDestroyed {
@@ -243,13 +262,22 @@ namespace Instant2D.EC {
             _components.Add(component);
 
             // register updatable components
-            if (component is IUpdatableComponent updatable) {
+            if (component is IUpdate updatable) {
                 // allocate the updated component buffer when needed
-                if (_updatedComponents == null) {
-                    _updatedComponents = new List<IUpdatableComponent>(8);
-                }
-
+                _updatedComponents ??= ListPool<IUpdate>.Get();
                 _updatedComponents.Add(updatable);
+            }
+
+            // register fixed update components
+            if (component is IFixedUpdate fixedUpdatable) {
+                _fixedUpdateComponents ??= ListPool<IFixedUpdate>.Get();
+                _fixedUpdateComponents.Add(fixedUpdatable);
+            }
+
+            // register late update components
+            if (component is ILateUpdate lateUpdatable) {
+                _lateUpdateComponents ??= ListPool<ILateUpdate>.Get();
+                _lateUpdateComponents.Add(lateUpdatable);
             }
 
             if (_isActive) {
@@ -304,13 +332,7 @@ namespace Instant2D.EC {
         public T RemoveComponent<T>() where T: Component {
             for (var i = 0; i < _components.Count; i++) {
                 if (_components[i] is T foundComponent) {
-                    _components.RemoveAt(i);
-                    if (foundComponent is IUpdatableComponent updatable) {
-                        _updatedComponents?.Remove(updatable);
-                    }
-
-                    // run the callback
-                    foundComponent.OnRemovedFromEntity();
+                    RemoveComponent(foundComponent);
                     return foundComponent;
                 }
             }
@@ -325,9 +347,15 @@ namespace Instant2D.EC {
             for (var i = 0; i < _components.Count; i++) {
                 if (_components[i] == component) {
                     _components.RemoveAt(i);
-                    if (component is IUpdatableComponent updatable) {
+
+                    if (component is IUpdate updatable) 
                         _updatedComponents?.Remove(updatable);
-                    }
+                    
+                    if (component is IFixedUpdate fixedUpdatable)
+                        _fixedUpdateComponents?.Remove(fixedUpdatable);
+
+                    if (component is ILateUpdate lateUpdatable)
+                        _lateUpdateComponents?.Remove(lateUpdatable);
 
                     // run the callback
                     component.OnRemovedFromEntity();
@@ -452,31 +480,86 @@ namespace Instant2D.EC {
 
         #endregion
 
-        public void Update() {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void PreUpdate() {
             if (!_isInitialized) {
                 // call post initialize on all components
                 for (var i = 0; i < _components.Count; i++) {
                     _components[i].PostInitialize();
                 }
 
+                // set initial transform state
+                _lastTransformState = TransformState;
+                TransformState = Transform.Data;
+
                 _isInitialized = true;
             }
 
             if (_shouldDestroy) {
                 ImmediateDestroy();
-                return;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void UpdateComponents(float dt) {
+            if (_updatedComponents != null) {
+                foreach (var comp in CollectionsMarshal.AsSpan(_updatedComponents)) {
+                    if (comp.IsActive) comp.Update(dt);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void FixedUpdateGlobal(int updateCount) {
+            if (updateCount > 0) {
+                _lastTransformState = Transform.Data;
             }
 
-            if (!_isActive)
-                return;
+            if (_fixedUpdateComponents == null || updateCount <= 0) return;
 
-            // update components
-            if (_updatedComponents != null) {
-                for (var i = 0; i < _updatedComponents.Count; i++) {
-                    var comp = _updatedComponents[i];
-                    if (comp.IsActive) {
-                        _updatedComponents[i].Update();
-                    }
+            // do several updates at once to reduce looping overhead
+            foreach (var comp in CollectionsMarshal.AsSpan(_fixedUpdateComponents)) {
+                for (var i = 0; i < updateCount; i++) {
+                    comp.FixedUpdate();
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void FixedUpdateCustom(float dt) {
+            var fixedUpdateCount = 0;
+            _timestepCounter += dt * _timescale * Scene.TimeScale;
+
+            // find out needed amount of updates
+            while (_timestepCounter >= Scene.FixedTimeStep) {
+                _timestepCounter -= Scene.FixedTimeStep;
+                fixedUpdateCount++;
+            }
+
+            if (fixedUpdateCount > 0) {
+                _lastTransformState = Transform.Data;
+                if (_fixedUpdateComponents != null) {
+                    FixedUpdateGlobal(fixedUpdateCount);
+                }
+            }
+
+            AlphaFrameTime = _timestepCounter / Scene.FixedTimeStep;
+        }
+
+        internal void LateUpdate(float dt) {
+            // perform transform interpolation
+            if (InterpolateTransform) {
+                var (lastPos, lastScale, lastRot) = _lastTransformState;
+                TransformState = new(
+                    Vector2.Lerp(lastPos, Transform.Position, AlphaFrameTime),
+                    Vector2.Lerp(lastScale, Transform.Scale, AlphaFrameTime),
+                    VectorUtils.LerpAngle(lastRot, Transform.Rotation, AlphaFrameTime)
+                );
+            } else TransformState = Transform.Data;
+
+            if (_lateUpdateComponents != null) {
+                foreach (var comp in CollectionsMarshal.AsSpan(_lateUpdateComponents)) {
+                    if (comp.IsActive) comp.LateUpdate(dt);
                 }
             }
         }
@@ -495,6 +578,8 @@ namespace Instant2D.EC {
             }
 
             // clear components so no references remain
+            _fixedUpdateComponents?.Clear();
+            _lateUpdateComponents?.Clear();
             _updatedComponents?.Clear();
             _components.Clear();
 
@@ -517,16 +602,21 @@ namespace Instant2D.EC {
         // IPooled impl
         void IPooled.Reset() {
             IsDestroyed = false;
+            TimeScale = 1.0f;
             Name = null;
 
             // reset the transform and reassign entity
             Transform.Reset();
             Transform.Entity = this;
 
-            // reset othet fields
+            // reset other fields
             _isInitialized = false;
-            _overrideTimeScale = null;
-            _updatedComponents?.Clear();
+            _updatedComponents?.Pool();
+            _updatedComponents = null;
+            _fixedUpdateComponents?.Pool();
+            _fixedUpdateComponents = null;
+            _lateUpdateComponents?.Pool();
+            _lateUpdateComponents = null;
             _components.Clear();
             _shouldDestroy = false;
             _scene = null;

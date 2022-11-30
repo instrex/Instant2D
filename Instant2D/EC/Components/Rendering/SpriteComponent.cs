@@ -12,8 +12,10 @@ using System.Threading.Tasks;
 
 namespace Instant2D.EC {
     public class SpriteComponent : RenderableComponent, IPooled {
-        bool _isSpriteSet;
+        bool _isSpriteSet, _autocorrectOrigin = true;
         protected SpriteEffects _spriteFx;
+
+        Vector2 _origin;
         Sprite _sprite;
 
         /// <summary>
@@ -23,6 +25,7 @@ namespace Instant2D.EC {
             get => _sprite;
             set {
                 _sprite = value;
+                _origin = _sprite.Origin;
                 _isSpriteSet = true;
                 _boundsDirty = true;
             } 
@@ -33,7 +36,12 @@ namespace Instant2D.EC {
         /// </summary>
         public bool FlipX {
             get => (_spriteFx & SpriteEffects.FlipHorizontally) == 0;
-            set => _spriteFx = value ? _spriteFx | SpriteEffects.FlipHorizontally : _spriteFx & ~SpriteEffects.FlipHorizontally;
+            set {
+                _spriteFx = value ? _spriteFx | SpriteEffects.FlipHorizontally : _spriteFx & ~SpriteEffects.FlipHorizontally;
+                if (_autocorrectOrigin) {
+                    _origin.X = value ? _sprite.SourceRect.Width - _sprite.Origin.X : _sprite.Origin.X;
+                }
+            }
         }
 
         /// <summary>
@@ -41,7 +49,12 @@ namespace Instant2D.EC {
         /// </summary>
         public bool FlipY {
             get => (_spriteFx & SpriteEffects.FlipVertically) == 0;
-            set => _spriteFx = value ? _spriteFx | SpriteEffects.FlipVertically : _spriteFx & ~SpriteEffects.FlipVertically;
+            set {
+                _spriteFx = value ? _spriteFx | SpriteEffects.FlipVertically : _spriteFx & ~SpriteEffects.FlipVertically;
+                if (_autocorrectOrigin) {
+                    _origin.Y = value ? _sprite.SourceRect.Height - _sprite.Origin.Y : _sprite.Origin.Y;
+                }
+            } 
         }
 
         /// <summary>
@@ -82,7 +95,7 @@ namespace Instant2D.EC {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Vector2 TransformPointOffset(Vector2 offset) => 
-            offset.RotatedBy(Entity.Transform.Rotation) * Entity.Transform.Scale
+            offset.RotatedBy(Entity.TransformState.Rotation) * Entity.TransformState.Scale
             * new Vector2(FlipX ? 1 : -1, FlipY ? 1 : -1)
             + Offset;
 
@@ -102,12 +115,14 @@ namespace Instant2D.EC {
             if (!_isSpriteSet)
                 return;
 
-            drawing.DrawSprite(
-                Sprite, 
-                Entity.Transform.Position + Offset, 
-                Color, 
-                Entity.Transform.Rotation, 
-                Entity.Transform.Scale,
+            drawing.DrawTexture(
+                Sprite.Texture,
+                Entity.TransformState.Position + Offset,
+                Sprite.SourceRect,
+                Color,
+                Entity.TransformState.Rotation,
+                _origin,
+                Entity.TransformState.Scale,
                 _spriteFx
             );
         }
