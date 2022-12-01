@@ -95,7 +95,7 @@ namespace Instant2D.EC {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Vector2 TransformPointOffset(Vector2 offset) => 
-            offset.RotatedBy(Entity.TransformState.Rotation) * Entity.TransformState.Scale
+            offset.RotatedBy(Entity.Transform.Rotation) * Entity.Transform.Scale
             * new Vector2(FlipX ? 1 : -1, FlipY ? 1 : -1)
             + Offset;
 

@@ -30,7 +30,7 @@ namespace Instant2D.EC {
         internal List<IFixedUpdate> _fixedUpdateComponents;
         internal List<ILateUpdate> _lateUpdateComponents;
         internal float _timestepCounter, _timescale = 1.0f;
-        TransformData _lastTransformState;
+        internal TransformData _lastTransformState;
         bool _shouldDestroy, _isInitialized;
         Scene _scene;
 
@@ -185,6 +185,11 @@ namespace Instant2D.EC {
                     // reset the individual timestep counter
                     // when timescale is back to 1.0
                     _timestepCounter = 0f;
+                }
+
+                // set timescales for children
+                for(var i = 0; i < ChildrenCount; ++i) {
+                    this[i].TimeScale = value;
                 }
             }
         }
@@ -473,8 +478,9 @@ namespace Instant2D.EC {
         }
 
         /// <inheritdoc cref="TimeScale"/>
-        public Entity SetTimeScale(float timeScale = float.NaN) {
+        public Entity SetTimeScale(float timeScale = 1.0f, bool applyToChildren = true) {
             TimeScale = timeScale;
+
             return this;
         }
 
@@ -510,23 +516,29 @@ namespace Instant2D.EC {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void FixedUpdateGlobal(int updateCount) {
-            if (updateCount > 0) {
-                _lastTransformState = Transform.Data;
+        internal void FixedUpdateGlobal(int updateCount, bool useChildren = false) {
+
+            if (_fixedUpdateComponents != null && updateCount > 0) {
+                // do several updates at once to reduce looping overhead
+                foreach (var comp in CollectionsMarshal.AsSpan(_fixedUpdateComponents)) {
+                    for (var i = 0; i < updateCount; i++) {
+                        comp.FixedUpdate();
+                    }
+                }
             }
 
-            if (_fixedUpdateComponents == null || updateCount <= 0) return;
-
-            // do several updates at once to reduce looping overhead
-            foreach (var comp in CollectionsMarshal.AsSpan(_fixedUpdateComponents)) {
-                for (var i = 0; i < updateCount; i++) {
-                    comp.FixedUpdate();
+            if (useChildren) {
+                for (var i = 0; i < ChildrenCount; i++) {
+                    this[i].FixedUpdateGlobal(updateCount, useChildren);
                 }
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FixedUpdateCustom(float dt) {
+            // parents handle their children themselves
+            if (Parent != null) return;
+
             var fixedUpdateCount = 0;
             _timestepCounter += dt * _timescale * Scene.TimeScale;
 
@@ -537,13 +549,21 @@ namespace Instant2D.EC {
             }
 
             if (fixedUpdateCount > 0) {
+                // save previous state data first
                 _lastTransformState = Transform.Data;
-                if (_fixedUpdateComponents != null) {
-                    FixedUpdateGlobal(fixedUpdateCount);
+                for (var i = 0; i < ChildrenCount; i++) {
+                    this[i]._lastTransformState = this[i].Transform.Data;
                 }
+
+                // invoke the big callback
+                FixedUpdateGlobal(fixedUpdateCount, true);
             }
 
+            // set AlphaFrameTime on self and all children
             AlphaFrameTime = _timestepCounter / Scene.FixedTimeStep;
+            for (var i = 0; i < ChildrenCount; i++) {
+                this[i].AlphaFrameTime = AlphaFrameTime;
+            }
         }
 
         internal void LateUpdate(float dt) {

@@ -217,7 +217,7 @@ namespace Instant2D.EC {
             _fixedTimestepProgress += dt * TimeScale;
 
             // determine amount of fixed updates
-            while (_fixedTimestepProgress > FixedTimeStep) {
+            while (_fixedTimestepProgress >= FixedTimeStep) {
                 _fixedTimestepProgress -= FixedTimeStep;
                 fixedUpdateCount++;
             }
@@ -227,7 +227,18 @@ namespace Instant2D.EC {
 
             // apply FixedUpdates
             var span = CollectionsMarshal.AsSpan(_entities);
-            foreach (var entity in span) {
+
+            for (var i = 0; i < span.Length; i++) {
+                var entity = span[i];
+                if (entity._timescale == 1f) {
+                    // set the lastTransformState for all entities first
+                    entity._lastTransformState = entity.Transform.Data;
+                }
+            }
+
+            // now loop over all entities and invoke FixedUpdates
+            for (var i = 0; i < span.Length; i++) {
+                var entity = span[i];
                 if (entity._timescale == 1f) {
                     entity.FixedUpdateGlobal(fixedUpdateCount);
                     entity.AlphaFrameTime = AlphaFrameTime;
