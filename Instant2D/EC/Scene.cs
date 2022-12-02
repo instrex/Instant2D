@@ -228,13 +228,16 @@ namespace Instant2D.EC {
             // apply FixedUpdates
             var span = CollectionsMarshal.AsSpan(_entities);
 
-            for (var i = 0; i < span.Length; i++) {
-                var entity = span[i];
-                if (entity._timescale == 1f) {
-                    // set the lastTransformState for all entities first
-                    entity._lastTransformState = entity.Transform.Data;
+            if (fixedUpdateCount > 0) {
+                for (var i = 0; i < span.Length; i++) {
+                    var entity = span[i];
+                    if (entity._timescale == 1f) {
+                        // set the lastTransformState for all entities first
+                        entity._lastTransformState = entity.Transform.Data;
+                    }
                 }
             }
+            
 
             // now loop over all entities and invoke FixedUpdates
             for (var i = 0; i < span.Length; i++) {

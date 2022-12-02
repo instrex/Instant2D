@@ -65,6 +65,13 @@ namespace Instant2D.Collisions {
         }
 
         /// <summary>
+        /// Marks the collider for bounds update.
+        /// </summary>
+        public void MarkDirty() {
+            _areBoundsDirty = true;
+        }
+
+        /// <summary>
         /// Update the value of <see cref="Bounds"/>. Called only when needed to increase performance.
         /// </summary>
         protected abstract void RecalculateBounds(ref RectangleF bounds);

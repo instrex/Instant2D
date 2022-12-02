@@ -50,6 +50,11 @@ namespace Instant2D.Core {
             }
         }
 
+        /// <summary>
+        /// Current number of frames per second.
+        /// </summary>
+        public int FPS => _fpsCounter;
+
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
         public InstantGame() {

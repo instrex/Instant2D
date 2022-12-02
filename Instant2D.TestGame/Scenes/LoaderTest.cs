@@ -13,6 +13,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.TestGame.Scenes {
+    interface IEase {
+        static abstract float Ease(float t);
+    }
+
+    class SineEase : IEase {
+        public static float Ease(float t) => -(MathF.Cos(MathHelper.Pi * t) - 1) / 2;
+
+    }
+
     public class LoaderTest : Scene {
         public class CustomLoader : IAssetLoader, ILazyAssetLoader, IHotReloader {
             public IEnumerable<Asset> Load(AssetManager assets) {
