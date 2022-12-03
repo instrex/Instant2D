@@ -157,6 +157,18 @@ namespace Instant2D.EC {
         }
 
         /// <summary>
+        /// Adds an existing, possibly overriden <see cref="RenderLayer"/>.
+        /// </summary>
+        public T AddRenderLayer<T>(T renderLayer) where T: RenderLayer {
+            _layers.Add(renderLayer);
+
+            // set the default layer to first one
+            DefaultRenderLayer ??= renderLayer;
+
+            return renderLayer;
+        }
+
+        /// <summary>
         /// Adds a master layer to this scene. This layer should not contain any objects and instead be used to draw each other layer, optionally applying post-processing effects. <br/>
         /// Should be the last layer in hierarchy, is automatically added when you add post-processing effects to the scene.
         /// </summary>
@@ -366,6 +378,15 @@ namespace Instant2D.EC {
                     case IAssetContainer<SpriteAnimation> animationAsset:
                         foreach (var spriteRenderer in FindComponentsOfType<SpriteAnimationComponent>().Where(s => s.Animation.Key == animationAsset.Content.Key))
                             spriteRenderer.SetAnimation(animationAsset.Content);
+
+                        break;
+
+                    // replace materials with reloaded effects
+                    case IAssetContainer<Effect> effectAsset:
+                        foreach (var renderable in Entities.SelectMany(e => e.Components.OfType<RenderableComponent>()).Where(r => r.Material != null && r.Material.Effect != null)) {
+                            if (renderable.Material.Effect.Tag is string key && key == asset.Key)
+                                renderable.Material = renderable.Material with { Effect = effectAsset.Content };
+                        }
 
                         break;
                 }

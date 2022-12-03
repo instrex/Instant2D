@@ -19,8 +19,8 @@ namespace Instant2D.EC.Rendering {
         /// </summary>
         public const string MASTER_LAYER_NAME = "master";
 
-        RenderLayer[] _masteredLayers;
-        RenderTarget2D _renderTarget;
+        protected RenderLayer[] _masteredLayers;
+        protected RenderTarget2D _renderTarget;
 
         internal bool _drawOrderDirty;
         internal bool _useRenderTarget;
@@ -50,7 +50,7 @@ namespace Instant2D.EC.Rendering {
         /// <summary>
         /// List of renderable objects this layer houses.
         /// </summary>
-        public readonly List<RenderableComponent> Objects = new();
+        public List<RenderableComponent> Objects = new();
 
         /// <summary>
         /// When <see langword="true"/>, the layer will be drawn. If you're looking to disable the layer from appearing on-screen but want to keep updating RenderTarget, see <see cref="ShouldPresent"/>.
@@ -105,6 +105,12 @@ namespace Instant2D.EC.Rendering {
             return this;
         }
 
+        /// <inheritdoc cref="Camera"/>
+        public RenderLayer SetCamera(CameraComponent camera) {
+            Camera = camera;
+            return this;
+        }
+
         #endregion
 
         void ResizeRenderTarget(SceneResolutionChangedEvent ev) {
@@ -118,7 +124,7 @@ namespace Instant2D.EC.Rendering {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void DrawObjects() { 
+        protected void DrawObjects() { 
             // no one's there
             if (Objects.Count == 0) {
                 return;
@@ -180,7 +186,7 @@ namespace Instant2D.EC.Rendering {
         /// <summary>
         /// Renders the contents of this layer.
         /// </summary>
-        public void Prepare() {
+        public virtual void Prepare() {
             if (_useRenderTarget && _renderTarget == null) {
                 // initialize the RenderTarget when needed
                 _renderTarget = new RenderTarget2D(InstantGame.Instance.GraphicsDevice, Scene.Resolution.renderTargetSize.X, Scene.Resolution.renderTargetSize.Y);
@@ -215,7 +221,7 @@ namespace Instant2D.EC.Rendering {
         /// <summary>
         /// Presents the layer to the screen. If it uses RenderTarget, all the drawing work would be done via <see cref="Draw"/>, and this step is just rendering the RenderTarget onto the screen.
         /// </summary>
-        public void Present(DrawingContext drawing) {
+        public virtual void Present(DrawingContext drawing) {
             if (_useRenderTarget) {
                 // present the rendertexture to the screen and call it a day
                 drawing.DrawTexture(_renderTarget, Vector2.Zero, null, Color.White, 0, Vector2.Zero, Vector2.One);

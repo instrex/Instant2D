@@ -27,6 +27,7 @@ namespace Instant2D.Core {
 
         // fps stuff
         TimeSpan _fpsTimer;
+        int _framesPerSecond;
         int _fpsCounter;
 
         // window
@@ -53,7 +54,7 @@ namespace Instant2D.Core {
         /// <summary>
         /// Current number of frames per second.
         /// </summary>
-        public int FPS => _fpsCounter;
+        public int FPS => _framesPerSecond;
 
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
@@ -191,6 +192,7 @@ namespace Instant2D.Core {
                 Window.Title = $"{_title} [{_fpsCounter} FPS, {GC.GetTotalMemory(false) / 1048576f:F1} MB]";
 
                 // reset the FPS metrics
+                _framesPerSecond = _fpsCounter;
                 _fpsTimer -= _oneSecond;
                 _fpsCounter = 0;
             }
