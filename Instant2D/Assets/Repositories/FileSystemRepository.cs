@@ -31,6 +31,8 @@ namespace Instant2D.Assets.Repositories {
             }
         }
 
+        public bool Exists(string filename) => File.Exists(Path.Combine(WorkingDirectory, filename));
+
         public Stream OpenStream(string path) {
             var actualPath = Path.Combine(WorkingDirectory, path);
 

@@ -47,6 +47,9 @@ namespace Instant2D {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Stream OpenStream(string path) => Repository.OpenStream(path);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Exists(string filename) => Repository.Exists(filename);
+
         #endregion
 
         #region Loaders

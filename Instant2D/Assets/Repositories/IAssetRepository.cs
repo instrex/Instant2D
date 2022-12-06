@@ -19,5 +19,10 @@ namespace Instant2D.Assets {
         /// Opens the file stream with specified path or returns <see langword="null"/> if it doesn't exist.
         /// </summary>
         Stream OpenStream(string path);
+
+        /// <summary>
+        /// Checks if the filename entry is defined in this repository.
+        /// </summary>
+        bool Exists(string filename);
     }
 }

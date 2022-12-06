@@ -578,6 +578,9 @@ namespace Instant2D.EC {
             ).SetContext(instance);
         }
 
+        // simple assets shortcut to avoid some verbosity
+        public static AssetManager Assets => AssetManager.Instance;
+
         // ICoroutineTarget impl
         bool ICoroutineTarget.IsActive => !_isCleanedUp;
         float ICoroutineTarget.TimeScale => TimeScale;

@@ -111,6 +111,9 @@ namespace Instant2D.EC {
 
         #endregion
 
+        // simple assets shortcut to avoid some verbosity
+        public static AssetManager Assets => AssetManager.Instance;
+
         // ICoroutineTarget impl
         float ICoroutineTarget.TimeScale => Entity.TimeScale;
     }

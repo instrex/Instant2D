@@ -2,6 +2,7 @@
 using Instant2D.Core;
 using Instant2D.EC.Events;
 using Instant2D.Graphics;
+using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -72,6 +73,11 @@ namespace Instant2D.EC.Rendering {
         /// Can be used to render user interface in screen-space if you pass in another camera that doesn't move.
         /// </summary>
         public CameraComponent Camera;
+
+        /// <summary>
+        /// A mask used to determine if entity should not be rendered by this layer. By default, none of the entities are excluded.
+        /// </summary>
+        public int ExcludeEntitiesWithTag = 0;
 
         #region Setters
 
@@ -150,6 +156,10 @@ namespace Instant2D.EC.Rendering {
             // draw all the non-culled objects
             for (var i = 0; i < Objects.Count; i++) {
                 var obj = Objects[i];
+
+                // skip excluded entities
+                if (ExcludeEntitiesWithTag != 0 && ExcludeEntitiesWithTag.IsFlagSet(obj.Entity.Tags, false))
+                    continue;
 
                 // check if renderer is in bounds of camera
                 if (!(obj.IsVisible = bounds.Intersects(obj.Bounds)))

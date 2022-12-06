@@ -54,6 +54,11 @@ namespace Instant2D.EC {
         /// </summary>
         public bool InterpolateTransform = true;
 
+        /// <summary>
+        /// Tags of this entity. Use <see cref="IntFlags"/> functions.
+        /// </summary>
+        public int Tags = 0;
+
         public Entity() {
             Transform = new() { Entity = this };
         }
@@ -375,6 +380,22 @@ namespace Instant2D.EC {
 
         #region Setters
 
+        /// <summary>
+        /// Tags this entity with specified unshifted flag.
+        /// </summary>
+        public Entity AddTag(int tag) {
+            Tags = Tags.SetFlag(tag);
+            return this;
+        }
+
+        /// <summary>
+        /// Removes unshifted flag from this entity's tag .
+        /// </summary>
+        public Entity RemoveTag(int tag) {
+            Tags = Tags.RemoveFlag(tag);
+            return this;
+        }
+
         /// <inheritdoc cref="Scene"/>
         public Entity SetScene(Scene scene) {
             Scene = scene;
@@ -622,8 +643,10 @@ namespace Instant2D.EC {
         // IPooled impl
         void IPooled.Reset() {
             IsDestroyed = false;
+            AlphaFrameTime = 0f;
             TimeScale = 1.0f;
             Name = null;
+            Tags = 0;
 
             // reset the transform and reassign entity
             Transform.Reset();
