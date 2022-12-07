@@ -1,11 +1,12 @@
-﻿using Instant2D.Coroutines;
+﻿
+using Instant2D.Coroutines;
 using Instant2D.Utils;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC {
-    public abstract class Component : ICoroutineTarget {
+    public abstract class Component {
         /// <summary>
         /// Entity this component is attached to.
         /// </summary>
@@ -113,8 +114,5 @@ namespace Instant2D.EC {
 
         // simple assets shortcut to avoid some verbosity
         public static AssetManager Assets => AssetManager.Instance;
-
-        // ICoroutineTarget impl
-        float ICoroutineTarget.TimeScale => Entity.TimeScale;
     }
 }

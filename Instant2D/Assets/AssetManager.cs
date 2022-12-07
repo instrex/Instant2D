@@ -9,12 +9,12 @@ using System.IO;
 using System.Reflection;
 using System.Diagnostics;
 using Instant2D.Utils;
-using Instant2D.Coroutines;
 using Instant2D.Assets.Repositories;
 using System.Runtime.CompilerServices;
 using Instant2D.Assets.Containers;
 using System.Text.RegularExpressions;
 using Instant2D.EC;
+using Instant2D.Coroutines;
 
 namespace Instant2D {
     public class AssetManager : SubSystem, IAssetRepository {
@@ -33,7 +33,7 @@ namespace Instant2D {
 
         readonly List<(int order, IAssetLoader)> _loaders = new();
         readonly Dictionary<string, Asset> _assets = new();
-        readonly Dictionary<string, TimerInstance> _hotReloadTimers = new();
+        readonly Dictionary<string, Coroutine> _hotReloadTimers = new();
         FileSystemWatcher _hotReloadWatcher;
         string _assetFolder = "Assets/";
         bool _assetsLoaded;
@@ -154,7 +154,7 @@ namespace Instant2D {
 
             // if we do it immediately, there's a chance the file could be used by something
             // adding a little bit of delay helps making sure that wouldn't happen
-            _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.Schedule(0.5f, timer => {
+            _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.Schedule(0.5f, () => {
                 var format = Path.GetExtension(assetKey);
                 foreach (var loader in _loaders.Select(p => p.Item2)
                     .OfType<IHotReloader>()) {
@@ -170,6 +170,9 @@ namespace Instant2D {
                         break;
                     }
                 }
+
+                // clear the timer
+                _hotReloadTimers.Remove(assetKey);
             }));
         }
 

@@ -4,135 +4,196 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Instant2D.Coroutines {
     public class CoroutineManager : SubSystem {
-        /// <summary>
-        /// Contains all coroutines sorted by target. Do not modify.
-        /// </summary>
-        public static readonly Dictionary<ICoroutineTarget, List<ICoroutineObject>> CoroutinesByTarget = new();
-
-        static readonly List<TimerInstance> _timers = new();
-        static readonly List<CoroutineInstance> _coroutines = new();
-
-        /// <summary>
-        /// Schedules a timer to invoke the callback at an interval. Use <see cref="TimerInstance.SetContext(object)"/> to provide information for the callback. <br/>
-        /// If <see cref="TimerInstance.SetTarget(ICoroutineTarget)"/> is used, the timer will stop when <see cref="ICoroutineTarget.IsActive"/> returns <see langword="false"/>.
-        /// </summary>
-        public static TimerInstance Schedule(float duration, Action<TimerInstance> callback, ICoroutineTarget target = default) {
-            var timer = new TimerInstance {
-                duration = duration,
-                callback = callback,
-                _target = target
-            };
-
-            // add the timer to active list
-            _timers.Add(timer);
-
-            RegisterToTarget(target, timer);
-
-            return timer;
-        }
-
-        /// <summary>
-        /// Runs an enumerator coroutine, optionally specifying <paramref name="completionHandler"/>. <br/>
-        /// <see cref="CoroutineInstance.completionHandler"/> takes a <see cref="bool"/> as parameter, which signals if coroutine was stopped manually (<see langword="true"/>), 
-        /// or it finished executing (<see langword="false"/>).
-        /// </summary>
-        public static CoroutineInstance Run(IEnumerator enumerator, Action<CoroutineInstance, bool> completionHandler = default, ICoroutineTarget target = default) {
-            var instance = new CoroutineInstance {
-                completionHandler = completionHandler,
-                enumerator = enumerator,
-                _target = target
-            };
-
-            // active the coroutine
-            _coroutines.Add(instance);
-
-            RegisterToTarget(target, instance);
-
-            return instance;
-        }
-
-        #region Target Tracking
-
-        /// <summary>
-        /// Stops all of the coroutines and timers assigned to <paramref name="target"/>.
-        /// </summary>
-        public static void StopByTarget(ICoroutineTarget target) {
-            if (target != null && CoroutinesByTarget.TryGetValue(target, out var list)) {
-                // stop all the coroutines
-                for (var i = 0; i < list.Count; i++) {
-                    list[i].Stop();
-                }
-
-                // clear out the key
-                CoroutinesByTarget.Remove(target);
-                list.Pool();
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void RemoveFromTarget(ICoroutineTarget target, ICoroutineObject obj) {
-            if (target == null || !CoroutinesByTarget.TryGetValue(target, out var list))
-                return;
-
-            if (list.Remove(obj) && list.Count == 0) {
-                // if the list is empty now, return it
-                CoroutinesByTarget.Remove(target);
-                list.Pool();
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void RegisterToTarget(ICoroutineTarget target, ICoroutineObject obj) {
-            if (target == null)
-                return;
-
-            // make a new list if target wasn't registered yet
-            if (!CoroutinesByTarget.TryGetValue(target, out var list)) {
-                list = ListPool<ICoroutineObject>.Get();
-            }
-
-            list.Add(obj);
-        }
-
-        #endregion
+        public static CoroutineManager Instance { get; private set; }
 
         public override void Initialize() {
             IsUpdatable = true;
+            Instance = this;
         }
 
+        static internal bool HasObjectsBlockedByNonGlobalTimeScale;
+
+        internal readonly ConditionalWeakTable<ICoroutineTarget, List<Coroutine>>
+            // stores coroutines blocked by fixed update tied to individual objects
+            _blockedByObjectFixedUpdates = new(),
+
+            // target to coroutines lookup, used to quickly stop everything if the object destroys
+            _coroutineTargets = new();
+
+        readonly List<Coroutine>
+            _coroutines = new(),
+
+            // coroutines that should be removed next frame
+            _markedForDeletion = new(),
+
+            // coroutines blocked by global fixedupdate
+            _blockedByFixedUpdate = new();
+
         public override void Update(GameTime time) {
-            // tick the coroutines
-            for (var i = _coroutines.Count - 1; i >= 0; i--) {
-                var coroutine = _coroutines[i];
+            HasObjectsBlockedByNonGlobalTimeScale = false;
 
-                // remove the coroutine when it's done
-                if (!coroutine.Tick(time)) {
-                    coroutine._isRunning = false;
-                    _coroutines.RemoveAt(i);
+            // clear all marked coroutines
+            if (_markedForDeletion.Count > 0) {
+                for (int i = 0; i < _markedForDeletion.Count; i++) {
+                    Coroutine coroutine = _markedForDeletion[i];
+                    _coroutines.Remove(coroutine);
 
-                    // clear the target
-                    RemoveFromTarget(coroutine._target, coroutine);
+                    var target = coroutine.Target;
+
+                    // unassign target
+                    if (target != null && _coroutineTargets.TryGetValue(target, out var list)) {
+                        list.Remove(coroutine);
+
+                        if (list.Count == 0) {
+                            // pool the list and remove it when it's empty
+                            _coroutineTargets.Remove(coroutine.Target);
+                            list.Pool();
+                        }
+                    }
+
+                    // return coroutine to the pool
+                    StaticPool<Coroutine>.Return(coroutine);
                 }
+
+                // clear the buffer
+                _markedForDeletion.Clear();
             }
 
-            // tick the timers
-            for (var i = _timers.Count - 1; i >= 0; i--) {
-                var timer = _timers[i];
+            // tick all running coroutines
+            for (var i = 0; i < _coroutines.Count; i++) {
+                var coroutine = _coroutines[i];
+                TickCoroutine(coroutine);
+            }
+        }
 
-                // remove the timer when it's due
-                if (!timer.Tick(time)) {
-                    _timers.RemoveAt(i);
+        #region Starter methods
 
-                    // clear the target
-                    RemoveFromTarget(timer._target, timer);
+        /// <summary>
+        /// Begins executing of a coroutine and returns its instance, optionally attaching it to an object.
+        /// </summary>
+        public static Coroutine Run(IEnumerator enumerator, ICoroutineTarget target = default) {
+            var coroutine = StaticPool<Coroutine>.Get();
+            coroutine._enumerator = enumerator;
+
+            // register the target
+            if (target != null) {
+                coroutine._target = new(target);
+                Instance._coroutineTargets.GetValue(target, _ => ListPool<Coroutine>.Get())
+                    .Add(coroutine);
+            }
+
+            // register coroutine
+            Instance._coroutines.Add(coroutine);
+
+            return coroutine;
+        }
+
+        /// <summary>
+        /// Starts a simple timer with specified <paramref name="handler"/>. Use <see cref="Coroutine.Stop"/> to interrupt it before completion.
+        /// </summary>
+        public static Coroutine Schedule(float delay, Action handler) =>
+            Run(SimpleTimer(delay, true, handler));
+
+        /// <inheritdoc cref="Schedule(float, Action)"/>
+        public static Coroutine Schedule(float delay, bool ignoreTimescale, ICoroutineTarget target, Action handler) =>
+            Run(SimpleTimer(delay, ignoreTimescale, handler), target);
+
+        /// <summary>
+        /// Starts an optionally looping timer with specified <paramref name="handler"/> and attached <paramref name="context"/>. Return <see langword="true"/> inside <paramref name="handler"/> to continue looping.
+        /// </summary>
+        public static Coroutine Schedule<T>(float delay, T context, Func<T, bool> handler) =>
+            Run(AdvancedTimer(delay, true, context, handler));
+
+        /// <inheritdoc cref="Schedule{T}(float, T, Func{T, bool})"/>
+        public static Coroutine Schedule<T>(float delay, bool ignoreTimescale, ICoroutineTarget target, T context, Func<T, bool> handler) =>
+            Run(AdvancedTimer(delay, ignoreTimescale, context, handler), target);
+
+        #endregion
+
+        /// <summary>
+        /// Manually stop all coroutines using specified target.
+        /// </summary>
+        public static void StopAll(ICoroutineTarget target) {
+            if (Instance._coroutineTargets.TryGetValue(target, out var list)) {
+                foreach (var coroutine in list) 
+                    coroutine.Stop();
+
+                // clear the target
+                Instance._coroutineTargets.Remove(target);
+                list.Pool();
+            }
+        }
+
+        // used in Schedule, simple timer without looping or context
+        static IEnumerator SimpleTimer(float duration, bool ignoreTimeScale, Action result) {
+            yield return new WaitForSeconds(duration, ignoreTimeScale);
+            result();
+        }
+
+        // used in Schedule, advanced timer with context and looping support
+        static IEnumerator AdvancedTimer<T>(float duration, bool ignoreTimeScale, T context, Func<T, bool> handler) {
+            do {
+                // continuosly invoke the callback until it returns false
+                yield return new WaitForSeconds(duration, ignoreTimeScale);
+            } while (handler(context));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void BlockByFixedUpdate(Coroutine coroutine, bool useOwnTimescale) {
+            // we can ignore individual timescales if it's actually 1.0f or coroutine doesn't have it at all
+            if (useOwnTimescale && coroutine.Target != null && coroutine.Target.TimeScale != 1.0f) {
+                _blockedByObjectFixedUpdates.GetValue(coroutine.Target, _ => ListPool<Coroutine>.Get()).Add(coroutine);
+                HasObjectsBlockedByNonGlobalTimeScale = true;
+                return;
+            }
+
+            _blockedByFixedUpdate.Add(coroutine);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void TickFixedUpdateGlobal() {
+            if (_blockedByFixedUpdate.Count == 0) return;
+            for (int i = _blockedByFixedUpdate.Count - 1; i >= 0; i--) {
+                Coroutine coroutine = _blockedByFixedUpdate[i];
+                if (coroutine._awaiter is not WaitForFixedUpdate(false))
+                    continue;
+
+                // clear the block
+                _blockedByFixedUpdate.RemoveAt(i);
+
+                // advance the routine
+                coroutine._awaiter = null;
+                TickCoroutine(coroutine);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void TickFixedUpdate(ICoroutineTarget target) {
+            if (!HasObjectsBlockedByNonGlobalTimeScale) return;
+            if (_blockedByObjectFixedUpdates.TryGetValue(target, out var list)) {
+                for (int i = list.Count - 1; i >= 0; i--) {
+                    Coroutine coroutine = list[i];
+                    list.RemoveAt(i);
+
+                    // advance
+                    coroutine._awaiter = null;
+                    TickCoroutine(coroutine);
                 }
+
+                // pool the list when not needed anymore
+                _blockedByObjectFixedUpdates.Remove(target);
+                list.Pool();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void TickCoroutine(Coroutine coroutine) {
+            if (!coroutine.Tick(TimeManager.DeltaTime)) {
+                _markedForDeletion.Add(coroutine);
             }
         }
     }

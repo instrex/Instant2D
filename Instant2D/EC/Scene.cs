@@ -2,7 +2,6 @@
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
-using Instant2D.Coroutines;
 using Instant2D.Utils.Math;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
@@ -21,6 +20,7 @@ using System.Text;
 using Instant2D.EC.Rendering;
 using System.IO;
 using System.Runtime.InteropServices;
+using Instant2D.Coroutines;
 
 namespace Instant2D.EC {
     public abstract class Scene : ICoroutineTarget {
@@ -213,6 +213,12 @@ namespace Instant2D.EC {
                 _isInitialized = true;
                 Initialize();
 
+                // add default render layer if none is added
+                if (_layers.Count == 0) {
+                    FNALoggerEXT.LogWarn("No RenderLayers were added, automatically added 'default'.");
+                    AddRenderLayer("default");
+                }
+
                 // initialize RTs for newly added layers
                 ResizeRenderTargets(Resolution);
             }
@@ -250,7 +256,6 @@ namespace Instant2D.EC {
                 }
             }
             
-
             // now loop over all entities and invoke FixedUpdates
             for (var i = 0; i < span.Length; i++) {
                 var entity = span[i];
@@ -260,6 +265,11 @@ namespace Instant2D.EC {
                 } else {
                     entity.FixedUpdateCustom(dt);
                 }
+            }
+
+            // tick all WaitForFixedUpdate coroutines
+            for (var i = 0; i < fixedUpdateCount; i++) {
+                CoroutineManager.Instance.TickFixedUpdateGlobal();
             }
 
             // apply Updates
@@ -290,78 +300,6 @@ namespace Instant2D.EC {
 
             Render();
         }
-
-        //StringBuilder _debugInfoText = new();
-
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //internal void DebugRender(DrawingContext drawing) {
-        //    drawing.DrawString($"Collision Debug", new(10), Color.LightBlue, new Vector2(3), 0, drawOutline: true);
-
-        //    _debugInfoText.Clear();
-        //    CollisionsDebugLayer(drawing, _debugInfoText);
-
-        //    drawing.Pop();
-
-        //    drawing.DrawString(_debugInfoText.ToString(), new(14, 42), Color.LightBlue, new Vector2(2), 0, drawOutline: true);
-        //}
-
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //void CollisionsDebugLayer(DrawingContext drawing, StringBuilder info) {
-        //    drawing.Push(Material.Default, SceneToScreenTransform);
-
-        //    var shiftHeld = InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftShift);
-        //    var mousePos = Camera.MouseToWorldPosition();
-        //    var colliderIndex = 0;
-
-        //    foreach (var collider in FindComponentsOfType<CollisionComponent>()) {
-        //        var bounds = collider.BaseCollider.Bounds;
-
-        //        // cull the off-screen colliders
-        //        if (!Camera.Bounds.Intersects(bounds))
-        //            continue;
-
-        //        if (bounds.Contains(mousePos)) {
-        //            info.AppendLine($"#{colliderIndex++} '{collider.Entity.Name}': {collider.GetType().Name}");
-
-        //            // visualize the bitmasks
-        //            for (var j = 0; j < 2; j++) {
-        //                var mask = j == 0 ? collider.LayerMask : collider.CollidesWithMask;
-        //                info.Append($" - {(j == 0 ? "LayerMask" : "CollidesWith")}: {mask} (Set Flags: ");
-
-        //                // don't list all flags
-        //                if (mask == -1) {
-        //                    info.AppendLine("ALL)");
-        //                    continue;
-        //                }
-
-        //                var begun = false;
-        //                for (var i = 0; i < 32; i++) {
-        //                    if (IntFlags.IsFlagSet(mask, i)) {
-        //                        if (!begun) begun = true;
-        //                        else info.Append(", ");
-        //                        info.Append(i);
-        //                    }
-        //                }
-
-        //                info.AppendLine(")");
-        //            }
-
-        //            info.AppendLine($" - Origin: {collider.Origin}");
-
-        //            info.AppendLine();
-        //        }
-
-        //        // draw bounds
-        //        drawing.DrawRectangle(bounds, Color.Transparent, new Color(1f, 1f, 1f, bounds.Contains(mousePos) ? 1f : 0.5f));
-
-        //        // draw actual collider shape
-        //        switch (collider) {
-        //            case CircleCollisionComponent circle:
-        //                drawing.DrawCircle(collider.Transform.Position, circle.Radius, Color.Red, resolution: 24);
-        //                break;
-        //        }
-        //    }
-        //}
 
         internal void OnAssetsUpdated(IEnumerable<Asset> assets) {
             // loop over unhandled asset changes, thus giving freedom to modify the way assets are reloaded when needed
@@ -400,7 +338,7 @@ namespace Instant2D.EC {
             }
 
             // release all the coroutines attached to this scene
-            CoroutineManager.StopByTarget(this);
+            CoroutineManager.StopAll(this);
 
             // raise the cleanup event
             Events.Raise<SceneCleanupEvent>(default);
@@ -555,7 +493,7 @@ namespace Instant2D.EC {
         /// </item>
         /// </list>
         /// </summary>
-        public CoroutineInstance PlaySound(Sound sound, Vector2? position = default, AudioRolloff? rolloff = default, float volume = 1.0f, float pan = 0f, float pitch = 0f, Entity followEntity = default) {
+        public Coroutine PlaySound(Sound sound, Vector2? position = default, AudioRolloff? rolloff = default, float volume = 1.0f, float pan = 0f, float pitch = 0f, Entity followEntity = default) {
             var instance = sound.CreateStaticInstance();
             instance.Pitch = pitch;
             instance.Pan = pan;
@@ -572,17 +510,18 @@ namespace Instant2D.EC {
                 _ => AudioRolloff.None
             };
 
-            return this.RunCoroutine(
-                AudioComponent.OneShotSound(instance, position, actualRolloff, volume, followEntity),
-                (coroutine, _) => coroutine.Context<StaticAudioInstance>().Pool()
-            ).SetContext(instance);
+            // TODO: update to new coroutine system
+            return null;
+            //return this.RunCoroutine(
+            //    AudioComponent.OneShotSound(instance, position, actualRolloff, volume, followEntity),
+            //    (coroutine, _) => coroutine.Context<StaticAudioInstance>().Pool()
+            //).SetContext(instance);
         }
 
         // simple assets shortcut to avoid some verbosity
         public static AssetManager Assets => AssetManager.Instance;
 
         // ICoroutineTarget impl
-        bool ICoroutineTarget.IsActive => !_isCleanedUp;
         float ICoroutineTarget.TimeScale => TimeScale;
     }
 }

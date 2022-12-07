@@ -1,6 +1,5 @@
 ﻿using Instant2D.Core;
 using Instant2D.Utils;
-using Instant2D.Coroutines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -12,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using Instant2D.Coroutines;
 
 namespace Instant2D.EC {
     /// <summary>
@@ -538,7 +538,6 @@ namespace Instant2D.EC {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FixedUpdateGlobal(int updateCount, bool useChildren = false) {
-
             if (_fixedUpdateComponents != null && updateCount > 0) {
                 // do several updates at once to reduce looping overhead
                 foreach (var comp in CollectionsMarshal.AsSpan(_fixedUpdateComponents)) {
@@ -578,6 +577,16 @@ namespace Instant2D.EC {
 
                 // invoke the big callback
                 FixedUpdateGlobal(fixedUpdateCount, true);
+
+                // tick WaitForFixedUpdate coroutines
+                if (CoroutineManager.HasObjectsBlockedByNonGlobalTimeScale) {
+                    for (var i = 0; i < fixedUpdateCount; i++) {
+                        CoroutineManager.Instance.TickFixedUpdate(this);
+                        for (var j = 0; j < ChildrenCount; j++) {
+                            CoroutineManager.Instance.TickFixedUpdate(this[j]);
+                        }
+                    }
+                }
             }
 
             // set AlphaFrameTime on self and all children
@@ -637,7 +646,7 @@ namespace Instant2D.EC {
             StaticPool<Entity>.Return(this);
 
             // release all the coroutines attached to this entity
-            CoroutineManager.StopByTarget(this);
+            CoroutineManager.StopAll(this);
         }
 
         // IPooled impl
@@ -666,7 +675,6 @@ namespace Instant2D.EC {
         }
 
         // ICoroutineTarget impl
-        bool ICoroutineTarget.IsActive => !_shouldDestroy && !IsDestroyed;
         float ICoroutineTarget.TimeScale => TimeScale;
     }
 }

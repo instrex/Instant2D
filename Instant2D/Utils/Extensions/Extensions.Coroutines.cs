@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Instant2D.EC;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,15 +9,19 @@ using System.Threading.Tasks;
 namespace Instant2D.Coroutines {
     public static class Extensions {
         /// <summary>
-        /// Schedules a timer, automatically calling <see cref="TimerInstance.SetTarget(ICoroutineTarget)"/> as current target.
+        /// Begins a coroutine and automatically sets its target.
         /// </summary>
-        public static TimerInstance Schedule(this ICoroutineTarget target, float duration, Action<TimerInstance> callback) =>
-            CoroutineManager.Schedule(duration, callback, target);
+        public static Coroutine RunCoroutine(this ICoroutineTarget target, IEnumerator enumerator) {
+            return CoroutineManager.Run(enumerator, target);
+        }
 
         /// <summary>
-        /// Runs a coroutine, automatically calling <see cref="CoroutineManager.SetTarget(ICoroutineTarget)"/> as current target.
+        /// Schedules a timer that will end when the target dies.
         /// </summary>
-        public static CoroutineInstance RunCoroutine(this ICoroutineTarget target, IEnumerator enumerator, Action<CoroutineInstance, bool> completionHandler = default) =>
-            CoroutineManager.Run(enumerator, completionHandler, target);
+        public static Coroutine Schedule(this ICoroutineTarget target, float delay, Action handler, bool ignoreTimescale = false) {
+            return CoroutineManager.Schedule(delay, ignoreTimescale, target, handler);
+        }
     }
 }
+
+
