@@ -1,5 +1,6 @@
 ﻿using Instant2D.Coroutines;
 using Instant2D.Utils;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -13,15 +14,29 @@ namespace Instant2D.Coroutines {
     /// </summary>
     public class Coroutine : IPooled {
         internal WeakReference<ICoroutineTarget> _target;
+        internal Action<Coroutine> _completionHandler;
+        internal object _awaiter, _context;
         internal IEnumerator _enumerator;
-        internal object _awaiter;
+        internal bool _isPaused;
 
+        // internal timer used for WaitForSeconds
         float _waitTimer;
 
         /// <summary>
         /// Is <see langword="true"/> when coroutine is still executing.
         /// </summary>
         public bool IsRunning => _enumerator != null;
+
+        /// <summary>
+        /// When <see langword="true"/>, coroutine will remain 'running' but will wait until <see cref="Resume"/>.
+        /// </summary>
+        public bool IsPaused {
+            get => _isPaused;
+            set {
+                if (value) Pause();
+                else Resume();
+            }
+        }
 
         /// <summary>
         /// Target object of this coroutine.
@@ -38,9 +53,64 @@ namespace Instant2D.Coroutines {
         /// <summary>
         /// Manually stops coroutine before its completion.
         /// </summary>
-        public void Stop() {
+        public void Stop(bool ignoreCompletionHandler = false) {
             _enumerator = null;
+
+            // do some mischief
+            if (ignoreCompletionHandler) {
+                _completionHandler = null;
+                _context = null;
+            }
         }
+
+        /// <summary>
+        /// Pauses the coroutine, suspending its execution until <see cref="Resume"/> is called.
+        /// </summary>
+        public Coroutine Pause() {
+            _isPaused = true;
+            return this;
+        }
+        
+        /// <summary>
+        /// Resumes execution of a paused coroutine.
+        /// </summary>
+        public Coroutine Resume() {
+            _isPaused = false;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets up a callback that will be triggered when this coroutine finishes execution.
+        /// </summary>
+        public Coroutine SetCompletionHandler(Action<Coroutine> handler) {
+            _completionHandler = handler;
+            return this;
+        }
+
+        /// <inheritdoc cref="SetCompletionHandler(Action{Coroutine})"/>
+        public Coroutine SetCompletionHandler(object context, Action<Coroutine> handler) {
+            _completionHandler = handler;
+            _context = context;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets optional context object used in conjuction with <see cref="SetCompletionHandler(Action{Coroutine})"/>.
+        /// </summary>
+        public Coroutine SetContext(object context) {
+            _context = context;
+            return this;
+        }
+
+        /// <summary>
+        /// Gets untyped context object.
+        /// </summary>
+        public object Context => _context;
+
+        /// <summary>
+        /// Gets typed context object.
+        /// </summary>
+        public T GetContext<T>() => (T)_context;
 
         /// <summary>
         /// Advance the coroutine forward.
@@ -59,6 +129,11 @@ namespace Instant2D.Coroutines {
             // coroutine was stopped
             if (_enumerator == null) {
                 return false;
+            }
+
+            // we wait until it's unpaused
+            if (_isPaused) {
+                return true;
             }
 
             // handle different awaiters
@@ -157,7 +232,10 @@ namespace Instant2D.Coroutines {
 
         public void Reset() {
             _target = null;
+            _completionHandler = null;
             _enumerator = null;
+            _isPaused = false;
+            _context = null;
             _awaiter = null;
             _waitTimer = 0;
         }

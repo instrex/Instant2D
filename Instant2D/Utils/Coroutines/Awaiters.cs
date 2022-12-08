@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Instant2D.Coroutines {
     /// <summary>
     /// Will be called by scenes or objects depending on the timescale and <paramref name="UseObjectTimescale"/> parameter. <br/>
-    /// This cannot be used outside of default EC framework.
+    /// This cannot be used outside of default EC framework unless you invoke <see cref="CoroutineManager.TickFixedUpdateGlobal"/> yourself.
     /// </summary>
     public record struct WaitForFixedUpdate(bool UseObjectTimescale = false);
 

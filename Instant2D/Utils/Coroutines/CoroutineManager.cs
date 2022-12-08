@@ -193,6 +193,7 @@ namespace Instant2D.Coroutines {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void TickCoroutine(Coroutine coroutine) {
             if (!coroutine.Tick(TimeManager.DeltaTime)) {
+                coroutine._completionHandler?.Invoke(coroutine);
                 _markedForDeletion.Add(coroutine);
             }
         }
