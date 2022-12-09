@@ -267,8 +267,11 @@ namespace Instant2D.EC {
                 }
             }
 
-            // tick all WaitForFixedUpdate coroutines
+            // call scene FixedUpdate
             for (var i = 0; i < fixedUpdateCount; i++) {
+                FixedUpdate();
+
+                // tick all WaitForFixedUpdate coroutines
                 CoroutineManager.Instance.TickFixedUpdateGlobal();
             }
 
@@ -385,6 +388,13 @@ namespace Instant2D.EC {
             for (var i = 0; i < _entities.Count; i++) {
                 _entities[i].PreUpdate();
             }
+        }
+
+        /// <summary>
+        /// Called according to <see cref="FixedTimeStep"/>.
+        /// </summary>
+        public virtual void FixedUpdate() {
+
         }
 
         /// <summary>

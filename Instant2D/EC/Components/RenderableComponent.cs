@@ -23,6 +23,11 @@ namespace Instant2D.EC {
         protected bool _boundsDirty = true;
         RectangleF _bounds;
 
+        /// <summary>
+        /// When <see langword="true"/>, the object will not be culled when out of view.
+        /// </summary>
+        public bool DisableCulling;
+
         bool _isVisible = true;
 
         public Color Color = Color.White;

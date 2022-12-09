@@ -75,11 +75,32 @@ namespace Instant2D.EC.Rendering {
         public CameraComponent Camera;
 
         /// <summary>
-        /// A mask used to determine if entity should not be rendered by this layer. By default, none of the entities are excluded.
+        /// A mask used to determine if entity should be rendered by this layer. By default, all of the entities are included.
         /// </summary>
-        public int ExcludeEntitiesWithTag = 0;
+        public int IncludeEntityTags = -1;
 
         #region Setters
+
+        /// <summary>
+        /// Includes an entity tag for rendering. If no tags were previously set, RenderLayer will only render objects with this tag exclusively.
+        /// </summary>
+        public RenderLayer IncludeEntityTag(int unshiftedFlag) {
+            if (IncludeEntityTags == -1) {
+                IncludeEntityTags = IntFlags.SetFlagExclusive(unshiftedFlag);
+                return this;
+            }
+
+            IncludeEntityTags = IncludeEntityTags.SetFlag(unshiftedFlag);
+            return this;
+        }
+
+        /// <summary>
+        /// Excludes an entity tag from rendering.
+        /// </summary>
+        public RenderLayer ExcludeEntityTag(int unshiftedFlag) {
+            IncludeEntityTags = IncludeEntityTags.RemoveFlag(unshiftedFlag);
+            return this;
+        }
 
         /// <summary>
         /// Sets the flag to use RenderTarget for this layer. Note that if this layer uses post-processing, this should be set to <see langword="true"/>.
@@ -158,11 +179,11 @@ namespace Instant2D.EC.Rendering {
                 var obj = Objects[i];
 
                 // skip excluded entities
-                if (ExcludeEntitiesWithTag != 0 && ExcludeEntitiesWithTag.IsFlagSet(obj.Entity.Tags, false))
+                if (IncludeEntityTags != -1 && obj.Entity.Tags != 0 && !IncludeEntityTags.IsFlagSet(obj.Entity.Tags, false))
                     continue;
 
                 // check if renderer is in bounds of camera
-                if (!(obj.IsVisible = bounds.Intersects(obj.Bounds)))
+                if (!obj.DisableCulling && !(obj.IsVisible = bounds.Intersects(obj.Bounds)))
                     continue;
 
                 if (currentMaterial != obj.Material) {

@@ -516,8 +516,8 @@ namespace Instant2D.EC {
                 }
 
                 // set initial transform state
-                _lastTransformState = TransformState;
                 TransformState = Transform.Data;
+                _lastTransformState = TransformState;
 
                 _isInitialized = true;
             }
