@@ -34,6 +34,8 @@ namespace Instant2D.EC {
         bool _shouldDestroy, _isInitialized;
         Scene _scene;
 
+        internal int _fixedUpdatesPassed;
+
         /// <summary> Unique number identifier for this entity. </summary>
         public readonly uint Id = _entityIdCounter++;
 
@@ -538,6 +540,8 @@ namespace Instant2D.EC {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FixedUpdateGlobal(int updateCount, bool useChildren = false) {
+            _fixedUpdatesPassed += updateCount;
+
             if (_fixedUpdateComponents != null && updateCount > 0) {
                 // do several updates at once to reduce looping overhead
                 foreach (var comp in CollectionsMarshal.AsSpan(_fixedUpdateComponents)) {
@@ -578,15 +582,11 @@ namespace Instant2D.EC {
                 // invoke the big callback
                 FixedUpdateGlobal(fixedUpdateCount, true);
 
-                // tick WaitForFixedUpdate coroutines
-                if (CoroutineManager.HasObjectsBlockedByNonGlobalTimeScale) {
+                // call the tick method when there are entity-blocked coroutines
+                if (CoroutineManager._anyEntityBlockedCoroutines)
                     for (var i = 0; i < fixedUpdateCount; i++) {
-                        CoroutineManager.Instance.TickFixedUpdate(this);
-                        for (var j = 0; j < ChildrenCount; j++) {
-                            CoroutineManager.Instance.TickFixedUpdate(this[j]);
-                        }
+                        CoroutineManager.TickFixedUpdate(Scene);
                     }
-                }
             }
 
             // set AlphaFrameTime on self and all children
@@ -675,6 +675,6 @@ namespace Instant2D.EC {
         }
 
         // ICoroutineTarget impl
-        float ICoroutineTarget.TimeScale => TimeScale;
+        float ICoroutineTarget.TimeScale => TimeScale * Scene.TimeScale;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Instant2D.Core;
+using Instant2D.EC;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
@@ -15,12 +16,9 @@ namespace Instant2D.Coroutines {
             Instance = this;
         }
 
-        static internal bool HasObjectsBlockedByNonGlobalTimeScale;
+        internal static bool _anyEntityBlockedCoroutines;
 
         internal readonly ConditionalWeakTable<ICoroutineTarget, List<Coroutine>>
-            // stores coroutines blocked by fixed update tied to individual objects
-            _blockedByObjectFixedUpdates = new(),
-
             // target to coroutines lookup, used to quickly stop everything if the object destroys
             _coroutineTargets = new();
 
@@ -28,14 +26,12 @@ namespace Instant2D.Coroutines {
             _coroutines = new(),
 
             // coroutines that should be removed next frame
-            _markedForDeletion = new(),
+            _markedForDeletion = new();
 
-            // coroutines blocked by global fixedupdate
-            _blockedByFixedUpdate = new();
+        // coroutines blocked by global fixedupdate
+        readonly List<Coroutine> _blockedByFixedUpdate = new();
 
         public override void Update(GameTime time) {
-            HasObjectsBlockedByNonGlobalTimeScale = false;
-
             // clear all marked coroutines
             if (_markedForDeletion.Count > 0) {
                 for (int i = 0; i < _markedForDeletion.Count; i++) {
@@ -54,6 +50,9 @@ namespace Instant2D.Coroutines {
                             list.Pool();
                         }
                     }
+
+                    // remove from fixedupdate list too
+                    _blockedByFixedUpdate.Remove(coroutine);
 
                     // return coroutine to the pool
                     StaticPool<Coroutine>.Return(coroutine);
@@ -143,50 +142,34 @@ namespace Instant2D.Coroutines {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void BlockByFixedUpdate(Coroutine coroutine, bool useOwnTimescale) {
-            // we can ignore individual timescales if it's actually 1.0f or coroutine doesn't have it at all
-            if (useOwnTimescale && coroutine.Target != null && coroutine.Target.TimeScale != 1.0f) {
-                _blockedByObjectFixedUpdates.GetValue(coroutine.Target, _ => ListPool<Coroutine>.Get()).Add(coroutine);
-                HasObjectsBlockedByNonGlobalTimeScale = true;
-                return;
-            }
-
+        internal void BlockByFixedUpdate(Coroutine coroutine) {
             _blockedByFixedUpdate.Add(coroutine);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void TickFixedUpdateGlobal() {
-            if (_blockedByFixedUpdate.Count == 0) return;
-            for (int i = _blockedByFixedUpdate.Count - 1; i >= 0; i--) {
-                Coroutine coroutine = _blockedByFixedUpdate[i];
-                if (coroutine._awaiter is not WaitForFixedUpdate(false))
+        internal static void TickFixedUpdate(Scene scene) {
+            // if CoroutineManager wasn't initialized or no blocked coroutines currently active
+            if (Instance == null || Instance._blockedByFixedUpdate is not List<Coroutine> { Count: >0 } blockedCoroutines)
+                return;
+
+            _anyEntityBlockedCoroutines = false;
+
+            for (int i = blockedCoroutines.Count - 1; i >= 0; i--) {
+                Coroutine coroutine = blockedCoroutines[i];
+
+                // how did it get here ???
+                if (coroutine._awaiter is not WaitForFixedUpdate(var ignoreEntityTimeScale) { _beganAtFixedUpdate: var beganAtFixedUpdate, _entity: var entity }) {
+                    blockedCoroutines.RemoveAt(i);
                     continue;
-
-                // clear the block
-                _blockedByFixedUpdate.RemoveAt(i);
-
-                // advance the routine
-                coroutine._awaiter = null;
-                TickCoroutine(coroutine);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void TickFixedUpdate(ICoroutineTarget target) {
-            if (!HasObjectsBlockedByNonGlobalTimeScale) return;
-            if (_blockedByObjectFixedUpdates.TryGetValue(target, out var list)) {
-                for (int i = list.Count - 1; i >= 0; i--) {
-                    Coroutine coroutine = list[i];
-                    list.RemoveAt(i);
-
-                    // advance
-                    coroutine._awaiter = null;
-                    TickCoroutine(coroutine);
                 }
 
-                // pool the list when not needed anymore
-                _blockedByObjectFixedUpdates.Remove(target);
-                list.Pool();
+                // if fixedupdate number changed, that means this coroutine should advance
+                if (beganAtFixedUpdate < (ignoreEntityTimeScale ? scene._fixedUpdatesPassed : (entity?._fixedUpdatesPassed ?? scene._fixedUpdatesPassed))) {
+                    blockedCoroutines.RemoveAt(i);
+
+                    coroutine._awaiter = null;
+                    Instance.TickCoroutine(coroutine);
+                }
             }
         }
 

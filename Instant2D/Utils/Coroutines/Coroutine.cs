@@ -1,4 +1,5 @@
 ﻿using Instant2D.Coroutines;
+using Instant2D.EC;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
@@ -180,24 +181,7 @@ namespace Instant2D.Coroutines {
                         break;
 
                     // will be ticked by scene/object automatically
-                    case WaitForFixedUpdate(bool useIndividualTimescale):
-                        if (useIndividualTimescale) {
-                            // this is required since when objects switch to global timescale, 
-                            // the method used to tick them will never be called
-                            if (timeScale == 1.0f) {
-                                if (_target.TryGetTarget(out var target) && CoroutineManager.Instance._blockedByObjectFixedUpdates.TryGetValue(target, out var blockedList)) {
-                                    blockedList.Remove(this);
-                                }
-
-                                // switch back to global
-                                _awaiter = new WaitForFixedUpdate();
-                                return true;
-                            }
-
-                            // i set this to avoid doing too much work when it's not needed
-                            CoroutineManager.HasObjectsBlockedByNonGlobalTimeScale = true;
-                        }
-
+                    case WaitForFixedUpdate:
                         return true;
                 }
             }
@@ -222,8 +206,38 @@ namespace Instant2D.Coroutines {
                     _awaiter = new WaitForCoroutine(coroutine);
                     break;
 
-                case WaitForFixedUpdate(bool useIndividualTimescale):
-                    CoroutineManager.Instance.BlockByFixedUpdate(this, useIndividualTimescale);
+                case WaitForFixedUpdate waitForFixedUpdate:
+                    if (_target == null || !_target.TryGetTarget(out var target)) {
+                        FNALoggerEXT.LogWarn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
+                        return true;
+                    }
+
+                    switch (target) {
+                        default:
+                            FNALoggerEXT.LogWarn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
+                            return true;
+
+                        case Scene scene:
+                            waitForFixedUpdate._beganAtFixedUpdate = scene._fixedUpdatesPassed;
+                            break;
+
+                        case Entity entity:
+                            waitForFixedUpdate._beganAtFixedUpdate = entity._fixedUpdatesPassed;
+                            waitForFixedUpdate._entity = entity;
+
+                            if (entity._timescale != 1.0f) {
+                                // mark that entities with non-global timescale should
+                                // try and tick the blocked coroutines as well
+                                CoroutineManager._anyEntityBlockedCoroutines = true;
+                            }
+
+                            break;
+                    }
+
+                    // mark the beginning update cycle and set the awaiter
+                    CoroutineManager.Instance.BlockByFixedUpdate(this);
+                    _awaiter = waitForFixedUpdate;
+
                     break;
             }
 

@@ -56,6 +56,16 @@ namespace Instant2D.Core {
         /// </summary>
         public int FPS => _framesPerSecond;
 
+        public void SetTargetFramerate(int framesPerSecond) {
+            if (framesPerSecond == -1) {
+                IsFixedTimeStep = false;
+                return;
+            }
+
+            TargetElapsedTime = TimeSpan.FromSeconds(1.0f / framesPerSecond);
+            IsFixedTimeStep = true;
+        }
+
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
         public InstantGame() {

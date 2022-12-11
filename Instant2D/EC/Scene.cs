@@ -30,6 +30,9 @@ namespace Instant2D.EC {
         bool _isInitialized, _isCleanedUp;
         bool _debugRender;
 
+        // how many fixed updates have been completed
+        internal int _fixedUpdatesPassed;
+
         readonly List<RenderLayer> _layers = new(12);
         RenderLayer _masterLayer;
 
@@ -271,8 +274,11 @@ namespace Instant2D.EC {
             for (var i = 0; i < fixedUpdateCount; i++) {
                 FixedUpdate();
 
+                // increment the fixedUpdate counter
+                _fixedUpdatesPassed++;
+
                 // tick all WaitForFixedUpdate coroutines
-                CoroutineManager.Instance.TickFixedUpdateGlobal();
+                CoroutineManager.TickFixedUpdate(this);
             }
 
             // apply Updates
