@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Facepunch.Steamworks" Version="2.3.3" />
     <PackageReference Include="fnalibs" Version="21.7.0" />
     <PackageReference Include="NVorbis" Version="0.10.4" />
   </ItemGroup>
@@ -26,5 +27,11 @@
     <None Remove="Assets\levels\beach.txt" />
     <None Remove="Assets\music\stage_1.ogg" />
     <None Remove="Assets\sprites\manifest.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="steam_api64.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

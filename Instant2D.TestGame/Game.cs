@@ -11,16 +11,15 @@ using Instant2D.EC.Components;
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
-using Instant2D.Coroutines;
 using Instant2D.Utils.Math;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using static System.Formats.Asn1.AsnWriter;
-using Instant2D.TestGame.Scenes;
 using Instant2D.Audio;
+using Instant2D.Coroutines;
+using Instant2D.TestGame.Scenes;
 
 namespace Instant2D.TestGame {
     public class Game : InstantGame {
@@ -29,7 +28,6 @@ namespace Instant2D.TestGame {
                 assets.SetupHotReload("./Instant2D.TestGame/Assets/");
                 assets.AddLoader<SpriteLoader>();
                 assets.AddLoader<SoundLoader>();
-                assets.AddLoader<LoaderTest.CustomLoader>();
             });
 
             AddSystem<InputManager>();
@@ -38,7 +36,7 @@ namespace Instant2D.TestGame {
             AddSystem<AudioManager>();
             AddSystem<SceneManager>(scene => {
                 scene.SetResolutionScaler<DefaultResolutionScaler>()
-                    .SetDesignResolution(640 / 2, 360 / 2)
+                    .SetDesignResolution(320, 180)
                     .SetPixelPerfect()
                     .SetDisplayMode(DefaultResolutionScaler.DisplayMode.ShowAll);
             });
