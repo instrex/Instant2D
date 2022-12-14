@@ -96,5 +96,18 @@ namespace Instant2D {
 
             return value1 + num * MathHelper.Clamp(amount, 0, 1);
         }
+
+        /// <summary>
+        /// Finds the point closest to <paramref name="position"/> on the line ab.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector2 GetClosestPointOnLine(Vector2 a, Vector2 b, Vector2 position) {
+            var v = b - a;
+            var w = position - a;
+            var t = Vector2.Dot(w, v) / Vector2.Dot(v, v);
+            t = MathHelper.Clamp(t, 0, 1);
+
+            return a + v * t;
+        }
     }
 }

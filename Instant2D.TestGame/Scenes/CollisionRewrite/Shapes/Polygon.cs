@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 
 namespace Instant2D.TestGame.Scenes.CollisionRewrite.Shapes {
     public class Polygon : ICollisionShape, IPooled {
-        IReadOnlyList<Vector2> _readOnlyVertices;
         internal Vector2[] _vertices, _edgeNormals;
         bool _edgeNormalsDirty = true, _boundsDirty = true;
         RectangleF _bounds;
@@ -14,8 +13,19 @@ namespace Instant2D.TestGame.Scenes.CollisionRewrite.Shapes {
         // if this is true, small optimizations may be performed
         internal bool _isBox;
 
+        /// <summary>
+        /// Construct a new polygon from provided <paramref name="vertices"/>. Vertices should be in clockwise order and centered around {0, 0}.
+        /// </summary>
         public Polygon(params Vector2[] vertices) {
             _vertices = vertices;
+        }
+        
+        /// <summary>
+        /// Construct a new polygon in the shape of a box. 
+        /// </summary>
+        public Polygon(float boxWidth, float boxHeight) {
+            _vertices = new Vector2[4];
+            SetBoxVertices(new(boxWidth, boxHeight));
         }
 
         /// <summary>
@@ -43,15 +53,15 @@ namespace Instant2D.TestGame.Scenes.CollisionRewrite.Shapes {
         }
 
         /// <summary>
-        /// Read-only access to vertices of this polygon.
+        /// Vertices of this polygon. Do not modify directly, use indexers.
         /// </summary>
         public IReadOnlyList<Vector2> Vertices {
-            get {
-                _readOnlyVertices ??= Array.AsReadOnly(_vertices);
-                return _readOnlyVertices; 
-            }
+            get => _vertices;
         }
 
+        /// <summary>
+        /// Automatically generated edge normals used for collision detection algorithm.
+        /// </summary>
         public Vector2[] EdgeNormals {
             get {
                 if (_edgeNormalsDirty) {
@@ -62,21 +72,96 @@ namespace Instant2D.TestGame.Scenes.CollisionRewrite.Shapes {
             }
         }
 
+        /// <summary>
+        /// Set the vertex array of this polygon. Vertices must be centered around the point {0, 0} in clockwise order. <br/>
+        /// Note that this method undoes any box optimizations.
+        /// </summary>
         public void SetVertices(Vector2[] vertices) {
-            _readOnlyVertices = null;
             _vertices = vertices;
             _edgeNormalsDirty = true;
             _boundsDirty = true;
+            _isBox = false;
         }
 
+        /// <summary>
+        /// Sets the vertices to those of a box.
+        /// </summary>
+        public void SetBoxVertices(Vector2 boxSize) {
+            Array.Resize(ref _vertices, 4);
+            SetVertices(_vertices);
+
+            // initialize the points to the size of the box
+            _vertices[0] = new Vector2(boxSize.X * 0.5f, boxSize.X * -0.5f);
+            _vertices[1] = new Vector2(boxSize.X * 0.5f, boxSize.X * 0.5f);
+            _vertices[2] = new Vector2(boxSize.X * -0.5f, boxSize.X * 0.5f);
+            _vertices[3] = new Vector2(boxSize.X * -0.5f, boxSize.X * -0.5f);
+            _isBox = true;
+        }
+
+        /// <summary>
+        /// Get or set any specific vertex. Using the setter undoes box optimizations.
+        /// </summary>
         public Vector2 this[int index] {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _vertices[index];
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set {
                 _vertices[index] = value;
                 _edgeNormalsDirty = true;
                 _boundsDirty = true;
+                _isBox = false;
             }
         }
+
+        #region Transformation methods & helpers 
+
+        public void Scale(Vector2 scale) {
+            Scale(_vertices, scale);
+            _edgeNormalsDirty = true;
+            _boundsDirty = true;
+        }
+
+        public static void Scale(Vector2[] vertices, Vector2 scale) {
+            for (var i = 0; i < vertices.Length; i++) {
+                vertices[i] *= scale;
+            }
+        }
+
+        public static void Rotate(Vector2[] vertices, float rotation, Vector2 center = default) {
+            for (var i = 0; i < vertices.Length; i++) {
+                vertices[i] = vertices[i].RotatedBy(rotation, center);
+            }
+        }
+
+        /// <summary>
+        /// Get closest point to <paramref name="position"/> on polygon's edge.
+        /// </summary>
+        public static Vector2 GetClosestPoint(Vector2[] vertices, Vector2 position, out float distanceSq, out Vector2 edgeNormal) {
+            Vector2 result = default;
+            distanceSq = float.MaxValue;
+            edgeNormal = default;
+
+            for (var i = 0; i < vertices.Length; i++) {
+                var a = vertices[i];
+                var b = vertices[i + 1 == vertices.Length ? 0 : i + 1];
+
+                var closestLine = VectorUtils.GetClosestPointOnLine(a, b, position);
+                Vector2.DistanceSquared(ref position, ref closestLine, out var dist);
+
+                if (dist < distanceSq) {
+                    distanceSq = dist;
+                    result = closestLine;
+
+                    var line = b - a;
+                    edgeNormal = new(-line.Y, line.X);
+                }
+            }
+
+            return result;
+        }
+
+        #endregion
 
         #region ICollisionShape implementation
 
@@ -89,19 +174,28 @@ namespace Instant2D.TestGame.Scenes.CollisionRewrite.Shapes {
         }
 
         public bool CollidesWith(ICollisionShape other, out Vector2 normal, out Vector2 penetrationVector) {
-            if (other is Polygon otherPolygon) {
-                return ICollisionShape.PolygonToPolygon(this, otherPolygon, out normal, out penetrationVector);
-            }
-
-            throw new NotImplementedException();
+            return other switch {
+                Polygon polygon => ICollisionShape.PolygonToPolygon(this, polygon, out normal, out penetrationVector),
+                _ => throw new NotImplementedException()
+            };
         }
 
-        public bool CollidesWithLine(Vector2 start, Vector2 end, out LineCollisionResult result) {
-            throw new NotImplementedException();
-        }
+        public bool CollidesWithLine(Vector2 start, Vector2 end, out float fraction, out float distance, out Vector2 intersectionPoint, out Vector2 normal) =>
+            ICollisionShape.LineToPolygon(start, end, this, out fraction, out distance, out intersectionPoint, out normal);
 
         public bool ContainsPoint(Vector2 point) {
-            throw new NotImplementedException();
+            point -= _position;
+
+            var isInside = false;
+            for (int i = 0, j = _vertices.Length - 1; i < _vertices.Length; j = i++) {
+                if (((_vertices[i].Y > point.Y) != (_vertices[j].Y > point.Y)) &&
+                    (point.X < (_vertices[j].X - _vertices[i].X) * (point.Y - _vertices[i].Y) / (_vertices[j].Y - _vertices[i].Y) +
+                     _vertices[i].X)) {
+                    isInside = !isInside;
+                }
+            }
+
+            return isInside;
         }
 
         #endregion
@@ -141,10 +235,12 @@ namespace Instant2D.TestGame.Scenes.CollisionRewrite.Shapes {
         }
 
         public void Reset() {
-            throw new NotImplementedException();
+            _boundsDirty = _edgeNormalsDirty = true;
+            _vertices = _edgeNormals = null;
+            _position = Vector2.Zero;
+            _isBox = false;
         }
     }
-    
 }
 
 namespace Instant2D.TestGame.Scenes {
