@@ -8,31 +8,33 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D.Collisions {
+namespace Instant2D.Collision {
+    using Shapes;
+
     /// <summary>
     /// Collection of colliders in world-space batched by evenly sized chunks. <br/>
     /// This removes the need to iterate over each defined collider.
     /// </summary>
-    public class SpatialHash<T> {
-        public const int DEFAULT_CHUNK_SIZE = 100;
+    public class SpatialHash<T> where T: ICollider<T> {
+        public const int DEFAULT_CHUNK_SIZE = 32;
 
         /// <summary>
         /// Current world size. Expands when new colliders are added.
         /// </summary>
-        public Rectangle Bounds;
+        public Rectangle Bounds { get; private set; }
 
         // chunk information
         // TODO: optimize _chunks indexing, as it somehow uses too much processing power to GetHashCode and Equals on
-        internal readonly Dictionary<long, List<BaseCollider<T>>> _chunks = new();
+        internal readonly Dictionary<long, List<T>> _chunks = new();
         readonly float _invChunkSize;
         readonly int _chunkSize;
 
         // cached stuff
-        readonly HashSet<BaseCollider<T>> _colliderHash = new();
-        readonly List<BaseCollider<T>> _colliderBuffer = new();
+        readonly HashSet<T> _colliderHash = new();
+        readonly List<T> _colliderBuffer = new();
 
         // dummy colliders
-        readonly BoxCollider<T> _overlapTestBox = new();
+        readonly Box _overlapTestBox = new();
 
         /// <summary>
         /// Creates a new <see cref="SpatialHash"/> instance with the world batched to chunks of size <paramref name="chunkSize"/>. <br/>
@@ -47,7 +49,7 @@ namespace Instant2D.Collisions {
         Point GetChunkCoords(float x, float y) => new((int)MathF.Floor(x * _invChunkSize), (int)MathF.Floor(y * _invChunkSize));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        List<BaseCollider<T>> GetChunk(int x, int y, bool createIfMissing = false) {
+        List<T> GetChunk(int x, int y, bool createIfMissing = false) {
             var hash = unchecked((long)x << 32 | (uint)y);
             if (!_chunks.TryGetValue(hash, out var values) && createIfMissing)
                 _chunks.Add(hash, values = new());
@@ -68,8 +70,8 @@ namespace Instant2D.Collisions {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AddCollider(BaseCollider<T> collider) {
-            var bounds = collider.Bounds;
+        public void AddCollider(T collider) {
+            var bounds = collider.Shape.Bounds;
             var (topLeft, bottomRight) = (GetChunkCoords(bounds.X, bounds.Y), GetChunkCoords(bounds.Right, bounds.Bottom));
 
             // expand bounds to the top left
@@ -88,15 +90,13 @@ namespace Instant2D.Collisions {
                 }
             }
 
-            // store the reference for later retrieval
-            // also the registration rect so it's easier to remove the object
+            // store registration region so it's easier to remove the object
             // when needed (when it moves for example)
-            collider._registrationRect = new(topLeft.X, topLeft.Y, bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
-            collider._spatialHash = this;
+            collider.SpatialHashRegion = new(topLeft.X, topLeft.Y, bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void RemoveCollider(BaseCollider<T> collider, bool forceRemove = false) {
+        public void RemoveCollider(T collider, bool forceRemove = false) {
             if (forceRemove) {
                 // iterate every cell and remove the collider
                 // may be inefficient, but I'm gonna bother with that later
@@ -106,10 +106,12 @@ namespace Instant2D.Collisions {
 
                 return;
             }
-            
+
+            var registrationRect = collider.SpatialHashRegion;
+
             // iterate the registration rect and remove the references
-            for (var x = collider._registrationRect.X; x <= collider._registrationRect.Right; x++) {
-                for (var y = collider._registrationRect.Y; y <= collider._registrationRect.Bottom; y++) {
+            for (var x = registrationRect.X; x <= registrationRect.Right; x++) {
+                for (var y = registrationRect.Y; y <= registrationRect.Bottom; y++) {
                     var chunk = GetChunk(x, y);
                     chunk?.Remove(collider);
                 }
@@ -123,7 +125,7 @@ namespace Instant2D.Collisions {
         /// For precise collisions, call specialized <see cref="ICollider"/> methods after or <see cref="OverlapAll(RectangleF, IntFlags)"/>.
         /// </summary>
         /// <remarks> Returned list is pooled, so avoid storing references to it or just copy it. </remarks>
-        public List<BaseCollider<T>> Broadphase(RectangleF bounds, int layerMask = -1) {
+        public List<T> Broadphase(RectangleF bounds, int layerMask = -1) {
             _colliderBuffer.Clear();
             _colliderHash.Clear();
 
@@ -132,7 +134,7 @@ namespace Instant2D.Collisions {
             for (var x = topLeft.X; x <= bottomRight.X; x++) {
                 for (var y = topLeft.Y; y <= bottomRight.Y; y++) {
                     // if it's not initialized, skip
-                    if (GetChunk(x, y) is not List<BaseCollider<T>> chunk)
+                    if (GetChunk(x, y) is not List<T> chunk)
                         continue;
 
                     for (var i = 0; i < chunk.Count; i++) {
@@ -144,7 +146,7 @@ namespace Instant2D.Collisions {
 
                         // if bounds intersect, try adding into the hash
                         // if successful, add it into the buffer
-                        if (bounds.Intersects(collider.Bounds) && _colliderHash.Add(collider))
+                        if (bounds.Intersects(collider.Shape.Bounds) && _colliderHash.Add(collider))
                             _colliderBuffer.Add(collider);
                     }
                 }
@@ -157,9 +159,9 @@ namespace Instant2D.Collisions {
         /// Performs a narrow overlap check and returns the first collider that meets <paramref name="layerMask"/> criteria. To get all of the results, call <see cref="OverlapAll(RectangleF, int)"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BaseCollider<T> Overlap(RectangleF bounds, int layerMask = -1) {
+        public T Overlap(RectangleF bounds, int layerMask = -1) {
             var overlap = OverlapAll(bounds, layerMask);
-            return overlap.Count < 1 ? null : overlap[0];
+            return overlap.Count < 1 ? default : overlap[0];
         }
 
         /// <summary>
@@ -167,25 +169,22 @@ namespace Instant2D.Collisions {
         /// </summary>
         /// <remarks> Returned list is pooled, so avoid storing references to it or just copy it. </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public List<BaseCollider<T>> OverlapAll(RectangleF bounds, int layerMask = -1) {
+        public List<T> OverlapAll(RectangleF bounds, int layerMask = -1) {
             // update the overlap test box
             _overlapTestBox.Position = bounds.Position;
             _overlapTestBox.Size = bounds.Size;
-            _overlapTestBox.Update();
 
             // do a broadphase and narrow down overlapping colliders
             var broadphase = Broadphase(bounds, layerMask);
             for (var i = broadphase.Count - 1; i >= 0; i--) {
                 // if a collider doesn't overlap, discard it
-                if (!broadphase[i].CheckOverlap(_overlapTestBox)) {
+                if (!broadphase[i].Shape.CheckOverlap(_overlapTestBox)) {
                     broadphase.RemoveAt(i);
                 }
             }
 
             return _colliderBuffer;
         }
-
-
 
         #endregion
     }

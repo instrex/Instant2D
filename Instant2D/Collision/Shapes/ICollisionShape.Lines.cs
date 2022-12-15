@@ -1,4 +1,4 @@
-﻿using Instant2D.TestGame.Scenes.CollisionRewrite.Shapes;
+﻿using Instant2D.Collision.Shapes;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D.TestGame.Scenes {
+namespace Instant2D.Collision.Shapes {
     public partial interface ICollisionShape {
         public static bool LineToLine(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2, out Vector2 intersection) {
             intersection = Vector2.Zero;
@@ -44,8 +44,7 @@ namespace Instant2D.TestGame.Scenes {
             for (int j = polygon._vertices.Length - 1, i = 0; i < polygon._vertices.Length; j = i, i++) {
                 var edge1 = polygon.Position + polygon.Vertices[j];
                 var edge2 = polygon.Position + polygon.Vertices[i];
-                Vector2 intersection;
-                if (LineToLine(edge1, edge2, start, end, out intersection)) {
+                if (LineToLine(edge1, edge2, start, end, out Vector2 intersection)) {
                     hasIntersection = true;
 
                     // TODO: is this the correct and most efficient way to get the fraction?

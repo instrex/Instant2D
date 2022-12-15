@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using Instant2D.Collisions;
+using Instant2D.Collision;
 using Instant2D.EC.Components;
 using Instant2D.EC.Events;
 using Instant2D.Assets;

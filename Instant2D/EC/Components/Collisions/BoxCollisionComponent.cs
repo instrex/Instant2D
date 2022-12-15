@@ -1,4 +1,4 @@
-﻿using Instant2D.Collisions;
+﻿using Instant2D.Collision;
 using Microsoft.Xna.Framework;
 using System.Runtime.CompilerServices;
 

@@ -1,7 +1,6 @@
-﻿using Instant2D.TestGame.Scenes.CollisionRewrite.Shapes;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 
-namespace Instant2D.TestGame.Scenes {
+namespace Instant2D.Collision.Shapes {
     public partial interface ICollisionShape {
         /// <summary>
         /// Position of the shape in world space.
