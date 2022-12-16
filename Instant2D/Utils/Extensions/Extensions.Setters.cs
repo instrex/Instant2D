@@ -180,18 +180,6 @@ namespace Instant2D.EC {
             return collisionComponent;
         }
 
-        /// <summary>
-        /// Attempts to automatically determine collider size using renderables attached to entity.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T AutoResize<T>(this T collisionComponent) where T : CollisionComponent {
-            // use renderables when possible
-            if (collisionComponent.Entity.TryGetComponent<RenderableComponent>(out var renderableComponent))
-                collisionComponent.AutoResize(renderableComponent.Bounds);
-
-            return collisionComponent;
-        }
-
         /// <inheritdoc cref="CollisionComponent.IsTrigger"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T SetIsTrigger<T>(this T collisionComponent, bool isTrigger = true) where T : CollisionComponent {

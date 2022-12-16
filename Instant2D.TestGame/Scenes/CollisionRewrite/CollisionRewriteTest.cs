@@ -1,7 +1,7 @@
-﻿using Instant2D.EC;
+﻿using Instant2D.Collision.Shapes;
+using Instant2D.EC;
 using Instant2D.Graphics;
 using Instant2D.Input;
-using Instant2D.TestGame.Scenes.CollisionRewrite.Shapes;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -11,11 +11,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.TestGame.Scenes {
-    public record struct LineCollisionResult {
-
-    }
-
-
     public class CollisionRewriteTest : Scene {
         Polygon polyA, polyB;
         float rayAngle;
@@ -35,20 +30,20 @@ namespace Instant2D.TestGame.Scenes {
         }
 
         void Scale(Polygon polygon, float scale) {
-            for (var i = 0; i < polygon.Vertices.Count; i++) {
+            for (var i = 0; i < polygon.Vertices.Length; i++) {
                 polygon[i] = polygon.Vertices[i] * scale;
             }
         }
 
         void Rotate(Polygon polygon, float rotation) {
-            for (var i = 0; i < polygon.Vertices.Count; i++) {
+            for (var i = 0; i < polygon.Vertices.Length; i++) {
                 polygon[i] = polygon.Vertices[i].RotatedBy(rotation);
             }
         }
 
         void DrawPoly(Polygon polygon, Color color, Vector2 offset = default) {
             var drawing = GraphicsManager.Context;
-            for (var i = 0; i < polygon.Vertices.Count - 1; i++) {
+            for (var i = 0; i < polygon.Vertices.Length - 1; i++) {
                 drawing.DrawLine(polygon.Position + offset + polygon.Vertices[i], polygon.Position + offset + polygon.Vertices[i + 1], color);
             }
 

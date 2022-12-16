@@ -1,4 +1,5 @@
 ﻿using Instant2D.Collision;
+using Instant2D.Collision.Shapes;
 using Instant2D.EC.Collisions;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
@@ -13,12 +14,7 @@ namespace Instant2D.EC.Components {
     /// <summary>
     /// Base class for all collider components. Contains useful methods for overlap checking and moving with callback support.
     /// </summary>
-    public abstract class CollisionComponent : Component {
-        /// <summary>
-        /// Internal collider used by collision detection system.
-        /// </summary>
-        public readonly BaseCollider<CollisionComponent> BaseCollider;
-
+    public abstract class CollisionComponent : Component, ICollider<CollisionComponent> {
         /// <summary>
         /// Anchor point of this collider from x=0, y=0 (top-left) to x=1, y=1 (bottom-right).
         /// </summary>
@@ -37,12 +33,33 @@ namespace Instant2D.EC.Components {
 
         bool _scaleWithTransform = true, _rotateWithTransform = true;
         internal List<ITriggerCallbacksHandler> _triggerHandlers;
-        HashSet<BaseCollider<CollisionComponent>> _contactTriggers, _tempTriggerSet;
+        HashSet<CollisionComponent> _contactTriggers, _tempTriggerSet;
 
         /// <summary>
         /// If <see langword="true"/>, this collider will not be considered solid and instead cause trigger callbacks to be emitted by other colliders when moving.
         /// </summary>
         public bool IsTrigger;
+
+        /// <summary>
+        /// Layer mask used to determine if object of different layers collide with each other.
+        /// </summary>
+        public int CollidesWithMask { get; set; }
+
+        /// <summary>
+        /// Layer mask used to determine this object's collision layer, meaning it can be shifted/unshifted to the <see cref="CollidesWithMask"/>. <br/>
+        /// This could contain more than 1 flag for better flexibility. Use <see cref="IntFlags"/> extensions for more convenience when working with bit operations.
+        /// </summary>
+        public int LayerMask { get; set; }
+
+        /// <summary>
+        /// Collision shape used for this collider.
+        /// </summary>
+        public ICollisionShape Shape { get; }
+
+        /// <summary>
+        /// The region at which this collider resides in spatial hash.
+        /// </summary>
+        public Rectangle SpatialHashRegion { get; set; }
 
         /// <summary>
         /// Anchor point of this collider. Defaults to the center of collider (0.5, 0.5).
@@ -97,34 +114,9 @@ namespace Instant2D.EC.Components {
             }
         }
 
-        /// <summary>
-        /// Constructs a new <see cref="CollisionComponent"/> with specified base collider.
-        /// </summary>
-        public CollisionComponent(BaseCollider<CollisionComponent> collider) {
-            BaseCollider = collider;
-            BaseCollider.Entity = this;
-        }
-
-        /// <summary>
-        /// Layer mask used to determine if object of different layers collide with each other.
-        /// </summary>
-        public int CollidesWithMask {
-            get => BaseCollider.CollidesWithMask;
-            set => BaseCollider.CollidesWithMask = value;
-        }
-
-        /// <summary>
-        /// Layer mask used to determine this object's collision layer, meaning it can be shifted/unshifted to the <see cref="CollidesWithMask"/>. <br/>
-        /// This could contain more than 1 flag for better flexibility. Use <see cref="IntFlags"/> extensions for more convenience when working with bit operations.
-        /// </summary>
-        public int LayerMask {
-            get => BaseCollider.LayerMask;
-            set => BaseCollider.LayerMask = value;
-        }
-
         public override void Initialize() {
             // check BaseCollider
-            if (BaseCollider is null) {
+            if (Shape is null) {
                 Logger.WriteLine($"BaseCollider of {GetType().Name} wasn't initialized, disabling.", Logger.Severity.Error);
                 Entity.RemoveComponent(this);
                 return;
@@ -136,25 +128,15 @@ namespace Instant2D.EC.Components {
                 Logger.WriteLine($"Collider added to a scene without Collisions intitialized, defaulting to SpatialHash with grid size of {SpatialHash<CollisionComponent>.DEFAULT_CHUNK_SIZE}.");
                 Scene.Collisions = new();
             }
-
-            BaseCollider._spatialHash = Scene.Collisions;
         }
 
         public override void OnRemovedFromEntity() {
-            Scene.Collisions.RemoveCollider(BaseCollider);
+            Scene.Collisions.RemoveCollider(this);
 
             // dispose of handlers
             if (_triggerHandlers != null) {
                 _triggerHandlers.Pool();
                 _triggerHandlers = null;
-            }
-        }
-
-        public override void PostInitialize() {
-            if (!_wasSizeSet) {
-                // attempt to automatically determine size
-                // using RenderableComponents
-                this.AutoResize();
             }
         }
 
@@ -165,29 +147,30 @@ namespace Instant2D.EC.Components {
 
         public override void OnDisabled() { 
             // deregister collider when this component is disabled
-            Scene.Collisions.RemoveCollider(BaseCollider);
+            Scene.Collisions.RemoveCollider(this);
         }
 
         /// <summary>
         /// Apply all of the settings and update the base collider.
         /// </summary>
-        public virtual void UpdateCollider() { }
-
-        /// <summary>
-        /// Automatically assign size values using <see cref="RenderableComponent.Bounds"/> as reference.
-        /// </summary>
-        public virtual void AutoResize(RectangleF bounds) { }
+        public void UpdateCollider() { 
+            // remove and readd the collider into the hash
+            if (SpatialHashRegion != Rectangle.Empty) {
+                Scene.Collisions.RemoveCollider(this);
+                Scene.Collisions.AddCollider(this);
+            }
+        }
 
         /// <summary>
         /// Calculates movement of the object based on <paramref name="velocity"/>. If it collides into something, <paramref name="hits"/> will be populated with collision data,
         /// as well as <paramref name="velocity"/> will be recalculated to prevent the collision. <br/> 
         /// You'll have to return the <paramref name="hits"/> list back into the pool using <c><paramref name="hits"/>.Pool()</c> and move the entity by <paramref name="velocity"/> yourself.
         /// </summary>
-        public bool CalculateMovementCollisions(ref Vector2 velocity, out List<CollisionHit<CollisionComponent>> hits) {
+        public bool CalculateMovementCollisions(ref Vector2 velocity, out List<CollisionResult<CollisionComponent>> hits) {
             hits = null;
 
             // generate bounds updated by the movement
-            var bounds = BaseCollider.Bounds;
+            var bounds = Shape.Bounds;
             bounds.Position += velocity;
 
             // do a broad sweep to find all the potential collisions
@@ -196,11 +179,11 @@ namespace Instant2D.EC.Components {
                 var other = nearby[i];
 
                 // check for collision, skipping self and triggers
-                if (other != BaseCollider && !other.Entity.IsTrigger && CollidesWith(other.Entity, velocity, out var hit)) {
+                if (other != this && !other.IsTrigger && CollidesWith(other, velocity, out var hit)) {
                     velocity -= hit.PenetrationVector;
 
                     // add the hit to hits array
-                    hits ??= ListPool<CollisionHit<CollisionComponent>>.Get();
+                    hits ??= ListPool<CollisionResult<CollisionComponent>>.Get();
                     hits.Add(hit);
                 }
             }
@@ -211,44 +194,57 @@ namespace Instant2D.EC.Components {
 
         #region Collision Methods
 
-        /// <summary>
-        /// Checks if two collision components collide and returns important collision information as <paramref name="hit"/>.
-        /// </summary>
-        public bool CollidesWith(CollisionComponent other, out CollisionHit<CollisionComponent> hit) => BaseCollider.CheckCollision(other.BaseCollider, out hit);
+        public bool CollidesWith(CollisionComponent other, out CollisionResult<CollisionComponent> result) {
+            if (Shape.CollidesWith(other.Shape, out var normal, out var penetrationVector)) {
+                result = new(this, other, normal, penetrationVector);
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
+
+        public bool CollidesWithLine(Vector2 start, Vector2 end, out LineCastResult<CollisionComponent> result) {
+            if (Shape.CollidesWithLine(start, end, out _, out var distance, out var intersection, out var normal)) {
+                result = new(this, start, end, distance, intersection, normal);
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
 
         /// <summary>
         /// Checks of two collision components could collider with <paramref name="velocity"/> applied to them.
         /// </summary>
-        public bool CollidesWith(CollisionComponent other, Vector2 velocity, out CollisionHit<CollisionComponent> hit) {
-            var oldPosition = BaseCollider.Position;
-            BaseCollider.Position += velocity;
+        public bool CollidesWith(CollisionComponent other, Vector2 velocity, out CollisionResult<CollisionComponent> result) {
+            var oldPosition = Shape.Position;
+            Shape.Position += velocity;
 
             // offset the BaseCollider and check for collision, then reset
-            var result = BaseCollider.CheckCollision(other.BaseCollider, out hit);
-            BaseCollider.Position = oldPosition;
+            var hit = CollidesWith(other, out result);
+            Shape.Position = oldPosition;
 
-            return result;
+            return hit;
         }
 
         /// <summary>
         /// Checks for any collisions using specified <paramref name="layerMask"/> and optional <paramref name="velocity"/>.
         /// </summary>
         public bool CollidesWithAny(int layerMask = -1, Vector2 velocity = default) {
-            var oldPosition = BaseCollider.Position;
-            BaseCollider.Position += velocity;
-            BaseCollider._areBoundsDirty = true;
+            var oldPosition = Shape.Position;
+            Shape.Position += velocity;
 
             // broadphase potential hits and check more precisely
-            foreach (var potential in Scene.Collisions.Broadphase(BaseCollider.Bounds, layerMask)) {
-                if (potential != BaseCollider && potential.CheckCollision(BaseCollider, out var hit)) {
-                    BaseCollider.Position = oldPosition;
+            foreach (var potential in Scene.Collisions.Broadphase(Shape.Bounds, layerMask)) {
+                if (potential != this && potential.CollidesWith(this, out var _)) {
+                    Shape.Position = oldPosition;
                     return true;
                 }
             }
 
             // revert to previous position
-            BaseCollider.Position = oldPosition;
-            BaseCollider._areBoundsDirty = true;
+            Shape.Position = oldPosition;
 
             return false;
         }
@@ -274,11 +270,11 @@ namespace Instant2D.EC.Components {
         public bool Overlaps(CollisionComponent other, bool preciseCheck = true) {
             if (!preciseCheck) {
                 // simply check bounds for intersections, that's it
-                return BaseCollider.Bounds.Contains(other.BaseCollider.Bounds);
+                return Shape.Bounds.Contains(other.Shape.Bounds);
             }
 
             // go for more precise approach and call stuff
-            return BaseCollider.CheckOverlap(other.BaseCollider);
+            return Shape.CheckOverlap(other.Shape);
         }
 
         #endregion
@@ -309,20 +305,20 @@ namespace Instant2D.EC.Components {
             }
 
             // scan nearby area for overlapping triggers
-            var nearby = Scene.Collisions.Broadphase(BaseCollider.Bounds, CollidesWithMask);
+            var nearby = Scene.Collisions.Broadphase(Shape.Bounds, CollidesWithMask);
             for (var i = 0; i < nearby.Count; i++) {
                 var trigger = nearby[i];
 
                 // either object has to be the trigger
                 // I'm not sure how useful is it to test two triggers colliding though
-                if (!IsTrigger && !trigger.Entity.IsTrigger)
+                if (!IsTrigger && !trigger.IsTrigger)
                     continue;
 
-                if (BaseCollider.CheckOverlap(trigger)) {
+                if (Shape.CheckOverlap(trigger.Shape)) {
                     // OnTriggerEnter
                     if (_contactTriggers.Add(trigger)) {
-                        TriggerCallbacks(trigger.Entity, true);
-                        trigger.Entity.TriggerCallbacks(this, true);
+                        TriggerCallbacks(trigger, true);
+                        trigger.TriggerCallbacks(this, true);
                     }
 
                     // store handled triggers for later
@@ -334,8 +330,8 @@ namespace Instant2D.EC.Components {
             foreach (var trigger in _contactTriggers) {
                 // OnTriggerExit
                 if (!_tempTriggerSet.Contains(trigger)) {
-                    TriggerCallbacks(trigger.Entity, false);
-                    trigger.Entity.TriggerCallbacks(this, false);
+                    TriggerCallbacks(trigger, false);
+                    trigger.TriggerCallbacks(this, false);
                     _contactTriggers.Remove(trigger);
                 }
             }
