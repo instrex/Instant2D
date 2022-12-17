@@ -615,6 +615,10 @@ namespace Instant2D.EC {
         }
 
         internal void ImmediateDestroy() {
+            // set this immediately so components know
+            // why they're being removed
+            IsDestroyed = true;
+
             // notify components of death and detach
             for (var i = 0; i < _components.Count; i++) {
                 // null out RenderLayers so that renderable components
@@ -639,7 +643,6 @@ namespace Instant2D.EC {
             }
 
             // detach from the scene
-            IsDestroyed = true;
             Scene = null;
 
             // put the entity into the pool for reuse

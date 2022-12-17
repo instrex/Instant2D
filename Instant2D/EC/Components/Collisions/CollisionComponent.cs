@@ -15,13 +15,19 @@ namespace Instant2D.EC.Components {
     /// Base class for all collider components. Contains useful methods for overlap checking and moving with callback support.
     /// </summary>
     public abstract class CollisionComponent : Component, ICollider<CollisionComponent> {
+        bool _scaleWithTransform = true, _rotateWithTransform = true;
+
+        // trigger stuff
+        HashSet<CollisionComponent> _contactTriggers, _tempTriggerSet;
+        List<ITriggerCallbacksHandler> _triggerHandlers;
+
         /// <summary>
         /// Anchor point of this collider from x=0, y=0 (top-left) to x=1, y=1 (bottom-right).
         /// </summary>
         protected Vector2 _origin = new(0.5f);
 
         /// <summary>
-        /// Absolute translation applied to collider position, scales/rotates with Transform when <see cref="ShouldScaleWithTransform"/> / <see cref="ShouldRotateWithTransform"/> is set.
+        /// Absolute translation applied to collider position. Scales / rotates with Transform when <see cref="ShouldScaleWithTransform"/> / <see cref="ShouldRotateWithTransform"/> is set.
         /// </summary>
         protected Vector2 _offset;
 
@@ -30,10 +36,6 @@ namespace Instant2D.EC.Components {
         /// You should manually this to <see langword="true"/> when user requests changes to the size.
         /// </summary>
         protected bool _wasSizeSet;
-
-        bool _scaleWithTransform = true, _rotateWithTransform = true;
-        internal List<ITriggerCallbacksHandler> _triggerHandlers;
-        HashSet<CollisionComponent> _contactTriggers, _tempTriggerSet;
 
         /// <summary>
         /// If <see langword="true"/>, this collider will not be considered solid and instead cause trigger callbacks to be emitted by other colliders when moving.
@@ -52,9 +54,9 @@ namespace Instant2D.EC.Components {
         public int LayerMask { get; set; }
 
         /// <summary>
-        /// Collision shape used for this collider.
+        /// Collision shape used for this collider. Avoid modifying any values of it directly.
         /// </summary>
-        public ICollisionShape Shape { get; }
+        public ICollisionShape Shape { get; protected set; }
 
         /// <summary>
         /// The region at which this collider resides in spatial hash.
@@ -117,7 +119,7 @@ namespace Instant2D.EC.Components {
         public override void Initialize() {
             // check BaseCollider
             if (Shape is null) {
-                Logger.WriteLine($"BaseCollider of {GetType().Name} wasn't initialized, disabling.", Logger.Severity.Error);
+                Logger.WriteLine($"Shape of {GetType().Name} wasn't initialized, disabling.", Logger.Severity.Error);
                 Entity.RemoveComponent(this);
                 return;
             }
@@ -151,11 +153,11 @@ namespace Instant2D.EC.Components {
         }
 
         /// <summary>
-        /// Apply all of the settings and update the base collider.
+        /// Move the collider in spatial hash.
         /// </summary>
         public void UpdateCollider() { 
             // remove and readd the collider into the hash
-            if (SpatialHashRegion != Rectangle.Empty) {
+            if (SpatialHashRegion.IsEmpty) {
                 Scene.Collisions.RemoveCollider(this);
                 Scene.Collisions.AddCollider(this);
             }
