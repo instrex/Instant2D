@@ -192,7 +192,8 @@ namespace Instant2D.Collision.Shapes {
 
         public bool CollidesWith(ICollisionShape other, out Vector2 normal, out Vector2 penetrationVector) {
             return other switch {
-                Polygon polygon => ICollisionShape.PolygonToPolygon(this, polygon, out normal, out penetrationVector),
+                Polygon polygon => ICollisionShape.PolygonToPolygon(this, polygon, out penetrationVector, out normal),
+                Box box => ICollisionShape.PolygonToPolygon(this, box.Polygon, out penetrationVector, out normal),
                 _ => throw new NotImplementedException()
             };
         }

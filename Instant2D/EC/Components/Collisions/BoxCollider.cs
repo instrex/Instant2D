@@ -1,9 +1,8 @@
 ﻿using Instant2D.Collision.Shapes;
+using Instant2D.Graphics;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,7 +29,7 @@ namespace Instant2D.EC.Components.Collisions {
             get => _size;
             set {
                 _size = value;
-                UpdateBox();
+                UpdateCollider();
             }
         }
 
@@ -39,17 +38,17 @@ namespace Instant2D.EC.Components.Collisions {
             if ((components & TransformComponentType.Position) != 0 ||
                 (ShouldScaleWithTransform && (components & TransformComponentType.Scale) != 0) ||
                 (ShouldRotateWithTransform && (components & TransformComponentType.Scale) != 0))
-                UpdateBox();
+                UpdateCollider();
         }
 
         public override void Initialize() {
             base.Initialize();
 
             // set initial values
-            UpdateBox();
+            UpdateCollider();
         }
 
-        void UpdateBox() {
+        public override void UpdateCollider() {
             var size = ShouldScaleWithTransform ? _size * Transform.Scale : _size;
             var offset = ShouldScaleWithTransform ? _offset * Transform.Scale : _offset;
 
@@ -59,7 +58,14 @@ namespace Instant2D.EC.Components.Collisions {
             _boxShape.Size = size;
 
             // move collider in spatial hash
-            UpdateCollider();
+            base.UpdateCollider();
+        }
+
+        public override void DrawDebugShape(DrawingContext drawing) {
+            base.DrawDebugShape(drawing);
+
+            // draw box shape
+            drawing.DrawRectangle(_boxShape.Bounds, Color.Transparent, Color.Red, 2);
         }
 
         /// <inheritdoc cref="Size"/>

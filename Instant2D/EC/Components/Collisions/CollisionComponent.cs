@@ -1,6 +1,7 @@
 ﻿using Instant2D.Collision;
 using Instant2D.Collision.Shapes;
 using Instant2D.EC.Collisions;
+using Instant2D.Graphics;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
@@ -19,7 +20,7 @@ namespace Instant2D.EC.Components {
 
         // trigger stuff
         HashSet<CollisionComponent> _contactTriggers, _tempTriggerSet;
-        List<ITriggerCallbacksHandler> _triggerHandlers;
+        internal List<ITriggerCallbacksHandler> _triggerHandlers;
 
         /// <summary>
         /// Anchor point of this collider from x=0, y=0 (top-left) to x=1, y=1 (bottom-right).
@@ -45,13 +46,13 @@ namespace Instant2D.EC.Components {
         /// <summary>
         /// Layer mask used to determine if object of different layers collide with each other.
         /// </summary>
-        public int CollidesWithMask { get; set; }
+        public int CollidesWithMask { get; set; } = -1;
 
         /// <summary>
         /// Layer mask used to determine this object's collision layer, meaning it can be shifted/unshifted to the <see cref="CollidesWithMask"/>. <br/>
         /// This could contain more than 1 flag for better flexibility. Use <see cref="IntFlags"/> extensions for more convenience when working with bit operations.
         /// </summary>
-        public int LayerMask { get; set; }
+        public int LayerMask { get; set; } = IntFlags.SetFlagExclusive(0);
 
         /// <summary>
         /// Collision shape used for this collider. Avoid modifying any values of it directly.
@@ -153,14 +154,12 @@ namespace Instant2D.EC.Components {
         }
 
         /// <summary>
-        /// Move the collider in spatial hash.
+        /// Move the collider in spatial hash and apply necessary shape values.
         /// </summary>
-        public void UpdateCollider() { 
+        public virtual void UpdateCollider() {
             // remove and readd the collider into the hash
-            if (SpatialHashRegion.IsEmpty) {
-                Scene.Collisions.RemoveCollider(this);
-                Scene.Collisions.AddCollider(this);
-            }
+            Scene.Collisions.RemoveCollider(this);
+            Scene.Collisions.AddCollider(this);
         }
 
         /// <summary>
@@ -192,6 +191,13 @@ namespace Instant2D.EC.Components {
 
             // return true only if we did something
             return hits != null;
+        }
+
+        public void Move(Vector2 velocity) {
+            if (CalculateMovementCollisions(ref velocity, out var hits))
+                hits.Pool();
+
+            Transform.Position += velocity;
         }
 
         #region Collision Methods
@@ -342,5 +348,17 @@ namespace Instant2D.EC.Components {
         }
 
         #endregion
+
+        /// <summary>
+        /// Debug drawing method used for visualizing colliders.
+        /// </summary>
+        public virtual void DrawDebugShape(DrawingContext drawing) {
+            // draw bounds
+            drawing.DrawRectangle(Shape.Bounds, Color.Transparent, Color.Gray, 2);
+            drawing.DrawLine(Shape.Bounds.TopLeft, Shape.Bounds.BottomRight, Color.Gray, 2);
+
+            // draw position
+            drawing.DrawPoint(Transform.Position, Color.Yellow, 4);
+        }
     }
 }

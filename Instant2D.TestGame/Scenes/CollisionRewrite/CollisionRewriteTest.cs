@@ -1,5 +1,8 @@
-﻿using Instant2D.Collision.Shapes;
+﻿using Instant2D.Collision;
+using Instant2D.Collision.Shapes;
 using Instant2D.EC;
+using Instant2D.EC.Components;
+using Instant2D.EC.Components.Collisions;
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Microsoft.Xna.Framework;
@@ -12,88 +15,52 @@ using System.Threading.Tasks;
 
 namespace Instant2D.TestGame.Scenes {
     public class CollisionRewriteTest : Scene {
-        Polygon polyA, polyB;
-        float rayAngle;
+        Box _box1, _box2;
 
         public override void Initialize() {
             base.Initialize();
 
-            polyA = new Polygon(new(-50, -50), new(50, -50), new(50, 50), new(-50, 50)) {
-                Position = new Vector2(25, 0)
-            };
+            Collisions = new(32);
 
-            polyB = new Polygon(new(100, -100), new(100, 100), new(-100, -100)) {
-                Position = new Vector2(-50, 0),
-            };
+            for (var i = 0; i < 12; i++) {
+                var collider = CreateEntity($"entity_{i}")
+                    .AddComponent<BoxCollider>()
+                    .SetSize(Random.Shared.NextFloat(5, 64), Random.Shared.NextFloat(5, 64));
 
-            Scale(polyB, 0.75f);
-        }
-
-        void Scale(Polygon polygon, float scale) {
-            for (var i = 0; i < polygon.Vertices.Length; i++) {
-                polygon[i] = polygon.Vertices[i] * scale;
+                collider.Move(Vector2.Zero);
             }
         }
 
-        void Rotate(Polygon polygon, float rotation) {
-            for (var i = 0; i < polygon.Vertices.Length; i++) {
-                polygon[i] = polygon.Vertices[i].RotatedBy(rotation);
-            }
-        }
+        public override void Update() {
+            base.Update();
 
-        void DrawPoly(Polygon polygon, Color color, Vector2 offset = default) {
-            var drawing = GraphicsManager.Context;
-            for (var i = 0; i < polygon.Vertices.Length - 1; i++) {
-                drawing.DrawLine(polygon.Position + offset + polygon.Vertices[i], polygon.Position + offset + polygon.Vertices[i + 1], color);
+            if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.W)) {
+                var collider = FindEntityByName("entity_0").GetComponent<BoxCollider>();
+                collider.Move(collider.Transform.Position.DirectionTo(Camera.MouseToWorldPosition()) * 4);
             }
 
-            drawing.DrawLine(polygon.Position + offset + polygon.Vertices[^1], polygon.Position + offset + polygon.Vertices[0], color);
+            if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.Q)) {
+                foreach (var collider in FindComponentsOfType<CollisionComponent>()) {
+                    collider.Move(Vector2.Zero);
+                }
+            }
         }
 
         public override void Render() {
             base.Render();
 
+            Camera.Zoom = 0.5f;
+
             var drawing = GraphicsManager.Context;
 
             drawing.Push(Material.Default, SceneToScreenTransform);
 
-            var rayOrigin = new Vector2(60, -100);
-            var rayHit = ICollisionShape.LineToPolygon(rayOrigin, rayOrigin + rayAngle.ToVector2() * 200, polyA, out var fraction, out var dist, out var intersect, out var n);
-            drawing.DrawLine(rayOrigin, rayHit ? intersect : rayOrigin + rayAngle.ToVector2() * 200, rayHit ? Color.Orange : Color.Green);
+            var bounds = Collisions.Bounds;
+            drawing.DrawRectangle(new(bounds.Location.ToVector2() * 32, new Vector2(bounds.Width, bounds.Height) * 32), Color.Transparent, Color.Cyan, 4);
 
-
-
-            if (InputManager.RightMouseDown) {
-                var pos = Camera.MouseToWorldPosition();
-                rayAngle = rayOrigin.AngleTo(pos);
+            foreach (var collider in FindComponentsOfType<CollisionComponent>()) {
+                collider.DrawDebugShape(drawing);
             }
-
-            var collision = ICollisionShape.PolygonToPolygon(polyA, polyB, out var penetration, out var normal);
-
-            DrawPoly(polyA, collision ? Color.Red : Color.Blue);
-            DrawPoly(polyB, collision ? Color.Red : Color.Blue);
-
-            if (collision) {
-                drawing.DrawLine(polyA.Position, polyA.Position - penetration, Color.Yellow, 2);
-                DrawPoly(polyA, Color.Yellow, -penetration);
-
-                polyA.Position -= penetration;
-            }
-
-            var movementA = new Vector2(
-                InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.A) ? -2 : InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.D) ? 2 : 0,
-                InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.W) ? -2 : InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.S) ? 2 : 0
-            );
-
-            if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Q)) {
-                Rotate(polyA, 0.1f);
-            }
-
-            if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.E)) {
-                Rotate(polyA, -0.1f);
-            }
-
-            polyA.Position += movementA;
 
             drawing.End();
         }
