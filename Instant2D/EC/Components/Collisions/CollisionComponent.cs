@@ -153,6 +153,14 @@ namespace Instant2D.EC.Components {
             Scene.Collisions.RemoveCollider(this);
         }
 
+        public override void OnTransformUpdated(TransformComponentType components) {
+            // update components when needed
+            if ((components & TransformComponentType.Position) != 0 ||
+                (ShouldScaleWithTransform && (components & TransformComponentType.Scale) != 0) ||
+                (ShouldRotateWithTransform && (components & TransformComponentType.Rotation) != 0))
+                UpdateCollider();
+        }
+
         /// <summary>
         /// Move the collider in spatial hash and apply necessary shape values.
         /// </summary>

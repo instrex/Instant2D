@@ -15,8 +15,6 @@ using System.Threading.Tasks;
 
 namespace Instant2D.TestGame.Scenes {
     public class CollisionRewriteTest : Scene {
-        Box _box1, _box2;
-
         public override void Initialize() {
             base.Initialize();
 
@@ -25,10 +23,16 @@ namespace Instant2D.TestGame.Scenes {
             for (var i = 0; i < 12; i++) {
                 var collider = CreateEntity($"entity_{i}")
                     .AddComponent<BoxCollider>()
-                    .SetSize(Random.Shared.NextFloat(5, 64), Random.Shared.NextFloat(5, 64));
+                    .SetSize(i == 0 ? 50 : Random.Shared.NextFloat(5, 64), i == 0 ? 10 : Random.Shared.NextFloat(5, 64));
 
                 collider.Move(Vector2.Zero);
             }
+
+            var poly = new Vector2[] { new(2.5f, 1.2f), new(0f, 2.5f), new(-2.5f, 1.2f), new(-1.25f, -1.2f) };
+            Polygon.Scale(poly, new Vector2(100f));
+
+            CreateEntity("big_poly", new(50))
+                .AddComponent(new PolygonCollider(poly));
         }
 
         public override void Update() {
@@ -37,6 +41,16 @@ namespace Instant2D.TestGame.Scenes {
             if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.W)) {
                 var collider = FindEntityByName("entity_0").GetComponent<BoxCollider>();
                 collider.Move(collider.Transform.Position.DirectionTo(Camera.MouseToWorldPosition()) * 4);
+            }
+
+            if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.T)) {
+                var collider = FindEntityByName("entity_0").GetComponent<BoxCollider>();
+                collider.Transform.Rotation += 0.1f;
+            }
+
+            if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.R)) {
+                var collider = FindEntityByName("entity_0").GetComponent<BoxCollider>();
+                collider.Transform.Rotation -= 0.1f;
             }
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.Q)) {

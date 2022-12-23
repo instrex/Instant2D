@@ -93,10 +93,10 @@ namespace Instant2D.Collision.Shapes {
             Array.Resize(ref _vertices, 4);
 
             // initialize the points to the size of the box
-            _vertices[0] = new Vector2(boxSize.X * 0.5f, boxSize.X * -0.5f);
-            _vertices[1] = new Vector2(boxSize.X * 0.5f, boxSize.X * 0.5f);
-            _vertices[2] = new Vector2(boxSize.X * -0.5f, boxSize.X * 0.5f);
-            _vertices[3] = new Vector2(boxSize.X * -0.5f, boxSize.X * -0.5f);
+            _vertices[0] = new Vector2(boxSize.X * 0.5f, boxSize.Y * -0.5f);
+            _vertices[1] = new Vector2(boxSize.X * 0.5f, boxSize.Y * 0.5f);
+            _vertices[2] = new Vector2(boxSize.X * -0.5f, boxSize.Y * 0.5f);
+            _vertices[3] = new Vector2(boxSize.X * -0.5f, boxSize.Y * -0.5f);
 
             // rotate verts immediately
             if (rotation != 0) {

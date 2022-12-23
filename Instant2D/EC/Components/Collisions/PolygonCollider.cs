@@ -15,12 +15,18 @@ namespace Instant2D.EC.Components.Collisions {
         public PolygonCollider() => Shape = _polygonShape = new();
         public PolygonCollider(Vector2[] vertices) {
             Shape = _polygonShape = new Polygon(vertices);
+            _originalVertices = vertices;
         }
 
         /// <summary>
-        /// Read-only access to polygon vertices.
+        /// Read-only access to polygon vertices. Do not modify directly.
         /// </summary>
         public Vector2[] Vertices => _polygonShape.Vertices;
+
+        /// <summary>
+        /// Initializes empty vertices array.
+        /// </summary>
+        public PolygonCollider SetVertices(int count) => SetVertices(new Vector2[count]);
 
         /// <summary>
         /// Set vertices and store original, untransformed points in the array.
@@ -28,17 +34,17 @@ namespace Instant2D.EC.Components.Collisions {
         public PolygonCollider SetVertices(params Vector2[] vertices) {
             // copy the vertices here 
             _originalVertices = vertices.ToArray();
-            UpdatePolygon();
+            UpdateCollider();
 
             return this;
         }
 
-        public override void OnTransformUpdated(TransformComponentType components) {
-            // update components when needed
-            if ((components & TransformComponentType.Position) != 0 ||
-                (ShouldScaleWithTransform && (components & TransformComponentType.Scale) != 0) ||
-                (ShouldRotateWithTransform && (components & TransformComponentType.Scale) != 0))
-                UpdatePolygon();
+        /// <summary>
+        /// Sets a vertex of polygon to <paramref name="position"/>.
+        /// </summary>
+        public PolygonCollider SetVertex(int index, Vector2 position) {
+            _polygonShape[index] = position;
+            return this;
         }
 
         public override void DrawDebugShape(DrawingContext drawing) {
@@ -47,11 +53,11 @@ namespace Instant2D.EC.Components.Collisions {
             // draw polygon
             var vertices = ShouldScaleWithTransform || ShouldRotateWithTransform ? _transformedVertices : _originalVertices;
             for (var i = 0; i < vertices.Length; i++) {
-                drawing.DrawLine(vertices[i], vertices[i + 1 >= vertices.Length ? 0 : i + 1], Color.Red, 2);
+                drawing.DrawLine(_polygonShape.Position + vertices[i], _polygonShape.Position + vertices[i + 1 >= vertices.Length ? 0 : i + 1], Color.Red, 2);
             }
         }
 
-        void UpdatePolygon() {
+        public override void UpdateCollider() {
             var offset = _offset;
             var origin = _origin - new Vector2(0.5f);
 
@@ -80,11 +86,11 @@ namespace Instant2D.EC.Components.Collisions {
             }
 
             var size = _polygonShape.Bounds.Size;
-            _polygonShape.Position = Entity.Transform.Position 
-                - (ShouldRotateWithTransform ? (size * origin).RotatedBy(Entity.Transform.Rotation) : size * origin) 
+            _polygonShape.Position = Entity.Transform.Position
+                - (ShouldRotateWithTransform ? (size * origin).RotatedBy(Entity.Transform.Rotation) : size * origin)
                 + offset;
 
-            UpdateCollider();
+            base.UpdateCollider();
         }
     }
 }

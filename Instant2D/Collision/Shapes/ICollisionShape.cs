@@ -18,7 +18,7 @@ namespace Instant2D.Collision.Shapes {
         bool CheckOverlap(ICollisionShape other);
 
         /// <summary>
-        /// Checks if the shape collides another. <paramref name="penetrationVector"/> represents the amount of motion that needs to be done to make the shapes not collide.
+        /// Checks if the shape collides another. <paramref name="penetrationVector"/> represents the amount of motion that needs to be applied to make the shapes not collide.
         /// </summary>
         bool CollidesWith(ICollisionShape other, out Vector2 normal, out Vector2 penetrationVector);
 

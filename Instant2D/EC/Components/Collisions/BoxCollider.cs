@@ -33,14 +33,6 @@ namespace Instant2D.EC.Components.Collisions {
             }
         }
 
-        public override void OnTransformUpdated(TransformComponentType components) {
-            // update components when needed
-            if ((components & TransformComponentType.Position) != 0 ||
-                (ShouldScaleWithTransform && (components & TransformComponentType.Scale) != 0) ||
-                (ShouldRotateWithTransform && (components & TransformComponentType.Scale) != 0))
-                UpdateCollider();
-        }
-
         public override void Initialize() {
             base.Initialize();
 
@@ -63,6 +55,16 @@ namespace Instant2D.EC.Components.Collisions {
 
         public override void DrawDebugShape(DrawingContext drawing) {
             base.DrawDebugShape(drawing);
+
+            if (_boxShape.HasPolygon) {
+                // draw polygon
+                var vertices = _boxShape.Polygon.Vertices;
+                for (var i = 0; i < vertices.Length; i++) {
+                    drawing.DrawLine(_boxShape.Position + vertices[i], _boxShape.Position + vertices[i + 1 >= vertices.Length ? 0 : i + 1], Color.Red, 2);
+                }
+
+                return;
+            }
 
             // draw box shape
             drawing.DrawRectangle(_boxShape.Bounds, Color.Transparent, Color.Red, 2);

@@ -36,6 +36,7 @@ namespace Instant2D.Collision.Shapes {
             set {
                 _position = value;
                 _boundsDirty = true;
+                _isPolygonDirty = true;
             }
         }
 
@@ -59,10 +60,19 @@ namespace Instant2D.Collision.Shapes {
                 _polygon ??= StaticPool<Polygon>.Get();
                 if (_isPolygonDirty) {
                     _polygon.SetBoxVertices(_size, _rotation);
+                    _polygon.Position = _position;
                 }
 
                 return _polygon;
             }
+        }
+        
+        /// <summary>
+        /// Check if <see cref="Polygon"/> is <see langword="null"/> or not without instantiating one on-demand.
+        /// </summary>
+        public bool HasPolygon {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _polygon != null;
         }
 
         #region ICollisionShape implementation

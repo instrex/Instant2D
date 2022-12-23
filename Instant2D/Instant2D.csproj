@@ -24,10 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	<ProjectReference Include="..\FNA\FNA.Core.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\FNA\FNA.Core.csproj" />
-  </ItemGroup>
-
+	
 </Project>
