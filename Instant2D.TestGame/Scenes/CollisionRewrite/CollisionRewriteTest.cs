@@ -79,9 +79,10 @@ namespace Instant2D.TestGame.Scenes {
                 if (InputManager.RightMouseDown) {
                     _lineStart = _controlledBox.Transform.Position;
                     _lineEnd = _controlledBox.Transform.Position + _controlledBox.Transform.Position.DirectionTo(Camera.MouseToWorldPosition()) * 128;
-                    Collisions.Linecast(_lineStart, _lineEnd, out _lineHits, ignoreOriginColliders: true);
 
-                    _lineHits.Sort();
+                    // sort the rays by distance on success
+                    if (Collisions.Linecast(_lineStart, _lineEnd, out _lineHits, ignoreOriginColliders: true))
+                        _lineHits.Sort();
                 }
 
                 if (InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.A) || InputManager.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.D)) {

@@ -131,10 +131,9 @@ namespace Instant2D.Collision {
         /// Gets all colliders close to <paramref name="bounds"/> and meeting <paramref name="layerMask"/> criteria.
         /// </summary>
         /// <remarks> Returned list is pooled, so don't forget to call <see cref="ListPool{T}.Return(List{T})"/> on it. </remarks>
-        public List<T> Broadphase(RectangleF bounds, int layerMask = -1) {
+        public bool Broadphase(RectangleF bounds, out List<T> results, int layerMask = -1) {
             _colliderHash.Clear();
-
-            var output = ListPool<T>.Get();
+            results = null;
 
             // iterate over each cell
             var (topLeft, bottomRight) = (GetChunkCoords(bounds.X, bounds.Y), GetChunkCoords(bounds.Right, bounds.Bottom));
@@ -153,13 +152,15 @@ namespace Instant2D.Collision {
 
                         // if bounds intersect, try adding into the hash
                         // if successful, add it into the buffer
-                        if (bounds.Intersects(collider.Shape.Bounds) && _colliderHash.Add(collider))
-                            output.Add(collider);
+                        if (bounds.Intersects(collider.Shape.Bounds) && _colliderHash.Add(collider)) {
+                            results ??= ListPool<T>.Get();
+                            results.Add(collider);
+                        }
                     }
                 }
             }
 
-            return output;
+            return results != null;
         }
 
         /// <summary>
@@ -167,25 +168,27 @@ namespace Instant2D.Collision {
         /// </summary>
         /// <remarks> Returned list is pooled, so don't forget to call <see cref="ListPool{T}.Return(List{T})"/> on it. </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public List<T> OverlapRect(RectangleF bounds, int layerMask = -1) {
-            var output = ListPool<T>.Get();
-
+        public bool OverlapRect(RectangleF bounds, out List<T> results, int layerMask = -1) {
             // update the overlap test box
             _overlapTestBox.Position = bounds.Position;
             _overlapTestBox.Size = bounds.Size;
 
             // do a broadphase and narrow down overlapping colliders
-            var broadphase = Broadphase(bounds, layerMask);
-            for (var i = broadphase.Count - 1; i >= 0; i--) {
-                // if a collider doesn't overlap, discard it
-                if (!broadphase[i].Shape.CheckOverlap(_overlapTestBox)) {
-                    broadphase.RemoveAt(i);
+            if (Broadphase(bounds, out var colliders, layerMask)) {
+                for (var i = colliders.Count - 1; i >= 0; i--) {
+                    // if a collider doesn't overlap, discard it
+                    if (!colliders[i].Shape.CheckOverlap(_overlapTestBox)) {
+                        colliders.RemoveAt(i);
+                    }
                 }
+
+                // just reuse the pooled list from broadphase
+                results = colliders;
+                return results.Count > 0;
             }
 
-            broadphase.Pool();
-
-            return output;
+            results = null;
+            return false;
         }
 
         /// <summary>

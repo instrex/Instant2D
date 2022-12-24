@@ -183,21 +183,22 @@ namespace Instant2D.EC.Components {
             bounds.Position += velocity;
 
             // do a broad sweep to find all the potential collisions
-            var nearby = Scene.Collisions.Broadphase(bounds, CollidesWithMask);
-            for (var i = 0; i < nearby.Count; i++) {
-                var other = nearby[i];
+            if (Scene.Collisions.Broadphase(bounds, out var colliders, CollidesWithMask)) {
+                for (var i = 0; i < colliders.Count; i++) {
+                    var other = colliders[i];
 
-                // check for collision, skipping self and triggers
-                if (other != this && !other.IsTrigger && CollidesWith(other, velocity, out var hit)) {
-                    velocity -= hit.PenetrationVector;
+                    // check for collision, skipping self and triggers
+                    if (other != this && !other.IsTrigger && CollidesWith(other, velocity, out var hit)) {
+                        velocity -= hit.PenetrationVector;
 
-                    // add the hit to hits array
-                    hits ??= ListPool<CollisionResult<CollisionComponent>>.Get();
-                    hits.Add(hit);
+                        // add the hit to hits array
+                        hits ??= ListPool<CollisionResult<CollisionComponent>>.Get();
+                        hits.Add(hit);
+                    }
                 }
-            }
 
-            nearby.Pool();
+                colliders.Pool();
+            }
 
             // return true only if we did something
             return hits != null;
@@ -253,17 +254,17 @@ namespace Instant2D.EC.Components {
             var oldPosition = Shape.Position;
             Shape.Position += velocity;
 
-            var nearby = Scene.Collisions.Broadphase(Shape.Bounds, layerMask);
-
             // broadphase potential hits and check more precisely
-            foreach (var potential in nearby) {
-                if (potential != this && potential.CollidesWith(this, out var _)) {
-                    Shape.Position = oldPosition;
-                    return true;
+            if (Scene.Collisions.Broadphase(Shape.Bounds, out var colliders, layerMask)) {
+                foreach (var potential in colliders) {
+                    if (potential != this && potential.CollidesWith(this, out var _)) {
+                        Shape.Position = oldPosition;
+                        return true;
+                    }
                 }
-            }
 
-            nearby.Pool();
+                colliders.Pool();
+            }
 
             // revert to previous position
             Shape.Position = oldPosition;
@@ -327,29 +328,30 @@ namespace Instant2D.EC.Components {
             }
 
             // scan nearby area for overlapping triggers
-            var nearby = Scene.Collisions.Broadphase(Shape.Bounds, CollidesWithMask);
-            for (var i = 0; i < nearby.Count; i++) {
-                var trigger = nearby[i];
+            if (Scene.Collisions.Broadphase(Shape.Bounds, out var colliders, CollidesWithMask)) {
+                for (var i = 0; i < colliders.Count; i++) {
+                    var trigger = colliders[i];
 
-                // either object has to be the trigger
-                // I'm not sure how useful is it to test two triggers colliding though
-                if (!IsTrigger && !trigger.IsTrigger)
-                    continue;
+                    // either object has to be the trigger
+                    // I'm not sure how useful is it to test two triggers colliding though
+                    if (!IsTrigger && !trigger.IsTrigger)
+                        continue;
 
-                if (Shape.CheckOverlap(trigger.Shape)) {
-                    // OnTriggerEnter
-                    if (_contactTriggers.Add(trigger)) {
-                        TriggerCallbacks(trigger, true);
-                        trigger.TriggerCallbacks(this, true);
+                    if (Shape.CheckOverlap(trigger.Shape)) {
+                        // OnTriggerEnter
+                        if (_contactTriggers.Add(trigger)) {
+                            TriggerCallbacks(trigger, true);
+                            trigger.TriggerCallbacks(this, true);
+                        }
+
+                        // store handled triggers for later
+                        _tempTriggerSet.Add(trigger);
                     }
-
-                    // store handled triggers for later
-                    _tempTriggerSet.Add(trigger);
                 }
+
+                colliders.Pool();
             }
-
-            nearby.Pool();
-
+            
             // call exit events
             foreach (var trigger in _contactTriggers) {
                 // OnTriggerExit

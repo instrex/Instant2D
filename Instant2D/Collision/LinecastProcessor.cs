@@ -23,18 +23,12 @@ namespace Instant2D.Collision {
             _layerMask = layerMask;
             _hits = 0;
             _ignoreStartingCollider = ignoreStartingCollider;
-
-            // obtain a pooled instance
-            _output = ListPool<LineCastResult<T>>.Get();
+            _colliderHash.Clear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool End(out List<LineCastResult<T>> results) {
             results = _output;
-
-            _colliderHash.Clear();
-            _output = null;
-
             return _hits > 0;
         }
 
@@ -56,15 +50,18 @@ namespace Instant2D.Collision {
                 if (RayIntersects(bounds, out var distance) && distance <= 1.0f) {
                     if (collider.CollidesWithLine(_origin, _end, out var hit)) {
                         // l bozo
-                        if (_ignoreStartingCollider && collider.Shape.ContainsPoint(_origin)) 
+                        if (_ignoreStartingCollider && collider.Shape.ContainsPoint(_origin))
                             continue;
-                        
+
+                        if (_hits == 0)
+                            // initialize the list on first hit
+                            _output = ListPool<LineCastResult<T>>.Get();
+
                         _output.Add(hit);
 
-                        // escape when limit is reached
-                        if (++_hits >= _hitLimit) {
+                        if (++_hits >= _hitLimit)
+                            // escape when limit is reached
                             break;
-                        }
                     }
                 }
             }
