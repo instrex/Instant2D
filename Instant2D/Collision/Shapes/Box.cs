@@ -22,6 +22,9 @@ namespace Instant2D.Collision.Shapes {
         public Vector2 Size {
             get => _size;
             set {
+                if (_size == value)
+                    return;
+
                 _size = value;
                 _isPolygonDirty = true;
                 _boundsDirty = true;
@@ -46,6 +49,9 @@ namespace Instant2D.Collision.Shapes {
         public float Rotation {
             get => _rotation;
             set {
+                if (_rotation == value)
+                    return;
+
                 _rotation = value;
                 _isPolygonDirty = true;
                 _boundsDirty = true;

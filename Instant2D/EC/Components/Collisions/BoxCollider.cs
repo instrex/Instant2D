@@ -53,23 +53,6 @@ namespace Instant2D.EC.Components.Collisions {
             base.UpdateCollider();
         }
 
-        public override void DrawDebugShape(DrawingContext drawing) {
-            base.DrawDebugShape(drawing);
-
-            if (_boxShape.HasPolygon) {
-                // draw polygon
-                var vertices = _boxShape.Polygon.Vertices;
-                for (var i = 0; i < vertices.Length; i++) {
-                    drawing.DrawLine(_boxShape.Position + vertices[i], _boxShape.Position + vertices[i + 1 >= vertices.Length ? 0 : i + 1], Color.Red, 2);
-                }
-
-                return;
-            }
-
-            // draw box shape
-            drawing.DrawRectangle(_boxShape.Bounds, Color.Transparent, Color.Red, 2);
-        }
-
         /// <inheritdoc cref="Size"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BoxCollider SetSize(float size) => SetSize(new Vector2(size));

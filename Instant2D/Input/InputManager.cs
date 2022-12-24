@@ -55,7 +55,7 @@ namespace Instant2D.Input {
         public static bool LeftMousePressed => _isFocused && _currentMouseState.LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released;
 
         /// <summary> Is true when the left mouse button was released this frame. </summary>
-        public static bool LeftMouseReleased => _isFocused && _currentMouseState.LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released;
+        public static bool LeftMouseReleased => _isFocused && _currentMouseState.LeftButton == ButtonState.Released && _prevMouseState.LeftButton == ButtonState.Pressed;
 
         /// <summary> Is true when the left mouse button is down. </summary>
         public static bool LeftMouseDown => _isFocused && _currentMouseState.LeftButton == ButtonState.Pressed;
@@ -64,7 +64,7 @@ namespace Instant2D.Input {
         public static bool RightMousePressed => _isFocused && _currentMouseState.RightButton == ButtonState.Pressed && _prevMouseState.RightButton == ButtonState.Released;
 
         /// <summary> Is true when the right mouse button was released this frame. </summary>
-        public static bool RightMouseReleased => _isFocused && _currentMouseState.RightButton == ButtonState.Pressed && _prevMouseState.RightButton == ButtonState.Released;
+        public static bool RightMouseReleased => _isFocused && _currentMouseState.RightButton == ButtonState.Released && _prevMouseState.RightButton == ButtonState.Pressed;
 
         /// <summary> Is true when the right mouse button is down. </summary>
         public static bool RightMouseDown => _isFocused && _currentMouseState.RightButton == ButtonState.Pressed;
@@ -73,7 +73,7 @@ namespace Instant2D.Input {
         public static bool MiddleMousePressed => _isFocused && _currentMouseState.MiddleButton == ButtonState.Pressed && _prevMouseState.MiddleButton == ButtonState.Released;
 
         /// <summary> Is true when the middle mouse button was released this frame. </summary>
-        public static bool MiddleMouseReleased => _isFocused && _currentMouseState.MiddleButton == ButtonState.Pressed && _prevMouseState.MiddleButton == ButtonState.Released;
+        public static bool MiddleMouseReleased => _isFocused && _currentMouseState.MiddleButton == ButtonState.Released && _prevMouseState.MiddleButton == ButtonState.Pressed;
 
         /// <summary> Is true when the middle mouse button is down. </summary>
         public static bool MiddleMouseDown => _isFocused && _currentMouseState.MiddleButton == ButtonState.Pressed;

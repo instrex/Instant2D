@@ -47,16 +47,6 @@ namespace Instant2D.EC.Components.Collisions {
             return this;
         }
 
-        public override void DrawDebugShape(DrawingContext drawing) {
-            base.DrawDebugShape(drawing);
-
-            // draw polygon
-            var vertices = ShouldScaleWithTransform || ShouldRotateWithTransform ? _transformedVertices : _originalVertices;
-            for (var i = 0; i < vertices.Length; i++) {
-                drawing.DrawLine(_polygonShape.Position + vertices[i], _polygonShape.Position + vertices[i + 1 >= vertices.Length ? 0 : i + 1], Color.Red, 2);
-            }
-        }
-
         public override void UpdateCollider() {
             var offset = _offset;
             var origin = _origin - new Vector2(0.5f);

@@ -23,17 +23,24 @@ namespace Instant2D.Collision {
         /// </summary>
         public Rectangle Bounds { get; private set; }
 
+        /// <summary>
+        /// Size of each collider chunk.
+        /// </summary>
+        public int ChunkSize => _chunkSize;
+
         // chunk information
         // TODO: optimize _chunks indexing, as it somehow uses too much processing power to GetHashCode and Equals on
         internal readonly Dictionary<long, List<T>> _chunks = new();
         readonly float _invChunkSize;
         readonly int _chunkSize;
 
+        // helper struct for processing linecasts
+        readonly LinecastProcessor<T> _linecaster = new();
+
         // cached stuff
         readonly HashSet<T> _colliderHash = new();
-        readonly List<T> _colliderBuffer = new();
 
-        // dummy colliders
+        // dummy shapes
         readonly Box _overlapTestBox = new();
 
         /// <summary>
@@ -121,13 +128,13 @@ namespace Instant2D.Collision {
         #region Collision Detection functions
 
         /// <summary>
-        /// Sweeps all colliders that fall close to <paramref name="bounds"/>. Note that this doesn't mean they collide, they just intersect with the bounds. <br/>
-        /// For precise collisions, call specialized <see cref="ICollider"/> methods after or <see cref="OverlapAll(RectangleF, IntFlags)"/>.
+        /// Gets all colliders close to <paramref name="bounds"/> and meeting <paramref name="layerMask"/> criteria.
         /// </summary>
-        /// <remarks> Returned list is pooled, so avoid storing references to it or just copy it. </remarks>
+        /// <remarks> Returned list is pooled, so don't forget to call <see cref="ListPool{T}.Return(List{T})"/> on it. </remarks>
         public List<T> Broadphase(RectangleF bounds, int layerMask = -1) {
-            _colliderBuffer.Clear();
             _colliderHash.Clear();
+
+            var output = ListPool<T>.Get();
 
             // iterate over each cell
             var (topLeft, bottomRight) = (GetChunkCoords(bounds.X, bounds.Y), GetChunkCoords(bounds.Right, bounds.Bottom));
@@ -147,29 +154,22 @@ namespace Instant2D.Collision {
                         // if bounds intersect, try adding into the hash
                         // if successful, add it into the buffer
                         if (bounds.Intersects(collider.Shape.Bounds) && _colliderHash.Add(collider))
-                            _colliderBuffer.Add(collider);
+                            output.Add(collider);
                     }
                 }
             }
 
-            return _colliderBuffer;
+            return output;
         }
 
         /// <summary>
-        /// Performs a narrow overlap check and returns the first collider that meets <paramref name="layerMask"/> criteria. To get all of the results, call <see cref="OverlapAll(RectangleF, int)"/>.
+        /// Performs a precise overlap check against <paramref name="bounds"/> using <see cref="Box.CheckOverlap(ICollisionShape)"/>.
         /// </summary>
+        /// <remarks> Returned list is pooled, so don't forget to call <see cref="ListPool{T}.Return(List{T})"/> on it. </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Overlap(RectangleF bounds, int layerMask = -1) {
-            var overlap = OverlapAll(bounds, layerMask);
-            return overlap.Count < 1 ? default : overlap[0];
-        }
+        public List<T> OverlapRect(RectangleF bounds, int layerMask = -1) {
+            var output = ListPool<T>.Get();
 
-        /// <summary>
-        /// Performs a narrow overlap check against <paramref name="bounds"/> calling <see cref="BaseCollider{T}.CheckOverlap(BaseCollider{T})"/>.
-        /// </summary>
-        /// <remarks> Returned list is pooled, so avoid storing references to it or just copy it. </remarks>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public List<T> OverlapAll(RectangleF bounds, int layerMask = -1) {
             // update the overlap test box
             _overlapTestBox.Position = bounds.Position;
             _overlapTestBox.Size = bounds.Size;
@@ -183,9 +183,74 @@ namespace Instant2D.Collision {
                 }
             }
 
-            return _colliderBuffer;
+            broadphase.Pool();
+
+            return output;
+        }
+
+        /// <summary>
+        /// Perform a linecast, checking objects in a line from point <paramref name="origin"/> to <paramref name="end"/>.
+        /// </summary>
+        /// <param name="origin"> Origin point of the line. </param>
+        /// <param name="end"> Ending point of the line. </param>
+        /// <param name="hits"> List with hit results. Pool after use! </param>
+        /// <param name="layerMask"> LayerMask of interest. </param>
+        /// <param name="hitLimit"> How many collider hits should be processed. </param>
+        /// <param name="ignoreOriginColliders"> When <see langword="true"/>, colliders with shapes containing <paramref name="origin"/> will be ignored. </param>
+        /// <returns></returns>
+        /// <remarks> Returned list is pooled, so don't forget to call <see cref="ListPool{T}.Return(List{T})"/> on it. </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Linecast(Vector2 origin, Vector2 end, out List<LineCastResult<T>> hits, int layerMask = -1, int hitLimit = int.MaxValue, bool ignoreOriginColliders = false) {
+            var direction = end - origin;
+
+            // get the current and target chunk coords
+            var (currentPos, endPos) = (GetChunkCoords(origin.X, origin.Y), GetChunkCoords(end.X, end.Y));
+
+            // determine direction of the ray
+            var (stepX, stepY) = (Math.Sign(direction.X), Math.Sign(direction.Y));
+            if (currentPos.X == endPos.X) stepX = 0;
+            if (currentPos.Y == endPos.Y) stepY = 0;
+
+            // calculate step boundaries
+            var (xStep, yStep) = (stepX < 0 ? 0f : stepX, stepY < 0 ? 0f : stepY);
+            var (nextBoundaryX, nextBoundaryY) = ((currentPos.X + xStep) * _chunkSize, (currentPos.Y + yStep) * _chunkSize);
+
+            var (tMaxX, tMaxY) = (direction.X != 0 ? (nextBoundaryX - origin.X) / direction.X : float.MaxValue, direction.Y != 0 ? (nextBoundaryY - origin.Y) / direction.Y : float.MaxValue);
+            var (tDeltaX, tDeltaY) = (direction.X != 0 ? _chunkSize / (direction.X * stepX) : float.MaxValue, direction.Y != 0 ? _chunkSize / (direction.Y * stepY) : float.MaxValue);
+
+            var chunk = GetChunk(currentPos.X, currentPos.Y);
+            _linecaster.Begin(origin, end, direction, layerMask, hitLimit, ignoreOriginColliders);
+
+            //if hit limit is reached immediately, just return
+            if (chunk != null && _linecaster.ProcessChunk(chunk)) 
+                return _linecaster.End(out hits);
+            
+            // check chunks along the line
+            while (currentPos.X != endPos.X || currentPos.Y != endPos.Y) {
+                if (tMaxX < tMaxY) {
+                    currentPos.X = (int)Approach(currentPos.X, endPos.X, Math.Abs(stepX));
+                    tMaxX += tDeltaX;
+                } else {
+                    currentPos.Y = (int)Approach(currentPos.Y, endPos.Y, Math.Abs(stepY));
+                    tMaxY += tDeltaY;
+                }
+
+                chunk = GetChunk(currentPos.X, currentPos.Y);
+                if (chunk != null && _linecaster.ProcessChunk(chunk))
+                    return _linecaster.End(out hits);
+            }
+
+            return _linecaster.End(out hits);
         }
 
         #endregion
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static float Approach(float start, float end, float shift) {
+            if (start < end)
+                return Math.Min(start + shift, end);
+
+            return Math.Max(start - shift, end);
+        }
     }
 }

@@ -197,6 +197,8 @@ namespace Instant2D.EC.Components {
                 }
             }
 
+            nearby.Pool();
+
             // return true only if we did something
             return hits != null;
         }
@@ -251,13 +253,17 @@ namespace Instant2D.EC.Components {
             var oldPosition = Shape.Position;
             Shape.Position += velocity;
 
+            var nearby = Scene.Collisions.Broadphase(Shape.Bounds, layerMask);
+
             // broadphase potential hits and check more precisely
-            foreach (var potential in Scene.Collisions.Broadphase(Shape.Bounds, layerMask)) {
+            foreach (var potential in nearby) {
                 if (potential != this && potential.CollidesWith(this, out var _)) {
                     Shape.Position = oldPosition;
                     return true;
                 }
             }
+
+            nearby.Pool();
 
             // revert to previous position
             Shape.Position = oldPosition;
@@ -342,6 +348,8 @@ namespace Instant2D.EC.Components {
                 }
             }
 
+            nearby.Pool();
+
             // call exit events
             foreach (var trigger in _contactTriggers) {
                 // OnTriggerExit
@@ -356,17 +364,5 @@ namespace Instant2D.EC.Components {
         }
 
         #endregion
-
-        /// <summary>
-        /// Debug drawing method used for visualizing colliders.
-        /// </summary>
-        public virtual void DrawDebugShape(DrawingContext drawing) {
-            // draw bounds
-            drawing.DrawRectangle(Shape.Bounds, Color.Transparent, Color.Gray, 2);
-            drawing.DrawLine(Shape.Bounds.TopLeft, Shape.Bounds.BottomRight, Color.Gray, 2);
-
-            // draw position
-            drawing.DrawPoint(Transform.Position, Color.Yellow, 4);
-        }
     }
 }

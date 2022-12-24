@@ -1,10 +1,14 @@
 ﻿using Instant2D.Collision.Shapes;
 using Microsoft.Xna.Framework;
+using System;
 
 namespace Instant2D.Collision {
     public record struct CollisionResult<T>(T Self, T Other, Vector2 Normal, Vector2 PenetrationVector) where T: ICollider<T>;
 
-    public record struct LineCastResult<T>(T Self, Vector2 LineOrigin, Vector2 LineEnd, float Distance, Vector2 Point, Vector2 Normal) where T : ICollider<T>;
+    public record struct LineCastResult<T>(T Self, Vector2 LineOrigin, Vector2 LineEnd, float Distance, Vector2 Point, Vector2 Normal) : IComparable<LineCastResult<T>> where T : ICollider<T> {
+        // sort by distance in default cases
+        public int CompareTo(LineCastResult<T> other) => Distance.CompareTo(other.Distance);
+    }
 
     /// <summary>
     /// Generic collider interface used in conjuction with <see cref="SpatialHash"/>.
