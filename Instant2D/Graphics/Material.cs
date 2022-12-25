@@ -29,7 +29,15 @@ namespace Instant2D.Graphics {
         /// </summary>
         public static readonly Material Default = new() {
             BlendState = BlendState.NonPremultiplied,
-            SamplerState = SamplerState.PointClamp,
+            SamplerState = SamplerState.PointClamp
+        };
+
+        /// <summary>
+        /// Material with Opaque <see cref="BlendState"/>.
+        /// </summary>
+        public static readonly Material Opaque = new() {
+            BlendState = BlendState.Opaque,
+            SamplerState = SamplerState.PointClamp
         };
     }
 }

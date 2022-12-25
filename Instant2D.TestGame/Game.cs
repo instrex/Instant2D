@@ -20,6 +20,7 @@ using Microsoft.Xna.Framework.Input;
 using Instant2D.Audio;
 using Instant2D.Coroutines;
 using Instant2D.TestGame.Scenes;
+using Instant2D.EC.Rendering;
 
 namespace Instant2D.TestGame {
     public class Game : InstantGame {
@@ -48,7 +49,9 @@ namespace Instant2D.TestGame {
             public override void Initialize() {
                 base.Initialize();
 
-                AddRenderLayer("default").BackgroundColor = Color.DarkCyan;
+                AddLayer<EntityLayer>("default")
+                    .SetBackgroundColor(Color.DarkCyan);
+                //.BackgroundColor = Color.DarkCyan;
 
                 // gather all scenes in this project
                 _sceneTypes = typeof(MainScene).Assembly.GetTypes()

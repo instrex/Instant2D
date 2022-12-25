@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC {
     public abstract class RenderableComponent : Component, IComparable<RenderableComponent> {
-        RenderLayer _layer;
+        EntityLayer _layer;
 
         // used for bounds calculations
         static Matrix2D _tempMatrix, _tempTransform;
@@ -75,17 +75,17 @@ namespace Instant2D.EC {
         /// <summary>
         /// The layer this component resides on.
         /// </summary>
-        public RenderLayer RenderLayer {
+        public EntityLayer RenderLayer {
             get => _layer;
             set {
                 // remove the object from the previous layer
                 // (if it exists)
-                _layer?.Objects.Remove(this);
+                _layer?.Components.Remove(this);
                 _layer = value;
 
                 if (_layer != null) {
                     // add the object and update the order
-                    _layer.Objects.Add(this);
+                    _layer.Components.Add(this);
                     _layer._drawOrderDirty = true;
                 }
             }

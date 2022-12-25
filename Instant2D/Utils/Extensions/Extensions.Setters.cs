@@ -48,7 +48,7 @@ namespace Instant2D.EC {
 
         /// <inheritdoc cref="RenderableComponent.RenderLayer"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T SetRenderLayer<T>(this T renderableComponent, RenderLayer renderLayer) where T : RenderableComponent {
+        public static T SetRenderLayer<T>(this T renderableComponent, EntityLayer renderLayer) where T : RenderableComponent {
             renderableComponent.RenderLayer = renderLayer;
             return renderableComponent;
         }
@@ -61,12 +61,17 @@ namespace Instant2D.EC {
 
                 // search the layer by name
                 if (layer.Name == layerName) {
-                    renderableComponent.RenderLayer = layer;
+                    renderableComponent.RenderLayer = layer switch {
+                        EntityLayer entityLayer => entityLayer,
+                        INestedRenderLayer nestedLayer when nestedLayer.Content is EntityLayer nestedEntityLayer => nestedEntityLayer,
+                        _ => throw new InvalidOperationException($"Cannot add renderable component to a non-entity layer of type '{layer.GetType().Name}'"),
+                    };
+
                     return renderableComponent;
                 }
             }
 
-            return renderableComponent;
+            throw new InvalidOperationException($"Invalid render layer '{layerName}'");
         }
 
         #endregion
@@ -192,11 +197,8 @@ namespace Instant2D.EC {
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T AddTriggerHandler<T>(this T collisionComponent, ITriggerCallbacksHandler triggerHandler) where T : CollisionComponent {
-            if (collisionComponent._triggerHandlers == null) {
-                // initialize a new list when needed
-                collisionComponent._triggerHandlers = ListPool<ITriggerCallbacksHandler>.Get();
-            }
-
+            // initialize a new list when needed
+            collisionComponent._triggerHandlers ??= ListPool<ITriggerCallbacksHandler>.Get();
             collisionComponent._triggerHandlers.Add(triggerHandler);
             return collisionComponent;
         }
@@ -238,6 +240,106 @@ namespace Instant2D.EC {
         public static T SetPan<T>(this T audio, float pan) where T : AudioInstance {
             audio.Pan = pan;
             return audio;
+        }
+
+        #endregion
+
+        #region Render Layers
+
+        /// <inheritdoc cref="IRenderLayer.IsActive"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetActive<T>(this T layer, bool isActive) where T : IRenderLayer {
+            layer.IsActive = isActive;
+            return layer;
+        }
+
+        /// <inheritdoc cref="IRenderLayer.ShouldPresent"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetShouldPresent<T>(this T layer, bool shouldPresent) where T : IRenderLayer {
+            layer.ShouldPresent = shouldPresent;
+            return layer;
+        }
+
+        #endregion
+
+        #region Entity Layers
+
+        /// <summary>
+        /// Creates a new entity named <paramref name="newCameraName"/> and attaches a <see cref="CameraComponent"/> to it.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetCamera<T>(this T layer, string newCameraName) where T : EntityLayer {
+            layer.Camera = layer.Scene.CreateEntity(newCameraName).AddComponent<CameraComponent>();
+            return layer;
+        }
+
+        /// <inheritdoc cref="EntityLayer.Camera"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetCamera<T>(this T layer, CameraComponent camera) where T : EntityLayer {
+            layer.Camera = camera;
+            return layer;
+        }
+
+        /// <inheritdoc cref="EntityLayer.BackgroundColor"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetBackgroundColor<T>(this T layer, Color backgroundColor) where T : EntityLayer {
+            layer.BackgroundColor = backgroundColor;
+            return layer;
+        }
+
+        /// <summary>
+        /// Includes an entity tag for rendering. If no tags were previously set, RenderLayer will only render objects with this tag exclusively.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T IncludeEntityTag<T>(this T layer, int unshiftedFlag) where T : EntityLayer {
+            layer.IncludeEntityTags = layer.IncludeEntityTags == -1 ?
+                IntFlags.SetFlagExclusive(unshiftedFlag) :
+                IntFlags.SetFlag(layer.IncludeEntityTags, unshiftedFlag);
+
+            return layer;
+        }
+
+        /// <summary>
+        /// Excludes an entity tag from rendering.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T ExcludeEntityTag<T>(this T layer, int unshiftedFlag) where T : EntityLayer {
+            layer.IncludeEntityTags = layer.IncludeEntityTags.RemoveFlag(unshiftedFlag);
+            return layer;
+        }
+
+        #endregion
+
+        #region Nested Layers
+
+        ///// <summary>
+        ///// Sets the internal layer to provided render layer instance.
+        ///// </summary>
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public static T SetContent<T>(this T layer, IRenderLayer content) where T : INestedRenderLayer {
+        //    layer.Content = content;
+        //    return layer;
+        //}
+
+        /// <summary>
+        /// Sets and applies <paramref name="initializer"/> to a new render layer instance.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TSelf SetContent<TSelf, TValue>(this TSelf layer, Action<TValue> initializer = default)
+            where TSelf : INestedRenderLayer
+            where TValue : IRenderLayer, new() {
+
+            var content = new TValue() {
+                Scene = layer.Scene,
+                IsActive = true,
+                ShouldPresent = true
+            };
+
+            // invoke initializer and save the layer
+            initializer?.Invoke(content);
+            layer.Content = content;
+
+            return layer;
         }
 
         #endregion

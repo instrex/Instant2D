@@ -29,7 +29,7 @@ namespace Instant2D.TestGame.Scenes {
             }
 
             CoroutineManager.Schedule(0.5f, () => {
-                RenderLayers[0].BackgroundColor = Color.Cyan;
+                //RenderLayers[0].BackgroundColor = Color.Cyan;
             });
         }
 

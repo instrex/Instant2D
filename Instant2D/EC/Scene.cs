@@ -33,13 +33,12 @@ namespace Instant2D.EC {
         // how many fixed updates have been completed
         internal int _fixedUpdatesPassed;
 
-        readonly List<RenderLayer> _layers = new(12);
-        RenderLayer _masterLayer;
+        readonly List<IRenderLayer> _renderLayers = new(12);
 
         /// <summary>
         /// Represents collection of RenderLayers this scene will use.
         /// </summary>
-        public IReadOnlyList<RenderLayer> RenderLayers => _layers;
+        public IReadOnlyList<IRenderLayer> RenderLayers => _renderLayers;
 
         /// <summary>
         /// Returns all entities attached to this scene.
@@ -84,9 +83,9 @@ namespace Instant2D.EC {
         public Entity Listener;
 
         /// <summary>
-        /// Default RenderLayer used for components with nothing specified.
+        /// Default Entity RenderLayer used for components with nothing specified.
         /// </summary>
-        public RenderLayer DefaultRenderLayer;
+        public EntityLayer DefaultRenderLayer;
 
         /// <summary>
         /// Camera used to render this scene.
@@ -147,63 +146,62 @@ namespace Instant2D.EC {
         #region Layers 
 
         /// <summary>
-        /// Create and register <see cref="SceneRenderLayer"/> for rendering objects or mastering other render layers.
+        /// Create and register <typeparamref name="T"/>.
         /// </summary>
-        public RenderLayer AddRenderLayer(string name) {
-            var layer = new RenderLayer(this, name);
-            _layers.Add(layer);
+        public T AddLayer<T>(float order, string name) where T: IRenderLayer, new() {
+            var layer = new T {
+                Scene = this, Name = name, Order = order,
+                ShouldPresent = true, IsActive = true,
+            };
 
-            // set the default layer to first one
-            DefaultRenderLayer ??= layer;
+            // update the list and sort
+            _renderLayers.Add(layer);
+            _renderLayers.Sort();
+
+            // set default render layer
+            if (DefaultRenderLayer == null && layer is EntityLayer entityLayer)
+                DefaultRenderLayer = entityLayer;
 
             return layer;
         }
 
         /// <summary>
-        /// Adds an existing, possibly overriden <see cref="RenderLayer"/>.
+        /// Create and register <typeparamref name="T"/> using automatically assigned Order.
         /// </summary>
-        public T AddRenderLayer<T>(T renderLayer) where T: RenderLayer {
-            _layers.Add(renderLayer);
-
-            // set the default layer to first one
-            DefaultRenderLayer ??= renderLayer;
-
-            return renderLayer;
-        }
+        public T AddLayer<T>(string name) where T : IRenderLayer, new() 
+            => AddLayer<T>(_renderLayers.Count == 0 ? 0 : _renderLayers.Max(l => l.Order) + 1, name);
 
         /// <summary>
-        /// Adds a master layer to this scene. This layer should not contain any objects and instead be used to draw each other layer, optionally applying post-processing effects. <br/>
-        /// Should be the last layer in hierarchy, is automatically added when you add post-processing effects to the scene.
+        /// Attempts to find a render layer with provided name.
         /// </summary>
-        public RenderLayer AddMasterLayer(string name) {
-            var layer = new RenderLayer(this, name);
-            layer.SetMasteredLayers(_layers.ToArray());
-
-            // if there's already a master layer defined,
-            // remove it and dispose of it (brutal)
-            if (_masterLayer != null) {
-                _layers.Remove(_masterLayer);
-                _masterLayer.Dispose();
-            }
-
-            // set the reference for later use
-            _masterLayer = layer;
-            _layers.Add(layer);
-
-            return layer;
-        }
-
-        /// <summary>
-        /// Attempts to get a render layer with provided name.
-        /// </summary>
-        public RenderLayer GetRenderLayer(string name) {
-            for (var i = 0; i < _layers.Count; i++) {
-                if (_layers[i].Name == name) {
-                    return _layers[i];
+        public IRenderLayer GetLayer(string name) {
+            for (var i = 0; i < _renderLayers.Count; i++) {
+                if (_renderLayers[i].Name == name) {
+                    return _renderLayers[i];
                 }
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Attempts to find a typed render layer with provided name.
+        /// </summary>
+        public T GetLayer<T>(string name, bool checkNestedLayers = true) where T: IRenderLayer {
+            for (var i = 0; i < _renderLayers.Count; i++) {
+                if (_renderLayers[i].Name == name) {
+                    switch (_renderLayers[i]) {
+                        case T typedLayer:
+                            return typedLayer;
+
+                        // check nested layers when prompted to
+                        case INestedRenderLayer nestedLayer when checkNestedLayers && nestedLayer.Content is T nestedTypedLayer:
+                            return nestedTypedLayer;
+                    }
+                }
+            }
+
+            return default;
         }
 
         #endregion
@@ -214,12 +212,21 @@ namespace Instant2D.EC {
             // TODO: move initialiation into SceneManager instead?
             if (!_isInitialized) {
                 _isInitialized = true;
+
+                // create a camera if haven't already
+                if (Camera is null) {
+                    Camera = CreateEntity("camera", Vector2.Zero)
+                        .AddComponent<CameraComponent>();
+
+                    Listener = Camera;
+                }
+
                 Initialize();
 
-                // add default render layer if none is added
-                if (_layers.Count == 0) {
+                // add default render layer if none was added
+                if (_renderLayers.Count == 0) {
                     FNALoggerEXT.LogWarn("No RenderLayers were added, automatically added 'default'.");
-                    AddRenderLayer("default");
+                    AddLayer<EntityLayer>(0, "default");
                 }
 
                 // initialize RTs for newly added layers
@@ -390,10 +397,7 @@ namespace Instant2D.EC {
         /// Called each frame when <see cref="IsActive"/>. Make sure to include <c>base.Update();</c> in your override, or include your own entity update routine.
         /// </summary>
         public virtual void Update() {
-            // update entities before anything else
-            for (var i = 0; i < _entities.Count; i++) {
-                _entities[i].PreUpdate();
-            }
+
         }
 
         /// <summary>
@@ -407,25 +411,19 @@ namespace Instant2D.EC {
         /// Called on the first scene update. 
         /// </summary>
         public virtual void Initialize() {
-            if (Camera is null) {
-                Camera = CreateEntity("camera", Vector2.Zero)
-                    .AddComponent<CameraComponent>();
-
-                Listener = Camera;
-            }
+            
         }
 
         /// <summary>
         /// Called each frame when <see cref="IsVisible"/> is set and Scene is initialized. Make sure to include <c>base.Render();</c> in your override, or implement your own rendering routine.
         /// </summary>
         public virtual void Render() {
-            // prepare all of the layers before drawing them on-screen
-            for (var i = 0; i < _layers.Count; i++) {
-                var layer = _layers[i];
+            var layersSpan = CollectionsMarshal.AsSpan(_renderLayers);
 
-                // we prepare the layer for presentation there
-                if (layer.Active && layer.ShouldPresent) {
-                    layer.Prepare();
+            // prepare all of the layers before drawing them on-screen
+            for (var i = 0; i < layersSpan.Length; i++) {
+                if (layersSpan[i].IsActive) {
+                    layersSpan[i].Prepare();
                 }
             }
 
@@ -435,11 +433,12 @@ namespace Instant2D.EC {
             gd.Clear(Color.Transparent);
 
             var drawing = GraphicsManager.Context;
-            drawing.Begin(Material.Default, Matrix.Identity);
+            drawing.Begin(Material.Opaque, Matrix.Identity);
 
             // draw the layers onto the RT
-            for (var i = 0; i < _layers.Count; i++) {
-                _layers[i].Present(drawing);
+            for (var i = 0; i < layersSpan.Length; i++) {
+                if (layersSpan[i].ShouldPresent)
+                    layersSpan[i].Present(drawing);
             }
 
             drawing.End();
@@ -448,20 +447,13 @@ namespace Instant2D.EC {
             gd.SetRenderTarget(null);
             gd.Clear(Color.Transparent);
 
-            drawing.Begin(Material.Default, Matrix.Identity);
+            drawing.Begin(Material.Opaque, Matrix.Identity);
 
             drawing.DrawTexture(_sceneTarget, Resolution.offset, null, Color.White, 0, Vector2.Zero, new(Resolution.scaleFactor));
 
-            if (!debug) {
-                using (var stream = File.OpenWrite("ass.png"))
-                    _sceneTarget.SaveAsPng(stream, _sceneTarget.Width, _sceneTarget.Height);
-
-                debug = true;
-            }
-
             drawing.End();
         }
-        bool debug = false;
+
         #endregion
 
         /// <summary>
