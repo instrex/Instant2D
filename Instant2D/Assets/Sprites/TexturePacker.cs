@@ -68,7 +68,7 @@ namespace Instant2D.Assets.Sprites {
                 pages[i] = result[i] with { sheet = rt };
 
                 // notify of the progress
-                InstantGame.Instance.Logger.Info($"Finished drawing 'spritesheet_{i}': {rt.Width}x{rt.Height} with {pages[i].textures.Length} items.");
+                InstantGame.Logger.Info($"Finished drawing 'spritesheet_{i}': {rt.Width}x{rt.Height} with {pages[i].textures.Length} items.");
             }
 
             return pages;

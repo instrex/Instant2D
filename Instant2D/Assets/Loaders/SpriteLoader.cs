@@ -40,7 +40,7 @@ namespace Instant2D.Assets.Loaders {
                     }
 
                 } catch (Exception ex) {
-                    Logger.WriteLine($"Could not load sprite manifest '{Path.GetFileName(path)}': {ex.Message}", Logger.Severity.Error);
+                    InstantGame.Logger.Error($"Could not load sprite manifest '{Path.GetFileName(path)}': {ex.Message}");
                 }
             }
 
@@ -101,7 +101,7 @@ namespace Instant2D.Assets.Loaders {
                     // split using frame size (requires image dimensions)
                     case { type: SpriteSplitOptions.BySize, widthOrFrameCount: var width, height: var height }:
                         if (!TryGetPngSize(def.key, out var imageDimensions)) {
-                            Logger.WriteLine($"Couldn't get image dimensions for sprite '{key}'", Logger.Severity.Warning);
+                            InstantGame.Logger.Warn($"Couldn't get image dimensions for sprite '{key}'");
                             break;
                         }
 
@@ -183,7 +183,7 @@ namespace Instant2D.Assets.Loaders {
             // save asset data
             switch (asset) {
                 default:
-                    Logger.WriteLine($"Unknown asset type '{asset.GetType().Name}' encountered by SpriteLoader", Logger.Severity.Warning);
+                    InstantGame.Logger.Warn($"Unknown asset type '{asset.GetType().Name}'.");
                     break;
 
                 case LazyAsset<SpriteAnimation> animationAsset when def.animation is SpriteAnimationDef animation:

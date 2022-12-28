@@ -57,7 +57,7 @@ namespace Instant2D.EC {
         /// Swtiches current scene to <paramref name="scene"/>.
         /// </summary>
         public static void Switch<T>(T scene) where T: Scene {
-            Logger.WriteLine($"Switching to scene '{scene.GetType()}'...");
+            InstantGame.Logger.Info($"Loading scene '{scene.GetType()}'...");
             Instance.Current = scene;
         }
 
@@ -67,7 +67,7 @@ namespace Instant2D.EC {
             IsRenderable = true;
 
             if (!InstantGame.Instance.TryGetSystem<GraphicsManager>(out _)) {
-                InstantGame.Instance.Logger.Warning("SceneManager requires GraphicsManager system to be added, initializing...");
+                InstantGame.Logger.Info("SceneManager requires GraphicsManager system to be added, initializing...");
                 InstantGame.Instance.AddSystem<GraphicsManager>();
             }
 

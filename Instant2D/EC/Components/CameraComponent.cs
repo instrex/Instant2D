@@ -1,4 +1,5 @@
-﻿using Instant2D.EC.Events;
+﻿using Instant2D.Core;
+using Instant2D.EC.Events;
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
@@ -57,7 +58,7 @@ namespace Instant2D.EC {
                     return;
 
                 if (value <= 0) {
-                    Logger.WriteLine($"Attempted to set zoom value of '{Entity.Name}' to a value less than zero ({value:F2}). Pls don't.", Logger.Severity.Warning);
+                    InstantGame.Logger.Warn($"Attempted to set zoom value of '{Entity.Name}' to a value less than zero ({value:F2}). Pls don't.");
                     return;
                 }
 

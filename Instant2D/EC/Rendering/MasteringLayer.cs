@@ -69,7 +69,7 @@ namespace Instant2D.EC.Rendering {
                 var layer = Scene.GetLayer(names[i]);
 
                 if (layer == null) {
-                    FNALoggerEXT.LogWarn($"Layer '{names[i]}' wasn't found.");
+                    InstantGame.Logger.Warn($"Layer '{names[i]}' wasn't found.");
                     continue;
                 }
 

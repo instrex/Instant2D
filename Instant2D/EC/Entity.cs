@@ -109,7 +109,7 @@ namespace Instant2D.EC {
         /// <summary> Adds the <paramref name="other"/> to the children list. </summary>
         public Entity AddChild(Entity other) {
             if (other == null) {
-                InstantGame.Instance.Logger.Warning($"Tried to add 'null' as '{Name}'s child.");
+                InstantGame.Logger.Warn($"Tried to add 'null' as '{Name}'s child.");
                 return other;
             }
 

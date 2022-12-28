@@ -1,4 +1,5 @@
-﻿using Instant2D.EC;
+﻿using Instant2D.Core;
+using Instant2D.EC;
 using Instant2D.EC.Rendering;
 using Instant2D.Graphics;
 using Instant2D.Input;
@@ -14,17 +15,17 @@ namespace Instant2D.TestGame.Scenes {
     public class RenderLayerRewriteTest : Scene {
         class OutlineLayer : RenderTargetLayer {
             public override void Present(DrawingContext drawing) {
-                drawing.Push(Material.Default, Matrix.Identity);
+                Content.Present(drawing);
 
-                var rotation = Scene.TotalTime.ToVector2() * (10 + 5 * MathF.Sin(Scene.TotalTime * 2));
+                drawing.Push(Material.Default with { BlendState = BlendState.Additive}, Matrix.Identity);
+
+                var rotation = Scene.TotalTime.ToVector2() * (1 + 4 * MathF.Sin(Scene.TotalTime * 2));
                 drawing.DrawTexture(RenderTarget, rotation, null, Color.White with { A = 255 / 4 }, 0, Vector2.Zero, Vector2.One);
                 drawing.DrawTexture(RenderTarget, rotation.RotatedBy(MathHelper.PiOver2), null, Color.White with { A = 255 / 4}, 0, Vector2.Zero, Vector2.One);
                 drawing.DrawTexture(RenderTarget, rotation.RotatedBy(MathHelper.Pi), null, Color.White with { A = 255 / 4 }, 0, Vector2.Zero, Vector2.One);
                 drawing.DrawTexture(RenderTarget, rotation.RotatedBy(MathHelper.Pi + MathHelper.PiOver2), null, Color.White with { A = 255 / 4 }, 0, Vector2.Zero, Vector2.One);
 
                 drawing.Pop();
-
-                Content.Present(drawing);
             }
         }
 
@@ -33,33 +34,27 @@ namespace Instant2D.TestGame.Scenes {
 
             AddLayer<EntityLayer>(1, "sky")
                 .SetBackgroundColor(Color.DarkCyan)
-                .SetCamera("static_camera")
-                ;
+                .SetCamera("static_camera");
 
             AddLayer<EntityLayer>(3, "parallax_50")
                 .SetCamera("parallax_camera_50");
 
             // mastering layer for background elements
             AddLayer<MasteringLayer>(5, "background")
-                .SetLayerRange(0.0f, 5.0f)
-                ;
+                .SetLayerRange(0.0f, 5.0f);
 
             AddLayer<OutlineLayer>(7, "walls")
-                .SetContent((EntityLayer _) => { })
-                ;
+                .SetContent((EntityLayer _) => { });
 
             AddLayer<OutlineLayer>(10, "objects")
-                .SetContent((EntityLayer _) => { })
-                ;
+                .SetContent((EntityLayer _) => { });
 
             // mastering layer for in-game objects
             AddLayer<MasteringLayer>(15, "world")
-                .SetLayerRange(5.0f, 15.0f)
-                ;
+                .SetLayerRange(5.0f, 15.0f);
 
             AddLayer<EntityLayer>(50, "ui")
-                .SetCamera("ui_camera")
-                ;
+                .SetCamera("ui_camera");
 
             // 2. now create dummy objects to represent layers
 
@@ -110,16 +105,20 @@ namespace Instant2D.TestGame.Scenes {
                     _ => null
                 };
 
+                GraphicsManager.Context.DrawRectangle(rect, rt == null ? Color.Black : Color.Magenta);
+
                 if (rt != null) {
                     GraphicsManager.Context.DrawTexture(rt, rtPos, null, Color.White, 0, Vector2.Zero, Vector2.One / 4);
 
+                    // draw big preview
                     if (rect.Contains(InputManager.RawMousePosition)) {
                         GraphicsManager.Context.DrawRectangle(new RectangleF(new Vector2(Resolution.renderTargetSize.X * 0.25f + 12, 4), Resolution.renderTargetSize.ToVector2()), Color.Magenta);
-
                         GraphicsManager.Context.DrawTexture(rt, new Vector2(Resolution.renderTargetSize.X * 0.25f + 12, 4), null, Color.White, 0, Vector2.Zero, Vector2.One);
-
                         GraphicsManager.Context.DrawRectangle(new RectangleF(new Vector2(Resolution.renderTargetSize.X * 0.25f + 12, 4), Resolution.renderTargetSize.ToVector2()), Color.Transparent, Color.Black, 4);
                     }
+                } else {
+                    GraphicsManager.Context.DrawLine(rect.TopLeft, rect.BottomRight, Color.Red, 2);
+                    GraphicsManager.Context.DrawLine(rect.TopRight, rect.BottomLeft, Color.Red, 2);
                 }
 
                 GraphicsManager.Context.DrawRectangle(rect, Color.Transparent, Color.Black, 2);
@@ -149,6 +148,11 @@ namespace Instant2D.TestGame.Scenes {
             // restart the scene
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R)) {
                 SceneManager.Switch<RenderLayerRewriteTest>();
+            }
+
+            // return
+            if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.Escape)) {
+                SceneManager.Switch<Game.MainScene>();
             }
 
             // darken the background

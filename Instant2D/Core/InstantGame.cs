@@ -1,6 +1,7 @@
 ﻿using Instant2D.Assets;
 using Instant2D.Audio;
 using Instant2D.Coroutines;
+using Instant2D.Diagnostics;
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
@@ -21,7 +22,7 @@ namespace Instant2D.Core {
             _updatableSystems = new(8),
             _renderableSystems = new(8);
 
-        internal Logger _logger;
+        internal ILogger _logger;
         internal bool _systemOrderDirty;
         bool _initialized;
 
@@ -38,10 +39,7 @@ namespace Instant2D.Core {
         /// </summary>
         public string Title {
             get {
-                if (_title == null) {
-                    _title = AppDomain.CurrentDomain.FriendlyName;
-                }
-
+                _title ??= AppDomain.CurrentDomain.FriendlyName;
                 return _title;
             }
 
@@ -77,13 +75,20 @@ namespace Instant2D.Core {
 
         #region System Management
 
-        public Logger Logger {
+        /// <summary>
+        /// Logger implementation used for this game.
+        /// </summary>
+        public static ILogger Logger {
             get {
-                if (_logger == null)
-                    _logger = AddSystem<Logger>();
+                if (Instance._logger == null) {
+                    var defaultLogger = new DefaultLogger();
+                    Instance._logger = defaultLogger;
+                }
 
-                return _logger;
+                return Instance._logger;
             }
+
+            set => Instance._logger = value;
         }
 
         public T AddSystem<T>(Action<T> initializer = default) where T: SubSystem, new() {
@@ -172,6 +177,10 @@ namespace Instant2D.Core {
                 system.Initialize();
             }
 
+            // setup file logging
+            if (_logger is DefaultLogger defaultLogger)
+                defaultLogger.SetOutputFile(".log");
+
             // then, sort them for later update tasks
             _subSystems.Sort();
 
@@ -193,6 +202,12 @@ namespace Instant2D.Core {
         }
 
         static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
+
+        protected override void OnExiting(object sender, EventArgs args) {
+            _logger?.Close();
+
+            base.OnExiting(sender, args);
+        }
 
         protected override void Draw(GameTime gameTime) {
             // calculate FPS 

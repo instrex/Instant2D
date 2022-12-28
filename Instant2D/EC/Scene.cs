@@ -225,7 +225,7 @@ namespace Instant2D.EC {
 
                 // add default render layer if none was added
                 if (_renderLayers.Count == 0) {
-                    FNALoggerEXT.LogWarn("No RenderLayers were added, automatically added 'default'.");
+                    InstantGame.Logger.Info("No RenderLayers were added, automatically added 'default'.");
                     AddLayer<EntityLayer>(0, "default");
                 }
 

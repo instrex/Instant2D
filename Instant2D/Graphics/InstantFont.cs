@@ -1,4 +1,5 @@
 ﻿using Instant2D.Assets.Loaders;
+using Instant2D.Core;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -49,7 +50,7 @@ namespace Instant2D.Graphics {
                 // check glyph
                 if (!_glyphs.TryGetValue(currentChar, out var glyph)) {
                     if (_defaultChar is char Default && !_glyphs.TryGetValue(Default, out glyph)) {
-                        Logger.WriteLine($"The font is missing the character '{currentChar}' and default is not set.", Logger.Severity.Error);
+                        InstantGame.Logger.Error($"The font is missing the character '{currentChar}' and default is not set.");
                         break;
                     }
                 }
@@ -94,7 +95,7 @@ namespace Instant2D.Graphics {
                 // get the glyph
                 if (!_glyphs.TryGetValue(currentChar, out var glyph)) {
                     if (_defaultChar is char Default && !_glyphs.TryGetValue(Default, out glyph)) {
-                        Logger.WriteLine($"The font is missing the character '{currentChar}' and default is not set.", Logger.Severity.Error);
+                        InstantGame.Logger.Error($"The font is missing the character '{currentChar}' and default is not set.");
                         break;
                     }
                 }

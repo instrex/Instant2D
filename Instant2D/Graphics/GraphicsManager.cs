@@ -57,7 +57,7 @@ namespace Instant2D.Graphics {
                     using var descStream = typeof(GraphicsManager).Assembly.GetManifestResourceStream(NAMESPACE + "default_font.json");
                     using var reader = new StreamReader(descStream);
                     if (!LegacyFontLoader.TryParse(reader.ReadToEnd(), out var fontDesc)) {
-                        Logger.WriteLine("Couldn't parse default font, something has gone very wrong...", Logger.Severity.Error);
+                        InstantGame.Logger.Error("Couldn't parse default font, something has gone very wrong...");
                         return null;
                     }
 

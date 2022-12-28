@@ -74,7 +74,7 @@ namespace Instant2D {
             var newPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, path);
 
             if (!Directory.Exists(newPath)) {
-                Logger.WriteLine($"Couldn't set AssetManager Folder to '{path}': directory does not exist.", Logger.Severity.Error);
+                InstantGame.Logger.Error($"Couldn't set AssetManager Folder to '{path}': directory does not exist.");
                 return this;
             }
 
@@ -116,8 +116,11 @@ namespace Instant2D {
             }
 
             // notify the user
-            Logger.WriteLine(devEnvEnabled ? $"Enabled hot reload for dev environment at: '{path}'" : $"Failed to enable hot reload for dev environment, falling back to: '{path}'",
-                    devEnvEnabled ? Logger.Severity.None : Logger.Severity.Warning);
+            if (devEnvEnabled) {
+                InstantGame.Logger.Info($"Enabled hot reload for dev environment at: '{path}'");
+            } else {
+                InstantGame.Logger.Warn($"Failed to enable hot reload for dev environment, falling back to: '{path}'");
+            }
 
             if (devEnvEnabled) {
                 _assetFolder = path;
@@ -160,7 +163,7 @@ namespace Instant2D {
                     .OfType<IHotReloader>()) {
 
                     if (loader.TryReload(assetKey, out var updatedAssets)) {
-                        Logger.WriteLine($"Hot Reload: updated {updatedAssets.Count()} assets.");
+                        InstantGame.Logger.Info($"Hot Reload: updated {updatedAssets.Count()} assets.");
 
                         // call events for EC to handle the asset change
                         if (SceneManager.Instance?.Current is Scene scene) {
@@ -237,7 +240,7 @@ namespace Instant2D {
         /// </summary>
         public void Register(string key, Asset asset, bool registerChildren = true) {
             if (!_assets.TryAdd(key, asset)) {
-                Logger.WriteLine($"Asset with key '{key}' was already added, skipping.", Logger.Severity.Warning);
+                InstantGame.Logger.Warn($"Asset with key '{key}' was already added, skipping.");
             }
 
             if (registerChildren && asset.Children != null) {

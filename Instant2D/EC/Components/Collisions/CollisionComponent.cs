@@ -1,5 +1,6 @@
 ﻿using Instant2D.Collision;
 using Instant2D.Collision.Shapes;
+using Instant2D.Core;
 using Instant2D.EC.Collisions;
 using Instant2D.Graphics;
 using Instant2D.Utils;
@@ -120,7 +121,7 @@ namespace Instant2D.EC.Components {
         public override void Initialize() {
             // check BaseCollider
             if (Shape is null) {
-                Logger.WriteLine($"Shape of {GetType().Name} wasn't initialized, disabling.", Logger.Severity.Error);
+                InstantGame.Logger.Error($"Shape of {GetType().Name} wasn't initialized, disabling.");
                 Entity.RemoveComponent(this);
                 return;
             }
@@ -128,7 +129,7 @@ namespace Instant2D.EC.Components {
             // initialize the collision manager and notify the user
             // in case they would want to tweak the chunk size
             if (Scene.Collisions is null) {
-                Logger.WriteLine($"Collider added to a scene without Collisions intitialized, defaulting to SpatialHash with grid size of {SpatialHash<CollisionComponent>.DEFAULT_CHUNK_SIZE}.");
+                InstantGame.Logger.Info($"Collider added to a scene without Collisions intitialized, defaulting to SpatialHash with grid size of {SpatialHash<CollisionComponent>.DEFAULT_CHUNK_SIZE}.");
                 Scene.Collisions = new();
             }
         }

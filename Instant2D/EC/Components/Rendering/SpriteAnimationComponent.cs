@@ -1,4 +1,5 @@
 ﻿using Instant2D.Assets.Sprites;
+using Instant2D.Core;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Newtonsoft.Json.Linq;
@@ -130,6 +131,9 @@ namespace Instant2D.EC {
 
         /// <inheritdoc cref="Frame"/>
         public SpriteAnimationComponent SetFrame(int frame, bool triggerEvents = true) {
+            if (_animation.Frames == null)
+                return this;
+
             var clampedIndex = Math.Clamp(frame, 0, _animation.Frames.Length - 1);
 
             // don't do anything if frames are the same
@@ -139,6 +143,9 @@ namespace Instant2D.EC {
             // set the frame
             Sprite = _animation.Frames[clampedIndex];
             _frameIndex = clampedIndex;
+
+            // adjust the elapsed time
+            _elapsedTime = _timePerFrame * frame;
 
             // call the events (if there are any)
             if (triggerEvents && _animation.Events != null)
@@ -157,7 +164,7 @@ namespace Instant2D.EC {
 
                         // ass
                         if (ev.args.Length < 2 || ev.args[0] is not string pointName || ev.args[1] is not Vector2 pointOffset) {
-                            Logger.WriteLine($"Invalid 'point' animation event usage, missing string 'pointName' and Vector2 'pointOffset'.");
+                            InstantGame.Logger.Error($"Invalid 'point' animation event usage, missing string 'pointName' and Vector2 'pointOffset'.");
                             continue;
                         }
 
