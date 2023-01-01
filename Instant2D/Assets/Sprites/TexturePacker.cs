@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.RectanglePacking;
+﻿using Instant2D.RectanglePacking;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -68,7 +67,7 @@ namespace Instant2D.Assets.Sprites {
                 pages[i] = result[i] with { sheet = rt };
 
                 // notify of the progress
-                InstantGame.Logger.Info($"Finished drawing 'spritesheet_{i}': {rt.Width}x{rt.Height} with {pages[i].textures.Length} items.");
+                InstantApp.Logger.Info($"Finished drawing 'spritesheet_{i}': {rt.Width}x{rt.Height} with {pages[i].textures.Length} items.");
             }
 
             return pages;
@@ -82,7 +81,7 @@ namespace Instant2D.Assets.Sprites {
         }
 
         RenderTarget2D DrawPage(in PackedTexture[] textures) {
-            var gd = InstantGame.Instance.GraphicsDevice;
+            var gd = InstantApp.Instance.GraphicsDevice;
 
             var textureSize = -1;
             for (var i = 0; i < textures.Length; i++) {

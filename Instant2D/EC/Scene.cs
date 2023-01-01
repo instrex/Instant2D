@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.Graphics;
+﻿using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
 using Instant2D.Utils.Math;
@@ -225,7 +224,7 @@ namespace Instant2D.EC {
 
                 // add default render layer if none was added
                 if (_renderLayers.Count == 0) {
-                    InstantGame.Logger.Info("No RenderLayers were added, automatically added 'default'.");
+                    InstantApp.Logger.Info("No RenderLayers were added, automatically added 'default'.");
                     AddLayer<EntityLayer>(0, "default");
                 }
 
@@ -364,7 +363,7 @@ namespace Instant2D.EC {
         }
 
         internal void ResizeRenderTargets(ScaledResolution resolution) {
-            var gd = InstantGame.Instance.GraphicsDevice;
+            var gd = InstantApp.Instance.GraphicsDevice;
 
             var previous = Resolution;
 
@@ -428,7 +427,7 @@ namespace Instant2D.EC {
             }
 
             // use Scene RT for flattening
-            var gd = InstantGame.Instance.GraphicsDevice;
+            var gd = InstantApp.Instance.GraphicsDevice;
             gd.SetRenderTarget(_sceneTarget);
             gd.Clear(Color.Transparent);
 

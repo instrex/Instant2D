@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.Assets;
+﻿using Instant2D.Assets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +16,7 @@ using Instant2D.EC;
 using Instant2D.Coroutines;
 
 namespace Instant2D {
-    public class AssetManager : SubSystem, IAssetRepository {
+    public class AssetManager : GameSystem, IAssetRepository {
         public static AssetManager Instance { get; set; }
 
         /// <summary>
@@ -74,7 +73,7 @@ namespace Instant2D {
             var newPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, path);
 
             if (!Directory.Exists(newPath)) {
-                InstantGame.Logger.Error($"Couldn't set AssetManager Folder to '{path}': directory does not exist.");
+                InstantApp.Logger.Error($"Couldn't set AssetManager Folder to '{path}': directory does not exist.");
                 return this;
             }
 
@@ -117,9 +116,9 @@ namespace Instant2D {
 
             // notify the user
             if (devEnvEnabled) {
-                InstantGame.Logger.Info($"Enabled hot reload for dev environment at: '{path}'");
+                InstantApp.Logger.Info($"Enabled hot reload for dev environment at: '{path}'");
             } else {
-                InstantGame.Logger.Warn($"Failed to enable hot reload for dev environment, falling back to: '{path}'");
+                InstantApp.Logger.Warn($"Failed to enable hot reload for dev environment, falling back to: '{path}'");
             }
 
             if (devEnvEnabled) {
@@ -163,7 +162,7 @@ namespace Instant2D {
                     .OfType<IHotReloader>()) {
 
                     if (loader.TryReload(assetKey, out var updatedAssets)) {
-                        InstantGame.Logger.Info($"Hot Reload: updated {updatedAssets.Count()} assets.");
+                        InstantApp.Logger.Info($"Hot Reload: updated {updatedAssets.Count()} assets.");
 
                         // call events for EC to handle the asset change
                         if (SceneManager.Instance?.Current is Scene scene) {
@@ -240,7 +239,7 @@ namespace Instant2D {
         /// </summary>
         public void Register(string key, Asset asset, bool registerChildren = true) {
             if (!_assets.TryAdd(key, asset)) {
-                InstantGame.Logger.Warn($"Asset with key '{key}' was already added, skipping.");
+                InstantApp.Logger.Warn($"Asset with key '{key}' was already added, skipping.");
             }
 
             if (registerChildren && asset.Children != null) {

@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Instant2D.Assets.Loaders;
-using Instant2D.Core;
 using Instant2D.EC;
 using Instant2D.EC.Components;
 using Instant2D.Graphics;
@@ -23,7 +22,7 @@ using Instant2D.TestGame.Scenes;
 using Instant2D.EC.Rendering;
 
 namespace Instant2D.TestGame {
-    public class Game : InstantGame {
+    public class Game : InstantApp {
         protected override void SetupSystems() {
             AddSystem<AssetManager>(assets => {
                 assets.SetupHotReload("./Instant2D.TestGame/Assets/");

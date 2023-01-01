@@ -1,5 +1,4 @@
 ﻿using Instant2D.Assets.Loaders;
-using Instant2D.Core;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,7 +13,7 @@ namespace Instant2D.Graphics {
     /// <summary>
     /// System that handles rendering. Feel free to subclass it and modify however you wish if it doesn't match your needs!
     /// </summary>
-    public class GraphicsManager : SubSystem {
+    public class GraphicsManager : GameSystem {
         public static GraphicsManager Instance { get; set; }
 
         /// <summary>
@@ -31,7 +30,7 @@ namespace Instant2D.Graphics {
         public static Sprite Pixel { 
             get {
                 if (_pixelSprite is null) {
-                    var tex = new Texture2D(InstantGame.Instance.GraphicsDevice, 1, 1);
+                    var tex = new Texture2D(InstantApp.Instance.GraphicsDevice, 1, 1);
                     tex.SetData(new[] { Color.White });
 
                     // create a sprite with default stuff
@@ -52,12 +51,12 @@ namespace Instant2D.Graphics {
 
                     // perform black magic ritual to load json description and texture
                     using var textureStream = typeof(GraphicsManager).Assembly.GetManifestResourceStream(NAMESPACE + "default_font.png");
-                    var texture = Texture2D.FromStream(InstantGame.Instance.GraphicsDevice, textureStream);
+                    var texture = Texture2D.FromStream(InstantApp.Instance.GraphicsDevice, textureStream);
 
                     using var descStream = typeof(GraphicsManager).Assembly.GetManifestResourceStream(NAMESPACE + "default_font.json");
                     using var reader = new StreamReader(descStream);
                     if (!LegacyFontLoader.TryParse(reader.ReadToEnd(), out var fontDesc)) {
-                        InstantGame.Logger.Error("Couldn't parse default font, something has gone very wrong...");
+                        InstantApp.Logger.Error("Couldn't parse default font, something has gone very wrong...");
                         return null;
                     }
 

@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.Coroutines;
+﻿using Instant2D.Coroutines;
 using Instant2D.EC;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
@@ -142,7 +141,7 @@ namespace Instant2D.Coroutines {
             if (_awaiter != null) {
                 switch (_awaiter) {
                     default:
-                        InstantGame.Logger.Error($"Unknown coroutine awaiter: {_awaiter?.GetType()}");
+                        InstantApp.Logger.Error($"Unknown coroutine awaiter: {_awaiter?.GetType()}");
                         break;
 
                     // custom awaiter function
@@ -209,13 +208,13 @@ namespace Instant2D.Coroutines {
 
                 case WaitForFixedUpdate waitForFixedUpdate:
                     if (_target == null || !_target.TryGetTarget(out var target)) {
-                        InstantGame.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
+                        InstantApp.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
                         return true;
                     }
 
                     switch (target) {
                         default:
-                            InstantGame.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
+                            InstantApp.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
                             return true;
 
                         case Scene scene:

@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.EC;
+﻿using Instant2D.EC;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
@@ -8,7 +7,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.Coroutines {
-    public class CoroutineManager : SubSystem {
+    public class CoroutineManager : GameSystem {
         public static CoroutineManager Instance { get; private set; }
 
         public override void Initialize() {

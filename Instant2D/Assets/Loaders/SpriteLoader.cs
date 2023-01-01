@@ -1,6 +1,5 @@
 ﻿using Instant2D.Assets.Containers;
 using Instant2D.Assets.Sprites;
-using Instant2D.Core;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -40,7 +39,7 @@ namespace Instant2D.Assets.Loaders {
                     }
 
                 } catch (Exception ex) {
-                    InstantGame.Logger.Error($"Could not load sprite manifest '{Path.GetFileName(path)}': {ex.Message}");
+                    InstantApp.Logger.Error($"Could not load sprite manifest '{Path.GetFileName(path)}': {ex.Message}");
                 }
             }
 
@@ -101,7 +100,7 @@ namespace Instant2D.Assets.Loaders {
                     // split using frame size (requires image dimensions)
                     case { type: SpriteSplitOptions.BySize, widthOrFrameCount: var width, height: var height }:
                         if (!TryGetPngSize(def.key, out var imageDimensions)) {
-                            InstantGame.Logger.Warn($"Couldn't get image dimensions for sprite '{key}'");
+                            InstantApp.Logger.Warn($"Couldn't get image dimensions for sprite '{key}'");
                             break;
                         }
 
@@ -136,7 +135,7 @@ namespace Instant2D.Assets.Loaders {
 
             // load the texture
             using var stream = AssetManager.Instance.OpenStream(asset.Key + ".png");
-            var texture = Texture2D.FromStream(InstantGame.Instance.GraphicsDevice, stream);
+            var texture = Texture2D.FromStream(InstantApp.Instance.GraphicsDevice, stream);
             texture.Tag = asset.Key;
 
             // make cool sprite
@@ -183,7 +182,7 @@ namespace Instant2D.Assets.Loaders {
             // save asset data
             switch (asset) {
                 default:
-                    InstantGame.Logger.Warn($"Unknown asset type '{asset.GetType().Name}'.");
+                    InstantApp.Logger.Warn($"Unknown asset type '{asset.GetType().Name}'.");
                     break;
 
                 case LazyAsset<SpriteAnimation> animationAsset when def.animation is SpriteAnimationDef animation:

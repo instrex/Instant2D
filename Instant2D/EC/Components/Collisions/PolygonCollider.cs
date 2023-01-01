@@ -23,6 +23,8 @@ namespace Instant2D.EC.Components.Collisions {
         /// </summary>
         public Vector2[] Vertices => _polygonShape.Vertices;
 
+        public Vector2[] TransformedVertices => _transformedVertices ?? Vertices;
+
         /// <summary>
         /// Initializes empty vertices array.
         /// </summary>
@@ -48,6 +50,9 @@ namespace Instant2D.EC.Components.Collisions {
         }
 
         public override void UpdateCollider() {
+            if (_originalVertices == null)
+                return;
+
             var offset = _offset;
             var origin = _origin - new Vector2(0.5f);
 

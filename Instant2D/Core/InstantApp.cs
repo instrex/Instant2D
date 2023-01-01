@@ -12,13 +12,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D.Core {
-    public abstract class InstantGame : Game {
-        public static InstantGame Instance { get; private set; }
+namespace Instant2D {
+    public abstract class InstantApp : Game {
+        public static InstantApp Instance { get; private set; }
 
-        // subsystem loading
-        internal readonly List<SubSystem> 
-            _subSystems = new(16),
+        // GameSystem loading
+        internal readonly List<GameSystem> 
+            _GameSystems = new(16),
             _updatableSystems = new(8),
             _renderableSystems = new(8);
 
@@ -66,7 +66,7 @@ namespace Instant2D.Core {
 
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
-        public InstantGame() {
+        public InstantApp() {
             Instance = this;
 
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
@@ -91,10 +91,10 @@ namespace Instant2D.Core {
             set => Instance._logger = value;
         }
 
-        public T AddSystem<T>(Action<T> initializer = default) where T: SubSystem, new() {
+        public T AddSystem<T>(Action<T> initializer = default) where T: GameSystem, new() {
             var instance = new T { Game = this };
             initializer?.Invoke(instance);
-            _subSystems.Add(instance);
+            _GameSystems.Add(instance);
 
             // if the game has already been initialized,
             // initialize this system as well
@@ -108,9 +108,9 @@ namespace Instant2D.Core {
         /// <summary>
         /// Attempts to get a system.
         /// </summary>
-        public bool TryGetSystem<T>(out T system) where T: SubSystem {
-            for (var i = 0; i < _subSystems.Count; i++) {
-                if (_subSystems[i] is T foundSystem) {
+        public bool TryGetSystem<T>(out T system) where T: GameSystem {
+            for (var i = 0; i < _GameSystems.Count; i++) {
+                if (_GameSystems[i] is T foundSystem) {
                     system = foundSystem;
                     return true;
                 }
@@ -123,9 +123,9 @@ namespace Instant2D.Core {
         /// <summary>
         /// Gets the system, throwing an exception if it doesn't exist.
         /// </summary>
-        public T GetSystem<T>() where T : SubSystem {
-            for (var i = 0; i < _subSystems.Count; i++) {
-                if (_subSystems[i] is T foundSystem) {
+        public T GetSystem<T>() where T : GameSystem {
+            for (var i = 0; i < _GameSystems.Count; i++) {
+                if (_GameSystems[i] is T foundSystem) {
                     return foundSystem;
                 }
             }
@@ -173,7 +173,7 @@ namespace Instant2D.Core {
 
             // initialize systems in order of definition
             _initialized = true;
-            foreach (var system in _subSystems.ToList()) {
+            foreach (var system in _GameSystems.ToList()) {
                 system.Initialize();
             }
 
@@ -182,7 +182,7 @@ namespace Instant2D.Core {
                 defaultLogger.SetOutputFile(".log");
 
             // then, sort them for later update tasks
-            _subSystems.Sort();
+            _GameSystems.Sort();
 
             Initialize();
         }
@@ -194,7 +194,7 @@ namespace Instant2D.Core {
                 _updatableSystems.Sort();
             }
 
-            // update the subsystems
+            // update the GameSystems
             for (var i = 0; i < _updatableSystems.Count; i++) {
                 var system = _updatableSystems[i];
                 system.Update(gameTime);

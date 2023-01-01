@@ -1,5 +1,4 @@
 ﻿using Instant2D.Audio;
-using Instant2D.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +11,7 @@ namespace Instant2D.Assets.Loaders {
         const string MUSIC_DIRECTORY = "music";
 
         public IEnumerable<Asset> Load(AssetManager assets) {
-            var manager = InstantGame.Instance.GetSystem<AudioManager>();
+            var manager = InstantApp.Instance.GetSystem<AudioManager>();
 
             // search both sfx and music folders for sounds
             foreach (var filename in assets.EnumerateFiles(SOUND_DIRECTORY, "*.ogg", true).Concat(assets.EnumerateFiles(MUSIC_DIRECTORY, "*.ogg", true))) {

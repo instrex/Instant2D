@@ -1,6 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using Instant2D.Core;
+using Instant2D;
 using System.Reflection;
 
 namespace Instant2D.TestGame {
@@ -8,7 +8,7 @@ namespace Instant2D.TestGame {
         [STAThread]
         static void Main() {
             //var games = Assembly.GetExecutingAssembly().GetTypes()
-            //    .Where(t => t.IsSubclassOf(typeof(InstantGame)))
+            //    .Where(t => t.IsSubclassOf(typeof(InstantApp)))
             //    .ToArray();
 
             //int selectedGame = 0;
@@ -30,7 +30,7 @@ namespace Instant2D.TestGame {
 
             Bootstrap.Initialize_FNA();
 
-            using InstantGame game = new Game();
+            using InstantApp game = new Game();
             game.Run();
         }
     }

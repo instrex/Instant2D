@@ -1,5 +1,4 @@
 ﻿using Instant2D.Assets.Sprites;
-using Instant2D.Core;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Newtonsoft.Json.Linq;
@@ -164,7 +163,7 @@ namespace Instant2D.EC {
 
                         // ass
                         if (ev.args.Length < 2 || ev.args[0] is not string pointName || ev.args[1] is not Vector2 pointOffset) {
-                            InstantGame.Logger.Error($"Invalid 'point' animation event usage, missing string 'pointName' and Vector2 'pointOffset'.");
+                            InstantApp.Logger.Error($"Invalid 'point' animation event usage, missing string 'pointName' and Vector2 'pointOffset'.");
                             continue;
                         }
 

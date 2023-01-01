@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.EC;
+﻿using Instant2D.EC;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -15,10 +14,10 @@ namespace Instant2D.Input {
     /// Presents an easy way to check for input events, as well as, <i>eventually</i>, Virtual input.
     /// </summary>
     /// <remarks>
-    /// NOTE: before accessing the static methods and properties there, make sure you add this system inside <see cref="InstantGame.SetupSystems"/>. 
+    /// NOTE: before accessing the static methods and properties there, make sure you add this system inside <see cref="InstantApp.SetupSystems"/>. 
     /// Otherwise, returned values will be nonsensical.
     /// </remarks>
-    public class InputManager : SubSystem {
+    public class InputManager : GameSystem {
         public override void Initialize() {
             UpdateOrder = int.MinValue;
             IsUpdatable = true;
@@ -89,7 +88,7 @@ namespace Instant2D.Input {
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void StaticUpdate(GameTime time) {
-            _isFocused = InstantGame.Instance.IsActive;
+            _isFocused = InstantApp.Instance.IsActive;
 
             // move the states to previous
             _prevMouseState = _currentMouseState;

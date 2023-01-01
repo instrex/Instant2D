@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.EC;
+﻿using Instant2D.EC;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -77,7 +76,7 @@ namespace Instant2D.Graphics {
 		readonly float[] _cornerOffsetY = new float[] { 0.0f, 0.0f, 1.0f, 1.0f };
 		readonly short[] _indexData;
 
-		public DrawingContext() : this(InstantGame.Instance.GraphicsDevice) { }
+		public DrawingContext() : this(InstantApp.Instance.GraphicsDevice) { }
 		public DrawingContext(GraphicsDevice graphicsDevice) {
 			GraphicsDevice = graphicsDevice;
 

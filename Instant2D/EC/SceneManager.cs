@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.Graphics;
+﻿using Instant2D.Graphics;
 using Instant2D.Utils;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
@@ -14,7 +13,7 @@ namespace Instant2D.EC {
     /// <summary>
     /// The meat of entity system. 
     /// </summary>
-    public class SceneManager : SubSystem {
+    public class SceneManager : GameSystem {
         public static SceneManager Instance { get; set; }
 
         ScaledResolution _resolution;
@@ -57,7 +56,7 @@ namespace Instant2D.EC {
         /// Swtiches current scene to <paramref name="scene"/>.
         /// </summary>
         public static void Switch<T>(T scene) where T: Scene {
-            InstantGame.Logger.Info($"Loading scene '{scene.GetType()}'...");
+            InstantApp.Logger.Info($"Loading scene '{scene.GetType()}'...");
             Instance.Current = scene;
         }
 
@@ -66,13 +65,13 @@ namespace Instant2D.EC {
             IsUpdatable = true;
             IsRenderable = true;
 
-            if (!InstantGame.Instance.TryGetSystem<GraphicsManager>(out _)) {
-                InstantGame.Logger.Info("SceneManager requires GraphicsManager system to be added, initializing...");
-                InstantGame.Instance.AddSystem<GraphicsManager>();
+            if (!InstantApp.Instance.TryGetSystem<GraphicsManager>(out _)) {
+                InstantApp.Logger.Info("SceneManager requires GraphicsManager system to be added, initializing...");
+                InstantApp.Instance.AddSystem<GraphicsManager>();
             }
 
             // setup the client size change callback for resizing RTs and stuff
-            InstantGame.Instance.Window.ClientSizeChanged += OnClientSizeChanged;
+            InstantApp.Instance.Window.ClientSizeChanged += OnClientSizeChanged;
 
             // initialize the resolution
             var screenSize = new Point(Game.GraphicsDevice.Viewport.Width, Game.GraphicsDevice.Viewport.Height);

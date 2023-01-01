@@ -1,4 +1,4 @@
-﻿using Instant2D.Core;
+﻿using Instant2D;
 using Instant2D.Coroutines;
 using Instant2D.EC;
 using Instant2D.Graphics;
@@ -16,7 +16,7 @@ namespace Instant2D.TestGame.Scenes {
         public override void Initialize() {
             base.Initialize();
 
-            InstantGame.Instance.TargetElapsedTime = TimeSpan.FromSeconds(1 / 165f);
+            InstantApp.Instance.TargetElapsedTime = TimeSpan.FromSeconds(1 / 165f);
 
             var logo = CreateEntity("logo", Vector2.Zero)
                 .AddComponent<SpriteComponent>()

@@ -1,4 +1,4 @@
-﻿using Instant2D.Core;
+﻿using Instant2D;
 using Instant2D.EC;
 using Instant2D.EC.Rendering;
 using Instant2D.Graphics;

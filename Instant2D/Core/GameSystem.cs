@@ -5,16 +5,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D.Core {
-    public abstract class SubSystem : IComparable<SubSystem> {
-        public int CompareTo(SubSystem other) {
+namespace Instant2D {
+    public abstract class GameSystem : IComparable<GameSystem> {
+        public int CompareTo(GameSystem other) {
             return UpdateOrder.CompareTo(other.UpdateOrder);
         }
 
         bool _useUpdate, _useRender;
 
         /// <summary> The Game instance this system is attached to. </summary>
-        public InstantGame Game { get; init; }
+        public InstantApp Game { get; init; }
 
         /// <summary> Determines which systems will run first. </summary>
         public int UpdateOrder { get; set; }
@@ -53,7 +53,7 @@ namespace Instant2D.Core {
             }
         }
 
-        /// <summary> Happens right when all of the subsystems were added. </summary>
+        /// <summary> Happens right when all of the GameSystems were added. </summary>
         public virtual void Initialize() { }
 
         /// <summary> Happens each frame if <see cref="IsUpdatable"/> is set. </summary>

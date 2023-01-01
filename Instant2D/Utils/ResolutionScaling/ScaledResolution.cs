@@ -1,5 +1,5 @@
-﻿using Instant2D.Core;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
+using Instant2D;
 
 namespace Instant2D.Utils.ResolutionScaling {
     public struct ScaledResolution {
@@ -35,7 +35,7 @@ namespace Instant2D.Utils.ResolutionScaling {
         /// Gets the default resolution using GraphicsDevice's Viewport and scale factor of 1.0f.
         /// </summary>
         public static ScaledResolution Default => new() {
-            renderTargetSize = new(InstantGame.Instance.GraphicsDevice.Viewport.Width, InstantGame.Instance.GraphicsDevice.Viewport.Height),
+            renderTargetSize = new(InstantApp.Instance.GraphicsDevice.Viewport.Width, InstantApp.Instance.GraphicsDevice.Viewport.Height),
             scaleFactor = 1.0f,
         };
     }

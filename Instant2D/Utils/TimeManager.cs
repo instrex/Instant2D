@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D {
-    public class TimeManager : SubSystem {
+    public class TimeManager : GameSystem {
         /// <summary>
         /// Total time that has passed since beginning of the game.
         /// </summary>

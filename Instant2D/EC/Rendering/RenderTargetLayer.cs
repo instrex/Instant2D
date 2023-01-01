@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.EC.Events;
+﻿using Instant2D.EC.Events;
 using Instant2D.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -58,7 +57,7 @@ namespace Instant2D.EC.Rendering {
             if (_renderTarget == null) 
                 CreateRenderTarget();
 
-            var gd = InstantGame.Instance.GraphicsDevice;
+            var gd = InstantApp.Instance.GraphicsDevice;
             //var oldRTs = gd.GetRenderTargets();
 
             // set the RT and clear it
@@ -77,7 +76,7 @@ namespace Instant2D.EC.Rendering {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CreateRenderTarget() => _renderTarget = new RenderTarget2D(InstantGame.Instance.GraphicsDevice, Scene.Resolution.renderTargetSize.X, Scene.Resolution.renderTargetSize.Y, false, InstantGame.Instance.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.None);
+        void CreateRenderTarget() => _renderTarget = new RenderTarget2D(InstantApp.Instance.GraphicsDevice, Scene.Resolution.renderTargetSize.X, Scene.Resolution.renderTargetSize.Y, false, InstantApp.Instance.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.None);
 
         void ResizeRenderTarget(SceneResolutionChangedEvent ev) {
             if (_renderTarget == null || ev.PreviousResolution.renderTargetSize == ev.Resolution.renderTargetSize)

@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.Utils;
+﻿using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -109,7 +108,7 @@ namespace Instant2D.EC {
         /// <summary> Adds the <paramref name="other"/> to the children list. </summary>
         public Entity AddChild(Entity other) {
             if (other == null) {
-                InstantGame.Logger.Warn($"Tried to add 'null' as '{Name}'s child.");
+                InstantApp.Logger.Warn($"Tried to add 'null' as '{Name}'s child.");
                 return other;
             }
 

@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +8,7 @@ using static FAudio;
 
 namespace Instant2D.Audio {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1806:Do not ignore method results", Justification = "<Pending>")]
-    public class AudioManager : SubSystem, IDisposable {
+    public class AudioManager : GameSystem, IDisposable {
         public readonly IntPtr AudioHandle;
 
         public readonly FAudioDeviceDetails DeviceDetails;

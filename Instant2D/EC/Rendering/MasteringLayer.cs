@@ -1,5 +1,4 @@
-﻿using Instant2D.Core;
-using Instant2D.EC.Events;
+﻿using Instant2D.EC.Events;
 using Instant2D.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -69,7 +68,7 @@ namespace Instant2D.EC.Rendering {
                 var layer = Scene.GetLayer(names[i]);
 
                 if (layer == null) {
-                    InstantGame.Logger.Warn($"Layer '{names[i]}' wasn't found.");
+                    InstantApp.Logger.Warn($"Layer '{names[i]}' wasn't found.");
                     continue;
                 }
 
@@ -88,8 +87,8 @@ namespace Instant2D.EC.Rendering {
         public Scene Scene { get; init; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CreateRenderTarget() => _renderTarget = new RenderTarget2D(InstantGame.Instance.GraphicsDevice, Scene.Resolution.renderTargetSize.X, Scene.Resolution.renderTargetSize.Y, false, 
-            InstantGame.Instance.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.None);
+        void CreateRenderTarget() => _renderTarget = new RenderTarget2D(InstantApp.Instance.GraphicsDevice, Scene.Resolution.renderTargetSize.X, Scene.Resolution.renderTargetSize.Y, false, 
+            InstantApp.Instance.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.None);
 
         void CollectLayers() {
             if (_layerRange is FloatRange range) {
@@ -146,7 +145,7 @@ namespace Instant2D.EC.Rendering {
                 CreateRenderTarget();
 
             // if RenderTarget is used, proceed to render contents into it
-            var gd = InstantGame.Instance.GraphicsDevice;
+            var gd = InstantApp.Instance.GraphicsDevice;
 
             // set the RT and clear it
             gd.SetRenderTarget(_renderTarget);

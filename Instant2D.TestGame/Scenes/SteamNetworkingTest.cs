@@ -1,4 +1,4 @@
-﻿using Instant2D.Core;
+﻿using Instant2D;
 using Instant2D.EC;
 using Instant2D.Graphics;
 using Instant2D.Input;
@@ -49,7 +49,7 @@ namespace Instant2D.TestGame.Scenes {
 
             public void Update(float dt) {
                 if (_image is Image avatar) {
-                    var texture = new Texture2D(InstantGame.Instance.GraphicsDevice, (int)avatar.Width, (int)avatar.Height);
+                    var texture = new Texture2D(InstantApp.Instance.GraphicsDevice, (int)avatar.Width, (int)avatar.Height);
                     texture.SetData(avatar.Data);
 
                     _sprite.SetSprite(new Sprite(texture, $"avatar/{friend.Name}"));
