@@ -15,12 +15,17 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace Instant2D.EC {
-    public static class Extensions {
-        #region Renderable Component
+    // have to put some methods here because they clash with each other in Extensions.cs class
+    public static class RenderableComponentExtensions {
+        /// <inheritdoc cref="Component.IsActive"/>
+        public static T SetActive<T>(this T component, bool isActive) where T : Component {
+            component.IsActive = isActive;
+            return component;
+        }
 
         /// <inheritdoc cref="RenderableComponent.Material"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T SetMaterial<T>(this T renderableComponent, Material material) where T: RenderableComponent {
+        public static T SetMaterial<T>(this T renderableComponent, Material material) where T : RenderableComponent {
             renderableComponent.Material = material;
             return renderableComponent;
         }
@@ -36,6 +41,13 @@ namespace Instant2D.EC {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T SetDepth<T>(this T renderableComponent, float depth) where T : RenderableComponent {
             renderableComponent.Depth = depth;
+            return renderableComponent;
+        }
+
+        /// <inheritdoc cref="RenderableComponent.Offset"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetOffset<T>(this T renderableComponent, Vector2 offset) where T : RenderableComponent {
+            renderableComponent.Offset = offset;
             return renderableComponent;
         }
 
@@ -73,9 +85,9 @@ namespace Instant2D.EC {
 
             throw new InvalidOperationException($"Invalid render layer '{layerName}'");
         }
+    }
 
-        #endregion
-
+    public static class Extensions {
         #region Sprite Renderer
 
         /// <inheritdoc cref="SpriteComponent.FlipY"/>

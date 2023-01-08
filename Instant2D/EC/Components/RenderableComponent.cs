@@ -83,7 +83,7 @@ namespace Instant2D.EC {
                 _layer?.Components.Remove(this);
                 _layer = value;
 
-                if (_layer != null) {
+                if (_layer != null && IsActive && Entity.IsActive) {
                     // add the object and update the order
                     _layer.Components.Add(this);
                     _layer._drawOrderDirty = true;

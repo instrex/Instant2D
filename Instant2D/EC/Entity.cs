@@ -673,10 +673,11 @@ namespace Instant2D.EC {
             _lateUpdateComponents = null;
             _components.Clear();
             _shouldDestroy = false;
+            _isActive = true;
             _scene = null;
         }
 
         // ICoroutineTarget impl
-        float ICoroutineTarget.TimeScale => TimeScale * Scene.TimeScale;
+        float ICoroutineTarget.TimeScale => TimeScale * (Scene?.TimeScale ?? 1.0f);
     }
 }

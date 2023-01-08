@@ -107,21 +107,39 @@ namespace Instant2D.Diagnostics {
         /// Sets the output file to flush the contents of this logger in specific intervals.
         /// </summary>
         public void SetOutputFile(string filename, float flushInterval = 10.0f) {
-            try {
-                _file = File.OpenWrite(filename);
-                _writer = new StreamWriter(_file);
-                CoroutineManager.Schedule(flushInterval, this, logger => {
-                    logger.Flush();
-                    return logger._file != null;
-                });
-            } catch {
-                Warn($"Could not open log stream '{filename}'");
+            // get file info to generate numbered log files
+            var directory = Path.GetDirectoryName(filename);
+            var name = Path.GetFileNameWithoutExtension(filename);
+            var extension = Path.GetExtension(filename);
+
+            for (var i = 0; i < 10; i++) {
+                var path = Path.Combine(directory, $"{name}{(i != 0 ? i.ToString() : "")}{extension}");
+
+                // in some cases multiple game windows may be opened,
+                // this makes it possible for two loggers to coexist
+
+                try {
+                    _file = File.OpenWrite(path);
+                    _writer = new StreamWriter(_file);
+                    CoroutineManager.Schedule(flushInterval, this, logger => {
+                        logger.Flush();
+                        return logger._file != null;
+                    });
+
+                    return;
+
+                } catch { }
             }
+
+            Warn($"Could not open log stream at '{filename}'");
         }
 
         #region ILogger implementation
 
         public void Close() {
+            if (_writer == null)
+                return;
+
             Flush();
 
             // dispose of files

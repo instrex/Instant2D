@@ -50,7 +50,12 @@ namespace Instant2D.EC {
         /// <summary>
         /// Swtiches current scene to a new instance created by parameterless constructor.
         /// </summary>
-        public static void Switch<T>() where T : Scene, new() => Switch<T>(new());
+        public static T Switch<T>() where T : Scene, new() {
+            var scene = new T();
+            Switch(scene);
+
+            return scene;
+        }
 
         /// <summary>
         /// Swtiches current scene to <paramref name="scene"/>.

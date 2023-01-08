@@ -50,7 +50,7 @@ namespace Instant2D.EC.Components.Collisions {
         }
 
         public override void UpdateCollider() {
-            if (_originalVertices == null)
+            if (_originalVertices is null || Transform is null)
                 return;
 
             var offset = _offset;

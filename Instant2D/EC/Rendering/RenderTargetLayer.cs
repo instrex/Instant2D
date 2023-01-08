@@ -7,6 +7,18 @@ using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC.Rendering {
+    public enum RenderTargetLayerBehavior {
+        /// <summary>
+        /// Layer will draw Content into the RenderTarget, then use this RenderTarget to present without redrawing content for the second time.
+        /// </summary>
+        PresentRenderTexture,
+
+        /// <summary>
+        /// Layer will draw Content into the RenderTarget, then draw it again it when presenting.
+        /// </summary>
+        PresentContent,
+    }
+
     /// <summary>
     /// Render layer used to capture contents of another render layer into a RenderTarget.
     /// </summary>
@@ -30,9 +42,20 @@ namespace Instant2D.EC.Rendering {
         /// </summary>
         public Color ClearColor = Color.Transparent;
 
+        /// <summary>
+        /// Parameters for when this layer calls Present.
+        /// </summary>
+        public RenderTargetLayerBehavior PresentBehavior = RenderTargetLayerBehavior.PresentRenderTexture;
+
         /// <inheritdoc cref="PresentColor"/>
         public RenderTargetLayer SetColor(Color color) {
             PresentColor = color;
+            return this;
+        }
+
+        /// <inheritdoc cref="RenderTargetLayerBehavior.PresentContent"/>
+        public RenderTargetLayer SetPresentContent() {
+            PresentBehavior = RenderTargetLayerBehavior.PresentContent;
             return this;
         }
 
@@ -93,6 +116,11 @@ namespace Instant2D.EC.Rendering {
         public virtual void Present(DrawingContext drawing) {
             if (Content == null || _renderTarget == null)
                 return;
+
+            if (PresentBehavior == RenderTargetLayerBehavior.PresentContent) {
+                Content.Present(GraphicsManager.Context);
+                return;
+            }
 
             drawing.DrawTexture(_renderTarget, Vector2.Zero, null, Color.White, 0, Vector2.Zero, Vector2.One);
         }

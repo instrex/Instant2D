@@ -41,6 +41,9 @@ namespace Instant2D.EC.Components.Collisions {
         }
 
         public override void UpdateCollider() {
+            if (Transform is null)
+                return;
+
             var size = ShouldScaleWithTransform ? _size * Transform.Scale : _size;
             var offset = ShouldScaleWithTransform ? _offset * Transform.Scale : _offset;
 

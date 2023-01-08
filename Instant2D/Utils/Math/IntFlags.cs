@@ -34,6 +34,14 @@ namespace Instant2D.Utils {
             return flag;
         }
 
+        /// <inheritdoc cref="SetFlagExclusive(int, bool)"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void SetFlagExclusive(ref int flag, bool isUnshifted = true) {
+            if (isUnshifted) {
+                flag = 1 << flag;
+            }
+        }
+
         /// <summary>
         /// Sets an unshifted flag to <see langword="true"/>.
         /// </summary>
@@ -42,12 +50,24 @@ namespace Instant2D.Utils {
             return value |= 1 << flag;
         }
 
+        /// <inheritdoc cref="SetFlag(int, int)"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void SetFlag(ref int value, int flag) {
+            value |= 1 << flag;
+        }
+
         /// <summary>
         /// Removes an unshifted flag.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int RemoveFlag(this int value, int flag) {
             return value &= ~(1 << flag);
+        }
+
+        /// <inheritdoc cref="RemoveFlag(int, int)"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void RemoveFlag(ref int value, int flag) {
+            value &= ~(1 << flag);
         }
 
         /// <summary>
