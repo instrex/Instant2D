@@ -354,6 +354,7 @@ namespace Instant2D.EC {
 
             // release all the coroutines attached to this scene
             CoroutineManager.StopAll(this);
+            OnExiting();
 
             // raise the cleanup event
             Events.Raise<SceneCleanupEvent>(default);
@@ -411,6 +412,13 @@ namespace Instant2D.EC {
         /// </summary>
         public virtual void Initialize() {
             
+        }
+
+        /// <summary>
+        /// Called when this scene unloads before loading the next one.
+        /// </summary>
+        public virtual void OnExiting() {
+
         }
 
         /// <summary>

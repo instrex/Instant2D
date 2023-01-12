@@ -1,6 +1,7 @@
 ﻿using Instant2D;
 using Instant2D.Coroutines;
 using Instant2D.EC;
+using Instant2D.EC.Rendering;
 using Instant2D.Graphics;
 using Instant2D.Input;
 using Microsoft.Xna.Framework;
@@ -34,6 +35,7 @@ namespace Instant2D.TestGame.Scenes {
         }
 
         Coroutine _dvdMovement;
+        Coroutine _longCoroutine;
 
         public override void Update() {
             base.Update();
@@ -41,7 +43,13 @@ namespace Instant2D.TestGame.Scenes {
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.E)) {
                 _dvdMovement?.Stop();
                 _dvdMovement = CoroutineManager.Run(MoveLikeDVD(FindEntityByName("logo")), FindEntityByName("logo"))
+                    .SetCompletionHandler(this, c => c.GetContext<CoroutineRewriteTest>()._longCoroutine = null)
                     ;
+            }
+
+            if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.Q)) {
+                _longCoroutine?.Stop();
+                _longCoroutine = CoroutineManager.Run(LongCoroutine());
             }
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.D1)) {
@@ -58,6 +66,25 @@ namespace Instant2D.TestGame.Scenes {
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R))
                 SceneManager.Switch<CoroutineRewriteTest>();
+        }
+
+        IEnumerator LongCoroutine() {
+            var layer = GetLayer<EntityLayer>("default");
+
+            var f = 0f;
+            while (f < 1f) {
+                f = MathHelper.Clamp(f + TimeManager.DeltaTime, 0, 1);
+                layer.BackgroundColor = Color.Lerp(Color.Black, Color.DarkCyan, f);
+                yield return null;
+            }
+
+            yield return new WaitForSeconds(2.0f);
+
+            while (f >= 0f) {
+                f = MathHelper.Clamp(f - TimeManager.DeltaTime, 0, 1);
+                layer.BackgroundColor = Color.Lerp(Color.Black, Color.DarkCyan, f);
+                yield return null;
+            }
         }
 
         IEnumerator MoveLikeDVD(Entity entity) {

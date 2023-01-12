@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,7 +19,7 @@ namespace Instant2D.Coroutines {
         internal Action<Coroutine> _completionHandler;
         internal object _awaiter, _context;
         internal IEnumerator _enumerator;
-        internal bool _isPaused;
+        internal bool _isPaused, _shouldRecycle;
 
         // internal timer used for WaitForSeconds
         float _waitTimer;
@@ -49,19 +50,31 @@ namespace Instant2D.Coroutines {
 
                 return target;
             }
+
+            internal set {
+                if (_target == null) {
+                    _target = new(value);
+                    return;
+                }
+
+                _target.SetTarget(value);
+            }
         }
 
         /// <summary>
         /// Manually stops coroutine before its completion.
         /// </summary>
-        public void Stop(bool ignoreCompletionHandler = false) {
+        public void Stop(bool invokeCompletionHandler = true) {
             _enumerator = null;
+            _awaiter = null;
 
-            // do some mischief
-            if (ignoreCompletionHandler) {
-                _completionHandler = null;
-                _context = null;
+            if (invokeCompletionHandler) {
+                // notify that coroutine has finished
+                _completionHandler?.Invoke(this);
             }
+
+            // remove this coroutine
+            CoroutineManager.Instance.RemoveCoroutine(this);
         }
 
         /// <summary>
@@ -179,10 +192,6 @@ namespace Instant2D.Coroutines {
                     case WaitForUpdate:
                         _awaiter = null;
                         break;
-
-                    // will be ticked by scene/object automatically
-                    case WaitForFixedUpdate:
-                        return true;
                 }
             }
 
@@ -192,7 +201,7 @@ namespace Instant2D.Coroutines {
                 return false;
             }
 
-            var yield = _enumerator.Current;
+            var yield = _enumerator?.Current;
             switch (yield) {
                 default: 
                     _awaiter = yield; 
@@ -206,46 +215,46 @@ namespace Instant2D.Coroutines {
                     _awaiter = new WaitForCoroutine(coroutine);
                     break;
 
-                case WaitForFixedUpdate waitForFixedUpdate:
-                    if (_target == null || !_target.TryGetTarget(out var target)) {
-                        InstantApp.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
-                        return true;
-                    }
+                //case WaitForFixedUpdate waitForFixedUpdate:
+                //    if (_target == null || !_target.TryGetTarget(out var target)) {
+                //        InstantApp.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
+                //        return true;
+                //    }
 
-                    switch (target) {
-                        default:
-                            InstantApp.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
-                            return true;
+                //    switch (target) {
+                //        default:
+                //            InstantApp.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
+                //            return true;
 
-                        case Scene scene:
-                            waitForFixedUpdate._beganAtFixedUpdate = scene._fixedUpdatesPassed;
-                            break;
+                //        case Scene scene:
+                //            waitForFixedUpdate._beganAtFixedUpdate = scene._fixedUpdatesPassed;
+                //            break;
 
-                        case Entity entity:
-                            waitForFixedUpdate._beganAtFixedUpdate = entity._fixedUpdatesPassed;
-                            waitForFixedUpdate._entity = entity;
+                //        case Entity entity:
+                //            waitForFixedUpdate._beganAtFixedUpdate = entity._fixedUpdatesPassed;
+                //            waitForFixedUpdate._entity = entity;
 
-                            if (entity._timescale != 1.0f) {
-                                // mark that entities with non-global timescale should
-                                // try and tick the blocked coroutines as well
-                                CoroutineManager._anyEntityBlockedCoroutines = true;
-                            }
+                //            if (entity._timescale != 1.0f) {
+                //                // mark that entities with non-global timescale should
+                //                // try and tick the blocked coroutines as well
+                //                CoroutineManager._anyEntityBlockedCoroutines = true;
+                //            }
 
-                            break;
-                    }
+                //            break;
+                //    }
 
-                    // mark the beginning update cycle and set the awaiter
-                    CoroutineManager.Instance.BlockByFixedUpdate(this);
-                    _awaiter = waitForFixedUpdate;
+                //    // mark the beginning update cycle and set the awaiter
+                //    CoroutineManager.Instance.BlockByFixedUpdate(this);
+                //    _awaiter = waitForFixedUpdate;
 
-                    break;
+                //    break;
             }
 
             return true;
         }
 
         public void Reset() {
-            _target = null;
+            _target?.SetTarget(null);
             _completionHandler = null;
             _enumerator = null;
             _isPaused = false;

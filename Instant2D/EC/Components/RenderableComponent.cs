@@ -165,7 +165,7 @@ namespace Instant2D.EC {
             if (z != 0) {
                 return z;
             }
-
+            
             // reverse the depth comparison so it's actually from 0 (nearest to screen) to 1 (furthest from screen)
             var depth = _depth.CompareTo(other._depth) * -1;
 
@@ -174,8 +174,14 @@ namespace Instant2D.EC {
                 return depth;
             }
 
-            // compare Materials as the last resort...
-            return _material.GetHashCode().CompareTo(other._material.GetHashCode());
+            var materials = _material.GetHashCode().CompareTo(other._material.GetHashCode());
+
+            if (materials != 0) {
+                return materials;
+            }
+
+            // compare entity ids as last resort
+            return Entity.Id.CompareTo(other.Entity.Id);
         }
 
         public override void OnTransformUpdated(TransformComponentType components) {
