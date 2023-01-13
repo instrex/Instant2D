@@ -121,7 +121,7 @@ namespace Instant2D.EC {
 
         /// <summary> Shortcut for creating an entity using <see cref="Scene.CreateEntity(string, Vector2)"/> and setting its <see cref="Parent"/> to this. </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Entity AddChild(string name) => AddChild(_scene?.CreateEntity(name, Vector2.Zero) ?? StaticPool<Entity>.Get());
+        public Entity AddChild(string name) => AddChild(_scene?.CreateEntity(name, Vector2.Zero) ?? Pool<Entity>.Shared.Get());
 
         #endregion
 
@@ -260,7 +260,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// When the component type implements <see cref="IPooled"/>, takes existing instance from pool and adds it. If not, a new instance is created.
         /// </summary>
-        public T AddComponent<T>() where T : Component, new() => AddComponent(ComponentPoolingData<T>.ShouldPool ? StaticPool<T>.Get() : new T());
+        public T AddComponent<T>() where T : Component, new() => AddComponent(ComponentPoolingData<T>.ShouldPool ? Pool<T>.Shared.Get() : new T());
 
         /// <summary>
         /// Attaches the provided component instance to this entity.
@@ -582,10 +582,10 @@ namespace Instant2D.EC {
                 FixedUpdateGlobal(fixedUpdateCount, true);
 
                 // call the tick method when there are entity-blocked coroutines
-                if (CoroutineManager._anyEntityBlockedCoroutines)
-                    for (var i = 0; i < fixedUpdateCount; i++) {
-                        CoroutineManager.TickFixedUpdate(Scene);
-                    }
+                //if (CoroutineManager._anyEntityBlockedCoroutines)
+                //    for (var i = 0; i < fixedUpdateCount; i++) {
+                //        CoroutineManager.TickFixedUpdate(Scene);
+                //    }
             }
 
             // set AlphaFrameTime on self and all children
@@ -645,10 +645,10 @@ namespace Instant2D.EC {
             Scene = null;
 
             // put the entity into the pool for reuse
-            StaticPool<Entity>.Return(this);
+            Pool<Entity>.Shared.Return(this);
 
             // release all the coroutines attached to this entity
-            CoroutineManager.StopAll(this);
+            CoroutineManager.Instance.StopAll(this);
         }
 
         // IPooled impl

@@ -9,10 +9,15 @@ namespace Instant2D.Utils {
     /// Presents an easy way to avoid excess allocations. Types may implement <see cref="IPooled"/> in order to get reset before returning.
     /// </summary>
     public class Pool<T> where T: new() {
+        /// <summary>
+        /// Shared pool instance.
+        /// </summary>
+        public static readonly Pool<T> Shared = new();
+
         readonly Queue<T> _items;
         int _capacity;
 
-        public Pool(int capacity = 32) {
+        public Pool(int capacity = 24) {
             _capacity = capacity;
             _items = new(capacity);
             Expand(capacity);
@@ -50,11 +55,24 @@ namespace Instant2D.Utils {
         /// Return an instance to the pool.
         /// </summary>
         public void Return(T obj) {
+            if (obj is null) {
+                // TODO: replace with a logger warning? maybe only throw in debug mode
+                throw new InvalidOperationException($"Attempted to return a null value into the pool.");
+            }
+
             _items.Enqueue(obj);
 
             // reset the pooled object
             if (obj is IPooled resettable)
                 resettable.Reset();
+        }
+
+        /// <summary>
+        /// Return an instance to the pool and null out the reference.
+        /// </summary>
+        public void Return(ref T obj) {
+            Return(obj);
+            obj = default;
         }
     }
 }

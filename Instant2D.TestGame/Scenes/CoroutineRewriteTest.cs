@@ -29,9 +29,9 @@ namespace Instant2D.TestGame.Scenes {
                     .SetSprite(Assets.Get<Sprite>("sprites/logo"));
             }
 
-            CoroutineManager.Schedule(0.5f, () => {
+            //CoroutineManager.Schedule(0.5f, () => {
                 //RenderLayers[0].BackgroundColor = Color.Cyan;
-            });
+            //});
         }
 
         Coroutine _dvdMovement;
@@ -41,15 +41,11 @@ namespace Instant2D.TestGame.Scenes {
             base.Update();
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.E)) {
-                _dvdMovement?.Stop();
-                _dvdMovement = CoroutineManager.Run(MoveLikeDVD(FindEntityByName("logo")), FindEntityByName("logo"))
-                    .SetCompletionHandler(this, c => c.GetContext<CoroutineRewriteTest>()._longCoroutine = null)
-                    ;
+                CoroutineManager.Instance.Run(MoveLikeDVD(FindEntityByName("logo")), ref _dvdMovement, FindEntityByName("logo"));
             }
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.Q)) {
-                _longCoroutine?.Stop();
-                _longCoroutine = CoroutineManager.Run(LongCoroutine());
+                CoroutineManager.Instance.Run(LongCoroutine(), ref _longCoroutine);
             }
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.D1)) {
@@ -103,7 +99,7 @@ namespace Instant2D.TestGame.Scenes {
                     velocity.Y *= -1;
                 }
 
-                yield return new WaitForFixedUpdate(false);
+                yield return new WaitForSeconds(FixedTimeStep);
             }
         }
 

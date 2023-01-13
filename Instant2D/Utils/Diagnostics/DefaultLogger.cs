@@ -121,7 +121,7 @@ namespace Instant2D.Diagnostics {
                 try {
                     _file = File.OpenWrite(path);
                     _writer = new StreamWriter(_file);
-                    CoroutineManager.Schedule(flushInterval, this, logger => {
+                    CoroutineManager.Instance.Schedule(flushInterval, this, logger => {
                         logger.Flush();
                         return logger._file != null;
                     });

@@ -34,6 +34,14 @@ namespace Instant2D {
         }
 
         /// <summary>
+        /// Returns the value to shared pool of the type.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Pool<T>(this T value) where T: IPooled, new() {
+            Utils.Pool<T>.Shared.Return(value);
+        }
+
+        /// <summary>
         /// Reads all bytes and optionally disposes of <paramref name="stream"/>.
         /// </summary>
         public static byte[] ReadBytes(this Stream stream, bool dispose = false) {

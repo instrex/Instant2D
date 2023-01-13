@@ -24,6 +24,8 @@ namespace Instant2D.Coroutines {
         // internal timer used for WaitForSeconds
         float _waitTimer;
 
+        #region Setters and Properties
+
         /// <summary>
         /// Is <see langword="true"/> when coroutine is still executing.
         /// </summary>
@@ -64,17 +66,19 @@ namespace Instant2D.Coroutines {
         /// <summary>
         /// Manually stops coroutine before its completion.
         /// </summary>
-        public void Stop(bool invokeCompletionHandler = true) {
+        public void Stop(bool invokeCompletionHandler = true, bool unregisterFromTargets = true) {
             _enumerator = null;
-            _awaiter = null;
-
             if (invokeCompletionHandler) {
                 // notify that coroutine has finished
                 _completionHandler?.Invoke(this);
             }
 
-            // remove this coroutine
-            CoroutineManager.Instance.RemoveCoroutine(this);
+            if (unregisterFromTargets) {
+                // the reason this is optional is because when using StopAll(target)
+                // we might not care about removing coroutines from list one by one
+                // and instead just clear it in one go
+                CoroutineManager.Instance.Stop(this);
+            }
         }
 
         /// <summary>
@@ -84,7 +88,7 @@ namespace Instant2D.Coroutines {
             _isPaused = true;
             return this;
         }
-        
+
         /// <summary>
         /// Resumes execution of a paused coroutine.
         /// </summary>
@@ -125,6 +129,15 @@ namespace Instant2D.Coroutines {
         /// Gets typed context object.
         /// </summary>
         public T GetContext<T>() => (T)_context;
+
+        /// <summary>
+        /// Returns this coroutine into the pool.
+        /// </summary>
+        public void Pool() {
+            Pool<Coroutine>.Shared.Return(this);
+        }
+
+        #endregion
 
         /// <summary>
         /// Advance the coroutine forward.
@@ -176,7 +189,7 @@ namespace Instant2D.Coroutines {
 
                         // reset the awaiter
                         _awaiter = null;
-                        _waitTimer = 0;
+                        _waitTimer -= duration;
 
                         break;
 
@@ -202,53 +215,11 @@ namespace Instant2D.Coroutines {
             }
 
             var yield = _enumerator?.Current;
-            switch (yield) {
-                default: 
-                    _awaiter = yield; 
-                    break;
-
-                case null:
-                    _awaiter = new WaitForUpdate();
-                    break;
-
-                case Coroutine coroutine:
-                    _awaiter = new WaitForCoroutine(coroutine);
-                    break;
-
-                //case WaitForFixedUpdate waitForFixedUpdate:
-                //    if (_target == null || !_target.TryGetTarget(out var target)) {
-                //        InstantApp.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
-                //        return true;
-                //    }
-
-                //    switch (target) {
-                //        default:
-                //            InstantApp.Logger.Warn("WaitForFixedUpdate may only be used when coroutine's target is set to Scene or Entity, skipping.");
-                //            return true;
-
-                //        case Scene scene:
-                //            waitForFixedUpdate._beganAtFixedUpdate = scene._fixedUpdatesPassed;
-                //            break;
-
-                //        case Entity entity:
-                //            waitForFixedUpdate._beganAtFixedUpdate = entity._fixedUpdatesPassed;
-                //            waitForFixedUpdate._entity = entity;
-
-                //            if (entity._timescale != 1.0f) {
-                //                // mark that entities with non-global timescale should
-                //                // try and tick the blocked coroutines as well
-                //                CoroutineManager._anyEntityBlockedCoroutines = true;
-                //            }
-
-                //            break;
-                //    }
-
-                //    // mark the beginning update cycle and set the awaiter
-                //    CoroutineManager.Instance.BlockByFixedUpdate(this);
-                //    _awaiter = waitForFixedUpdate;
-
-                //    break;
-            }
+            _awaiter = yield switch {
+                null => new WaitForUpdate(),
+                Coroutine coroutine => new WaitForCoroutine(coroutine),
+                _ => yield,
+            };
 
             return true;
         }
@@ -256,6 +227,7 @@ namespace Instant2D.Coroutines {
         public void Reset() {
             _target?.SetTarget(null);
             _completionHandler = null;
+            _shouldRecycle = false;
             _enumerator = null;
             _isPaused = false;
             _context = null;

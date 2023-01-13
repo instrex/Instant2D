@@ -147,16 +147,20 @@ namespace Instant2D {
             return this;
         }
 
+
+
         void OnFileEdited(object sender, FileSystemEventArgs e) {
             var assetKey = e.Name.Replace('\\', '/');
 
             // stop existing timer
-            if (_hotReloadTimers.TryGetValue(assetKey, out var timer))
+            if (_hotReloadTimers.TryGetValue(assetKey, out var timer)) {
                 timer.Stop();
+                Pool<Coroutine>.Shared.Return(timer);
+            }
 
             // if we do it immediately, there's a chance the file could be used by something
             // adding a little bit of delay helps making sure that wouldn't happen
-            _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.Schedule(0.5f, () => {
+            _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.Instance.Schedule(0.5f, () => {
                 var format = Path.GetExtension(assetKey);
                 foreach (var loader in _loaders.Select(p => p.Item2)
                     .OfType<IHotReloader>()) {

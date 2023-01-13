@@ -63,7 +63,7 @@ namespace Instant2D.Collision.Shapes {
         /// </summary>
         public Polygon Polygon {
             get {
-                _polygon ??= StaticPool<Polygon>.Get();
+                _polygon ??= Pool<Polygon>.Shared.Get();
                 if (_isPolygonDirty) {
                     _polygon.SetBoxVertices(_size, _rotation);
                     _polygon.Position = _position;

@@ -126,7 +126,7 @@ namespace Instant2D.EC {
         /// Creates an entity and automatically adds it onto the scene.
         /// </summary>
         public Entity CreateEntity(string name, Vector2 position = default) {
-            var entity = StaticPool<Entity>.Get();
+            var entity = Pool<Entity>.Shared.Get();
             entity.Transform.Position = position;
             entity.Name = name;
             entity.Scene = this;
@@ -284,7 +284,7 @@ namespace Instant2D.EC {
                 _fixedUpdatesPassed++;
 
                 // tick all WaitForFixedUpdate coroutines
-                CoroutineManager.TickFixedUpdate(this);
+                // CoroutineManager.TickFixedUpdate(this);
             }
 
             // apply Updates
@@ -353,7 +353,7 @@ namespace Instant2D.EC {
             }
 
             // release all the coroutines attached to this scene
-            CoroutineManager.StopAll(this);
+            CoroutineManager.Instance.StopAll(this);
             OnExiting();
 
             // raise the cleanup event
