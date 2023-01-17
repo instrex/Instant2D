@@ -36,6 +36,7 @@ namespace Instant2D.TestGame.Scenes {
 
         Coroutine _dvdMovement;
         Coroutine _longCoroutine;
+        Coroutine _timer;
 
         public override void Update() {
             base.Update();
@@ -58,6 +59,14 @@ namespace Instant2D.TestGame.Scenes {
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.D3)) {
                 TimeScale = 2f;
+            }
+
+            if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.D5)) {
+                _timer?.Stop();
+                _timer = CoroutineManager.Instance.Schedule(0.5f, "Hello from Timer!", ctx => {
+                    InstantApp.Logger.Warn(ctx);
+                    return false;
+                });
             }
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R))

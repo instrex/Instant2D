@@ -39,5 +39,13 @@ namespace Instant2D.Graphics {
             BlendState = BlendState.Opaque,
             SamplerState = SamplerState.PointClamp
         };
+
+        /// <summary>
+        /// Material with Additive <see cref="BlendState"/>.
+        /// </summary>
+        public static readonly Material Additive = new() {
+            BlendState = BlendState.Additive,
+            SamplerState = SamplerState.PointClamp
+        };
     }
 }

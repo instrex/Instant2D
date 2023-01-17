@@ -26,5 +26,9 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 	<ProjectReference Include="..\FNA\FNA.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="EC\Rendering\PostProcessors\" />
+  </ItemGroup>
 	
 </Project>

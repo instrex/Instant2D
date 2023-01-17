@@ -118,5 +118,12 @@ namespace Instant2D {
         public static void DrawString(this DrawingContext drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue, bool drawOutline = false) {
             DrawString(drawing, GraphicsManager.DefaultFont, text, position, color, scale, rotation, maxDisplayedCharacters, drawOutline);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Color Multiply(this Color a, Color b, float? alpha = default) => new(
+            a.R / 255f * (b.R / 255f),
+            a.G / 255f * (b.G / 255f),
+            a.B / 255f * (b.B / 255f),
+            alpha ?? a.A / 255f * (b.A / 255f));
     }
 }

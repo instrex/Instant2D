@@ -239,28 +239,28 @@ namespace Instant2D.EC {
         /// </summary>
         public IReadOnlyList<Component> Components => _components;
 
-        static class ComponentPoolingData<T> where T: Component {
-            static bool? _shouldPool;
-            public static bool ShouldPool {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get {
-                    // check if type implements IResettable
-                    if (_shouldPool is not bool shouldPool) {
-                        var isResettable = typeof(T).IsAssignableFrom(typeof(IPooled));
-                        _shouldPool = isResettable;
+        //static class ComponentPoolingData<T> where T: Component {
+        //    static bool? _shouldPool;
+        //    public static bool ShouldPool {
+        //        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //        get {
+        //            // check if type implements IResettable
+        //            if (_shouldPool is not bool shouldPool) {
+        //                var isResettable = typeof(T).IsAssignableFrom(typeof(IPooled));
+        //                _shouldPool = isResettable;
 
-                        return isResettable;
-                    }
+        //                return isResettable;
+        //            }
 
-                    return shouldPool;
-                }
-            }
-        }
+        //            return shouldPool;
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// When the component type implements <see cref="IPooled"/>, takes existing instance from pool and adds it. If not, a new instance is created.
         /// </summary>
-        public T AddComponent<T>() where T : Component, new() => AddComponent(ComponentPoolingData<T>.ShouldPool ? Pool<T>.Shared.Get() : new T());
+        public T AddComponent<T>() where T : Component, new() => AddComponent(new T());
 
         /// <summary>
         /// Attaches the provided component instance to this entity.
@@ -618,6 +618,9 @@ namespace Instant2D.EC {
             // why they're being removed
             IsDestroyed = true;
 
+            // release all the coroutines attached to this entity
+            CoroutineManager.Instance.StopAll(this);
+
             // notify components of death and detach
             for (var i = 0; i < _components.Count; i++) {
                 // null out RenderLayers so that renderable components
@@ -646,9 +649,6 @@ namespace Instant2D.EC {
 
             // put the entity into the pool for reuse
             Pool<Entity>.Shared.Return(this);
-
-            // release all the coroutines attached to this entity
-            CoroutineManager.Instance.StopAll(this);
         }
 
         // IPooled impl

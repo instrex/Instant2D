@@ -18,7 +18,11 @@ namespace Instant2D.EC.Rendering {
 
         readonly List<IRenderLayer> _masteredLayers = new();
 
+        // probably a bad idea, but two RTs should be able to be shared between all layers
+        static RenderTarget2D _ppTarget, _ppSwapTarget;
+
         bool _initialized, _useRenderTarget;
+        List<PostProcessor> _postProcessors;
         RenderTarget2D _renderTarget;
         Color _color = Color.White;
         FloatRange? _layerRange;
@@ -37,6 +41,8 @@ namespace Instant2D.EC.Rendering {
                 }
             }
         }
+
+        public IReadOnlyList<PostProcessor> PostProcessors => _postProcessors;
 
         public Color BackgroundColor = Color.Transparent;
 
@@ -87,8 +93,16 @@ namespace Instant2D.EC.Rendering {
         public Scene Scene { get; init; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CreateRenderTarget() => _renderTarget = new RenderTarget2D(InstantApp.Instance.GraphicsDevice, Scene.Resolution.renderTargetSize.X, Scene.Resolution.renderTargetSize.Y, false, 
+        RenderTarget2D CreateRenderTarget() => new(InstantApp.Instance.GraphicsDevice, Scene.Resolution.renderTargetSize.X, Scene.Resolution.renderTargetSize.Y, false, 
             InstantApp.Instance.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.None);
+
+        void ResizeRT(ref RenderTarget2D renderTarget, int width, int height) {
+            if (renderTarget.Width == width && renderTarget.Height == height)
+                return;
+
+            renderTarget.Dispose();
+            renderTarget = CreateRenderTarget();
+        }
 
         void CollectLayers() {
             if (_layerRange is FloatRange range) {
@@ -108,15 +122,30 @@ namespace Instant2D.EC.Rendering {
         }
 
         void ResizeRenderTarget(SceneResolutionChangedEvent ev) {
-            if (!_useRenderTarget || _renderTarget == null || ev.PreviousResolution.renderTargetSize == ev.Resolution.renderTargetSize)
+            if (ev.PreviousResolution.renderTargetSize == ev.Resolution.renderTargetSize)
                 return;
 
-            // dispose of the old RT
-            _renderTarget.Dispose();
-            _renderTarget = null;
+            var (width, height) = (ev.Resolution.renderTargetSize.X, ev.Resolution.renderTargetSize.Y);
 
-            // make new
-            CreateRenderTarget();
+            if (_useRenderTarget && _renderTarget != null) {
+                ResizeRT(ref _renderTarget, width, height);
+            }
+
+            if (_ppTarget != null) {
+                ResizeRT(ref _ppTarget, width, height);
+            }
+
+            if (_ppSwapTarget != null) {
+                ResizeRT(ref _ppSwapTarget, width, height);
+            }
+
+            if (_postProcessors != null) {
+                // notify post processors of resolution changes
+                for (var i = 0; i < _postProcessors.Count; i++) {
+                    var processor = _postProcessors[i];
+                    processor.OnResolutionChanged(ev.Resolution, ev.PreviousResolution);
+                }
+            }
         }
 
         public void Prepare() {
@@ -130,19 +159,11 @@ namespace Instant2D.EC.Rendering {
             if (_masteredLayers.Count == 0)
                 CollectLayers();
 
-
-            //// prepare mastered layers
-            //for (var i = 0; i < layersSpan.Length; i++) {
-            //    layersSpan[i].Prepare();
-            //}
-
             if (!_useRenderTarget) 
                 return;
 
             var layersSpan = CollectionsMarshal.AsSpan(_masteredLayers);
-
-            if (_renderTarget == null)
-                CreateRenderTarget();
+            _renderTarget ??= CreateRenderTarget();
 
             // if RenderTarget is used, proceed to render contents into it
             var gd = InstantApp.Instance.GraphicsDevice;
@@ -159,7 +180,77 @@ namespace Instant2D.EC.Rendering {
             }
 
             GraphicsManager.Context.End();
+
+            if (_postProcessors != null) 
+                ApplyPostProcessing();
         }
+
+        #region Post-processing
+
+        /// <summary>
+        /// Adds a post processor to this layer. Will automatically enable using RenderTarget.
+        /// </summary>
+        public MasteringLayer AddPostProcessor<T>(T postProcessor) where T: PostProcessor {
+            postProcessor.Parent = this;
+
+            // init the list on demand
+            _postProcessors ??= new();
+            _postProcessors.Add(postProcessor);
+
+            // sort post processors by order
+            _postProcessors.Sort((a, b) => a.Order.CompareTo(b.Order));
+
+            // init any resolution-based things
+            postProcessor.OnResolutionChanged(Scene.Resolution, default);
+
+            // post processors operate on RenderTargets, so.. yeah
+            _useRenderTarget = true;
+
+            return this;
+        }
+
+        /// <inheritdoc cref="AddPostProcessor{T}(T)"/>
+        public MasteringLayer AddPostProcessor<T>(float order) where T : PostProcessor, new() {
+            var postProcessor = new T { Parent = this, Order = order };
+            return AddPostProcessor(postProcessor);
+        }
+
+        void ApplyPostProcessing() {
+            _ppTarget ??= CreateRenderTarget();
+            _ppSwapTarget ??= CreateRenderTarget();
+
+            var activeRtCounter = 0;
+            for (var i = 0; i < _postProcessors.Count; i++) {
+                var pp = _postProcessors[i];
+
+                if (!pp.IsActive)
+                    continue;
+
+                var (source, destination) = (
+                    i == 0 ? _renderTarget : (activeRtCounter % 2 == 0 ? _ppTarget : _ppSwapTarget),
+                    activeRtCounter % 2 == 1 ? _ppTarget : _ppSwapTarget
+                );
+
+                activeRtCounter++;
+
+                // apply post processing
+                pp.Apply(source, destination);
+            }
+
+            InstantApp.Instance.GraphicsDevice.SetRenderTarget(_renderTarget);
+            GraphicsManager.Context.Begin(Material.Opaque, Matrix.Identity);
+
+            GraphicsManager.Context.DrawTexture(activeRtCounter % 2 == 0 ? _ppTarget : _ppSwapTarget, Vector2.Zero, null, _color, 0, Vector2.Zero, Vector2.One);
+
+            GraphicsManager.Context.End();
+
+            if (activeRtCounter % 2 == 1) {
+                // if we end up on ppTarget, swap rts
+                (_renderTarget, _ppTarget) = (_ppTarget, _renderTarget);
+            }
+        }
+
+        #endregion
 
         public void Present(DrawingContext drawing) {
             if (_useRenderTarget) {
@@ -184,6 +275,11 @@ namespace Instant2D.EC.Rendering {
             if (_renderTarget != null) {
                 ((IDisposable)_renderTarget).Dispose();
                 _renderTarget = null;
+            }
+
+            if (_ppTarget != null) {
+                ((IDisposable)_ppTarget).Dispose();
+                _ppTarget = null;
             }
 
             GC.SuppressFinalize(this);

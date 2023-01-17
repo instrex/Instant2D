@@ -73,12 +73,10 @@ namespace Instant2D.Coroutines {
                 _completionHandler?.Invoke(this);
             }
 
-            if (unregisterFromTargets) {
-                // the reason this is optional is because when using StopAll(target)
-                // we might not care about removing coroutines from list one by one
-                // and instead just clear it in one go
-                CoroutineManager.Instance.Stop(this);
-            }
+            // the reason this is optional is because when using StopAll(target)
+            // we might not care about removing coroutines from list one by one
+            // and instead just clear it in one go
+            CoroutineManager.Instance.Stop(this, unregisterFromTargets);
         }
 
         /// <summary>

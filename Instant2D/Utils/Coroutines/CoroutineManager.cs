@@ -16,19 +16,10 @@ namespace Instant2D.Coroutines {
             _nextFrameBuffer = new(24);
 
         /// <summary>
-        /// Runs a coroutine using provided (or automatically initialized) <paramref name="container"/>. You'll have to pool the container instance yourself. <br/>
-        /// If <paramref name="container"/> is already running a coroutine, it will be stopped and its completion handler will be invoked.
+        /// Runs a coroutine and returns its instance. Optionally, <paramref name="target"/> may be provided.
         /// </summary>
-        public void Run(IEnumerator enumerator, ref Coroutine container, ICoroutineTarget target = default) {
-            container ??= Pool<Coroutine>.Shared.Get();
-
-            // if container is already running something,
-            // stop it so we could replace with a new coroutine
-            if (container._enumerator != null) {
-                container.Stop();
-            }
-
-            container.Reset();
+        public Coroutine Run(IEnumerator enumerator, ICoroutineTarget target = default) {
+            var container = new Coroutine();
 
             // assign enumerator and append to target
             container._enumerator = enumerator;
@@ -39,16 +30,7 @@ namespace Instant2D.Coroutines {
 
             // if ran during the update, use the next frame buffer instead
             (_isCurrentlyUpdating ? _nextFrameBuffer : _activeCoroutines).Add(container);
-        }
-
-        /// <summary>
-        /// Runs a coroutine using automatically pooled instance. If you want to have access over the coroutine, use <see cref="Run(IEnumerator, ref Coroutine, ICoroutineTarget)"/> overload.
-        /// </summary>
-        public void Run(IEnumerator enumerator, ICoroutineTarget target = default) {
-            var container = Pool<Coroutine>.Shared.Get();
-            container._shouldRecycle = true;
-
-            Run(enumerator, ref container, target);
+            return container;
         }
 
         public void StopAll(ICoroutineTarget target) {
@@ -68,11 +50,7 @@ namespace Instant2D.Coroutines {
         /// <summary>
         /// Run a simple timer which may repeat if you return <see langword="true"/> in <paramref name="handler"/>.
         /// </summary>
-        public Coroutine Schedule<T>(float delay, T context, Func<T, bool> handler) {
-            Coroutine timerContainer = default;
-            Run(TimerCoroutine(delay, false, context, handler), ref timerContainer);
-            return timerContainer;
-        }
+        public Coroutine Schedule<T>(float delay, T context, Func<T, bool> handler) => Run(TimerCoroutine(delay, false, context, handler));
 
         /// <summary>
         /// Run a simple timer which may repeat if you return <see langword="true"/> in <paramref name="handler"/>.
@@ -93,9 +71,10 @@ namespace Instant2D.Coroutines {
 
         #endregion
 
-        internal void Stop(Coroutine coroutine) {
+        internal void Stop(Coroutine coroutine, bool detachFromTarget = true) {
             _stoppedCoroutines.Add(coroutine);
-            RemoveFromTarget(coroutine.Target, coroutine);
+            _nextFrameBuffer.Remove(coroutine);
+            if (detachFromTarget) RemoveFromTarget(coroutine.Target, coroutine);
         }
 
         #region GameSystem implementation

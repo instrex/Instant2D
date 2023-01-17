@@ -12,11 +12,11 @@ using System.Threading.Tasks;
 
 namespace Instant2D.EC {
     public class SpriteComponent : RenderableComponent, IPooled {
-        bool _isSpriteSet, _autocorrectOrigin = true;
+        protected bool _isSpriteSet, _autocorrectOrigin = true;
         protected SpriteEffects _spriteFx;
 
-        Vector2 _origin;
-        Sprite _sprite;
+        protected Vector2 _origin;
+        protected Sprite _sprite;
 
         /// <summary>
         /// The sprite to render.

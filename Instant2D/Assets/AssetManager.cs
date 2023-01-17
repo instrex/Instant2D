@@ -128,14 +128,9 @@ namespace Instant2D {
                 _hotReloadWatcher = new FileSystemWatcher(path) {
                     //Filter = "*.*",
                     IncludeSubdirectories = true,
-                    NotifyFilter = NotifyFilters.Attributes
-                        | NotifyFilters.CreationTime
-                        | NotifyFilters.DirectoryName
+                    NotifyFilter = NotifyFilters.DirectoryName
                         | NotifyFilters.FileName
-                        | NotifyFilters.LastAccess
                         | NotifyFilters.LastWrite
-                        | NotifyFilters.Security
-                        | NotifyFilters.Size
                 };
 
                 _hotReloadWatcher.Changed += OnFileEdited;
@@ -147,15 +142,13 @@ namespace Instant2D {
             return this;
         }
 
-
-
         void OnFileEdited(object sender, FileSystemEventArgs e) {
             var assetKey = e.Name.Replace('\\', '/');
 
             // stop existing timer
             if (_hotReloadTimers.TryGetValue(assetKey, out var timer)) {
                 timer.Stop();
-                Pool<Coroutine>.Shared.Return(timer);
+                //Pool<Coroutine>.Shared.Return(timer);
             }
 
             // if we do it immediately, there's a chance the file could be used by something
@@ -166,7 +159,7 @@ namespace Instant2D {
                     .OfType<IHotReloader>()) {
 
                     if (loader.TryReload(assetKey, out var updatedAssets)) {
-                        InstantApp.Logger.Info($"Hot Reload: updated {updatedAssets.Count()} assets.");
+                        InstantApp.Logger.Info($"Hot Reload: updated {updatedAssets.Count()} assets.\n{string.Join("\n", updatedAssets.Select(ass => $"- '{ass.Key}': {ass.GetType().Name}"))}");
 
                         // call events for EC to handle the asset change
                         if (SceneManager.Instance?.Current is Scene scene) {

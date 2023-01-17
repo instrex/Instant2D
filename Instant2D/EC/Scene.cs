@@ -147,7 +147,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Create and register <typeparamref name="T"/>.
         /// </summary>
-        public T AddLayer<T>(float order, string name) where T: IRenderLayer, new() {
+        public T AddLayer<T>(float order, string name) where T : IRenderLayer, new() {
             var layer = new T {
                 Scene = this, Name = name, Order = order,
                 ShouldPresent = true, IsActive = true,
@@ -167,7 +167,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Create and register <typeparamref name="T"/> using automatically assigned Order.
         /// </summary>
-        public T AddLayer<T>(string name) where T : IRenderLayer, new() 
+        public T AddLayer<T>(string name) where T : IRenderLayer, new()
             => AddLayer<T>(_renderLayers.Count == 0 ? 0 : _renderLayers.Max(l => l.Order) + 1, name);
 
         /// <summary>
@@ -186,7 +186,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Attempts to find a typed render layer with provided name.
         /// </summary>
-        public T GetLayer<T>(string name, bool checkNestedLayers = true) where T: IRenderLayer {
+        public T GetLayer<T>(string name, bool checkNestedLayers = true) where T : IRenderLayer {
             for (var i = 0; i < _renderLayers.Count; i++) {
                 if (_renderLayers[i].Name == name) {
                     switch (_renderLayers[i]) {
@@ -264,7 +264,7 @@ namespace Instant2D.EC {
                     }
                 }
             }
-            
+
             // now loop over all entities and invoke FixedUpdates
             for (var i = 0; i < span.Length; i++) {
                 var entity = span[i];
@@ -303,7 +303,7 @@ namespace Instant2D.EC {
                 _debugRender = !_debugRender;
             }
 
-            if (IsActive) 
+            if (IsActive)
                 Update();
         }
 
@@ -347,8 +347,12 @@ namespace Instant2D.EC {
         }
 
         internal void Cleanup() {
+            for (var i = 0; i<_entities.Count; i++) {
+                CoroutineManager.Instance.StopAll(_entities[i]);
+            }
+
             // destroy all entities before switching scenes
-            for (var i = 0; i < _entities.Count; i++) {
+            for (var i = 0; i<_entities.Count; i++) {
                 _entities[i].ImmediateDestroy();
             }
 
