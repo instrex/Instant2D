@@ -20,9 +20,9 @@ namespace Instant2D {
         /// <summary>
         /// Array of animation events, may be null if no events are specified.
         /// </summary>
-        public AnimationEvent[] Events { get; init; }
+        public SpriteDefinition.AnimationEvent[] Events { get; init; }
 
-        public SpriteAnimation(float fps, Sprite[] frames, AnimationEvent[] events = default, string key = default) {
+        public SpriteAnimation(float fps, Sprite[] frames, SpriteDefinition.AnimationEvent[] events = default, string key = default) {
             Fps = fps;
             Frames = frames;
             Events = events;

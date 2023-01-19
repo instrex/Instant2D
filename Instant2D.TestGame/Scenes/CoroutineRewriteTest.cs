@@ -42,11 +42,11 @@ namespace Instant2D.TestGame.Scenes {
             base.Update();
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.E)) {
-                CoroutineManager.Instance.Run(MoveLikeDVD(FindEntityByName("logo")), ref _dvdMovement, FindEntityByName("logo"));
+                //CoroutineManager.Instance.Run(MoveLikeDVD(FindEntityByName("logo")), ref _dvdMovement, FindEntityByName("logo"));
             }
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.Q)) {
-                CoroutineManager.Instance.Run(LongCoroutine(), ref _longCoroutine);
+                //CoroutineManager.Instance.Run(LongCoroutine(), ref _longCoroutine);
             }
 
             if (InputManager.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.D1)) {

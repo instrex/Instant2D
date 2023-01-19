@@ -60,7 +60,7 @@ namespace Instant2D.Graphics {
                         return null;
                     }
 
-                    _defaultFont = new InstantFont(fontDesc.CreateGlyphs(new[] { texture }), fontDesc.lineSpacing, fontDesc.defaultChar);
+                    _defaultFont = new InstantFont(fontDesc.CreateGlyphs(new[] { texture }), fontDesc.LineSpacing, fontDesc.DefaultChar);
                 }
 
                 return _defaultFont;

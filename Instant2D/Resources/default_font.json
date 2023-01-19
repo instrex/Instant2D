@@ -1,6 +1,6 @@
 {
 	"lineSpacing": 10,
-	"defaultChar": 32,
+	"defaultChar": " ",
 	"characters": [
 		/* CHAR | ID   | X     | Y     | W     | H     | OffX  | OffY  | AdvX   */
 

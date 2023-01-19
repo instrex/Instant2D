@@ -1,106 +1,38 @@
-﻿using Instant2D.Utils.Serialization;
-using Microsoft.Xna.Framework;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Xna.Framework;
 
 namespace Instant2D.Assets.Sprites {
     /// <summary>
     /// A class that houses all the sprite information you've defined in 'sprites/*' asset folder.
     /// </summary>
-    [JsonConverter(typeof(Converter))]
-    public class SpriteManifest {
-        public const string DEFAULT_FRAME_FORMAT = "{0}_{1}";
+    public readonly record struct SpriteManifest {
+        /// <summary>
+        /// Specifies default way of naming subsprites/animation frames. Defaults to <c>"{0}_{1}"</c>.
+        /// </summary>
+        public static string DefaultNamingFormat { get; set; } = "{0}_{1}";
 
         /// <summary>
-        /// Default origin used for sprites that don't override it. Defaults to [0.5, 0.5].
+        /// Default sprite origin for each manifest. Note that default origins can only be defined as normalized.
         /// </summary>
-        public Vector2 DefaultOrigin { get; set; } = new(0.5f);
+        public static Vector2 DefaultSpriteOrigin { get; set; } = new(0.5f);
 
         /// <summary>
-        /// Naming format used for sprites with multiple frames. Defaults to '{0}_{1}'.
+        /// Filename or the key of this manifest.
         /// </summary>
-        public string FrameFormat { get; set; } = DEFAULT_FRAME_FORMAT;
+        public string Key { get; init; }
 
         /// <summary>
-        /// Name of the manifest file.
+        /// All the sprite definition entries defined in this manifest.
         /// </summary>
-        public string Name { get; set; }
+        public SpriteDefinition[] Items { get; init; }
 
         /// <summary>
-        /// All of the definitions explicitly defined in this manifest.
+        /// Controls default origin for sprites in this manifest. This value will be used only if sprite doesn't specify origin explicitly.
         /// </summary>
-        public SpriteDef[] Items { get; set; }
+        public Vector2 SpriteOrigin { get; init; }
 
-        public class Converter : JsonConverter<SpriteManifest> {
-            readonly List<SpriteDef> _spriteBuffer = new(64);
-            public override SpriteManifest ReadJson(JsonReader reader, Type objectType, SpriteManifest existingValue, bool hasExistingValue, JsonSerializer serializer) {
-                // setup converters
-                serializer.Converters.Add(new RectangleConverter());
-                serializer.Converters.Add(new Vector2Converter());
-                serializer.Converters.Add(new AnimationEvent.Converter());
-                serializer.Converters.Add(new SpriteOrigin.Converter());
-                serializer.Converters.Add(new SpriteSplit.Converter());
-                serializer.Converters.Add(new ManualSplitItem.Converter());
-                
-                // skip '{'
-                reader.Read();
-
-                // create manifest
-                var manifest = new SpriteManifest();
-                var allowMetaElements = true;
-                while (reader.TokenType == JsonToken.PropertyName) {
-                    var key = (string) reader.Value;
-                    reader.Read();
-
-                    // process meta elements
-                    if (key.StartsWith("$")) {
-                        if (!allowMetaElements) {
-                            throw new InvalidOperationException("Meta elements should be defined at the top of the manifest.");
-                        }
-
-                        switch (key) {
-                            case "$default_origin":
-                                manifest.DefaultOrigin = serializer.Deserialize<Vector2>(reader);
-                                reader.Read();
-                                break;
-
-                            case "$frame_format":
-                                manifest.FrameFormat = (string)reader.Value;
-                                reader.Read();
-                                break;
-                        }
-
-                        continue;
-                    }
-
-                    allowMetaElements = false;
-
-                    var def = serializer.Deserialize<SpriteDef>(reader);
-                    def.key ??= key;
-
-                    _spriteBuffer.Add(def);
-
-                    reader.Read();
-                }
-
-                manifest.Items = _spriteBuffer.ToArray();
-                _spriteBuffer.Clear();
-
-                // skip '}'
-                reader.Read();
-
-                return manifest;
-            }
-
-            public override void WriteJson(JsonWriter writer, SpriteManifest value, JsonSerializer serializer) {
-                throw new NotImplementedException();
-            }
-        }
+        /// <summary>
+        /// Controls how subsprites/animation frames are named in this manifest. Defaults to <see cref="DefaultNamingFormat"/>.
+        /// </summary>
+        public string NamingFormat { get; init; }
     }
 }

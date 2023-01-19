@@ -1,7 +1,6 @@
 ﻿using Instant2D.Assets.Sprites;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -152,17 +151,16 @@ namespace Instant2D.EC {
                     var ev = _animation.Events[i];
 
                     // it's not your time yet...
-                    if (ev.frame != clampedIndex)
+                    if (ev.FrameIndex != clampedIndex)
                         continue;
 
                     // update point location instead
-                     if (ev.key == "point") {
+                     if (ev.Key == "point") {
                         // initialize points dict
-                        if (_capturedPoints == null)
-                            _capturedPoints = new();
+                        _capturedPoints ??= new();
 
                         // ass
-                        if (ev.args.Length < 2 || ev.args[0] is not string pointName || ev.args[1] is not Vector2 pointOffset) {
+                        if (ev.Args.Length < 2 || ev.Args[0] is not string pointName || ev.Args[1] is not Vector2 pointOffset) {
                             InstantApp.Logger.Error($"Invalid 'point' animation event usage, missing string 'pointName' and Vector2 'pointOffset'.");
                             continue;
                         }
@@ -172,7 +170,7 @@ namespace Instant2D.EC {
                         continue;
                     }
 
-                    OnAnimationEvent?.Invoke(this, ev.key, ev.args);
+                    OnAnimationEvent?.Invoke(this, ev.Key, ev.Args);
                 }
 
             return this;
@@ -213,13 +211,13 @@ namespace Instant2D.EC {
         Dictionary<string, Vector2> _capturedPoints;
 
         public override bool TryGetPoint(string key, out Vector2 point, bool dontApplyTransform = false) {
+            point = dontApplyTransform ? Vector2.Zero : Entity.Transform.Position;
             if (_capturedPoints == null || !_capturedPoints.TryGetValue(key, out var rawPoint)) {
-                point = Entity.Transform.Position;
                 return false;
             }
 
             var offset = rawPoint - Sprite.Origin;
-            point = Entity.Transform.Position + (dontApplyTransform ? offset : TransformPointOffset(offset));
+            point += TransformPointOffset(offset);
 
             return true;
         }

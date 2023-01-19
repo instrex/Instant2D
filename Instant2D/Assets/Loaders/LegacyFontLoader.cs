@@ -1,28 +1,28 @@
 ﻿using Instant2D.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Instant2D.Assets.Loaders {
     public abstract class LegacyFontLoader : IAssetLoader {
         public struct FontDescription {
-            public int lineSpacing;
-            public char defaultChar;
-            public string[] sheets;
-            public List<int[]> characters;
-            public List<int[]> kerning;
+            public int LineSpacing;
+            public char DefaultChar;
+            public string[] Sheets;
+            public List<int[]> Characters;
+            public List<int[]> Kerning;
 
             /// <summary>
-            /// Creates a stream of glyphs using information provided by <see cref="characters"/>.
+            /// Creates a stream of glyphs using information provided by <see cref="Characters"/>.
             /// </summary>
             public IEnumerable<InstantFont.Glyph> CreateGlyphs(Texture2D[] sheets) {
-                for (var i = 0; i < characters.Count; i++) {
-                    var info = characters[i];
+                for (var i = 0; i < Characters.Count; i++) {
+                    var info = Characters[i];
 
                     // glyph descriptions might have an optional argument for page index
                     if (info.Length != 8 && info.Length != 9) {
@@ -43,9 +43,15 @@ namespace Instant2D.Assets.Loaders {
         public static bool TryParse(string json, out FontDescription desc) {
             // TODO: messy but idk what to do about it
             try { 
-                desc = JsonConvert.DeserializeObject<FontDescription>(json);
+                desc = JsonSerializer.Deserialize<FontDescription>(json, new JsonSerializerOptions() { 
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                    PropertyNameCaseInsensitive = true,
+                    IncludeFields = true,
+                    AllowTrailingCommas = true, 
+                });
                 return true;
-            } catch {
+            } catch (Exception ex) {
+                InstantApp.Logger.Error($"Error parsing font. ({ex.Message})");
                 desc = default;
                 return false;
             }

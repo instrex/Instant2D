@@ -3,43 +3,44 @@ using Instant2D.Assets.Sprites;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using static Instant2D.Assets.Sprites.SpriteDefinition;
+
 namespace Instant2D.Assets.Loaders {
     public class SpriteLoader : IAssetLoader, ILazyAssetLoader, IHotReloader {
         const string DIRECTORY = "sprites";
 
-        readonly Dictionary<string, SpriteDef> _definitions = new();
-        readonly List<SpriteManifest> _manifests = new();
-        readonly List<Texture2D> _textures = new();
+        readonly Dictionary<string, SpriteManifest> _manifests = new();
+        readonly Dictionary<string, SpriteDefinition[]> _spritesByManifest = new();
+        readonly List<SpriteDefinition> _strayDefinitions = new();
 
         public IEnumerable<Asset> Load(AssetManager assets) {
-            // load all json sprite manifests
+            var definedKeys = new HashSet<string>();
             foreach (var path in assets.EnumerateFiles(DIRECTORY, "*.json", true)) {
                 try {
+                    if (_spritesByManifest.ContainsKey(path)) {
+                        // this probably shouldn't happen... ?
+                        throw new InvalidOperationException($"Manifest with a similar name '{path}' has already been defined.");
+                    }
+
                     using var stream = assets.OpenStream(path);
                     using var reader = new StreamReader(stream);
 
-                    // deserialize and save the manifest
-                    var manifest = JsonConvert.DeserializeObject<SpriteManifest>(reader.ReadToEnd(), new SpriteManifest.Converter());
-                    manifest.Name = path;
-                    _manifests.Add(manifest);
+                    var manifest = SpriteManifestParser.Parse(path, reader.ReadToEnd());
+                    _spritesByManifest.Add(manifest.Key, manifest.Items);
+                    _manifests.Add(manifest.Key, manifest);
 
-                    // save sprite definitions
+                    // mark keys as defined for the next step
                     foreach (var item in manifest.Items) {
-                        var key = $"sprites/{item.key}";
-                        _definitions.Add(key, item with {
-                            manifest = manifest,
-                            key = key,
-                        });
+                        definedKeys.Add(item.Key);
                     }
 
                 } catch (Exception ex) {
-                    InstantApp.Logger.Error($"Could not load sprite manifest '{Path.GetFileName(path)}': {ex.Message}");
+                    InstantApp.Logger.Error($"Couldn't load Sprite Manifest at {Path.GetFileName(path)}. ({ex.Message})");
                 }
             }
 
@@ -47,72 +48,94 @@ namespace Instant2D.Assets.Loaders {
             foreach (var path in assets.EnumerateFiles(DIRECTORY, "*.png", true)) {
                 var key = path.Replace(".png", "");
 
-                // don't replace existing defs
-                if (_definitions.ContainsKey(key))
+                if (definedKeys.Contains(key[(DIRECTORY.Length + 1)..]))
                     continue;
 
-                _definitions.TryAdd(key, new SpriteDef {
-                    key = key
+                // save 'stray' definition for use later
+                _strayDefinitions.Add(new SpriteDefinition {
+                    // remove 'sprites/' from the key
+                    Key = key[(DIRECTORY.Length + 1)..]
                 });
             }
 
-            // produce assets
-            foreach (var asset in ProcessAssets(_definitions))
+            var creationQueue = new List<DefinitionManifestPair>();
+            creationQueue.AddRange(_strayDefinitions.Select(def => new DefinitionManifestPair(def, null)));
+
+            // append pairs of sprites with manifests attached to them
+            foreach (var (manifestName, definitionArray) in _spritesByManifest) {
+                creationQueue.AddRange(definitionArray.Select(def => new DefinitionManifestPair(def, _manifests[manifestName])));
+            }
+
+            // produce assets from sprite definitions
+            foreach (var asset in CreateAssets(creationQueue))
                 yield return asset;
         }
 
-        IEnumerable<Asset> ProcessAssets(Dictionary<string, SpriteDef> definitions) {
-            foreach (var (key, def) in definitions) {
-                Asset baseAsset = def.animation != null ? new LazyAsset<SpriteAnimation>(key, this) : new LazyAsset<Sprite>(key, this);
-                baseAsset.Data = def;
+        record struct DefinitionManifestPair(SpriteDefinition Definition, SpriteManifest? Manifest = default);
 
-                // switch blocks are dumb ;-;
-                var i = 0;
+        IEnumerable<Asset> CreateAssets(IEnumerable<DefinitionManifestPair> definitions) {
+            foreach (var (def, manifest) in definitions) {
+                var key = $"sprites/{def.Key}";
 
-                // produce additional child assets from animations or splits
-                switch (def.split) {
-                    // manual sprite split
-                    case { type: SpriteSplitOptions.Manual, manual: var manualSplit }:
-                        for (i = 0; i < manualSplit.Length; i++) {
-                            var child = new LazyAsset<Sprite>(def.FormatFrameKey(manualSplit[i].key), this) {
-                                // save the data for later processing
-                                Data = manualSplit[i]
+                // root asset for the animation/spritesheet
+                Asset assetRoot = def.Animation != null ?
+                    new LazyAsset<SpriteAnimation>(key, this) :
+                    new LazyAsset<Sprite>(key, this);
+
+                // save def and manifest for later
+                assetRoot.Data = (def, manifest);
+
+                // yield the root asset first
+                yield return assetRoot;
+
+                // create child assets
+                switch (def.SplitOptions) {
+                    // save sub sprite properties into asset.Data
+                    case { Type: SplitType.BySubSprites, SubSprites: var subSprites }:
+                        foreach (var subSprite in subSprites) {
+                            var child = new LazyAsset<Sprite>(string.Format(manifest?.NamingFormat ?? SpriteManifest.DefaultNamingFormat, key, subSprite.Key), this) {
+                                Data = subSprite // save sub sprite for loading it later
                             };
 
-                            baseAsset.AddChild(child);
+                            assetRoot.AddChild(child);
 
+                            // load each sub sprite as individual asset
                             yield return child;
                         }
 
                         break;
 
-                    // split using frame cound
-                    case { type: SpriteSplitOptions.ByCount, widthOrFrameCount: var count }:
-                        for (i = 0; i < count; i++) {
-                            var child = new LazyAsset<Sprite>(def.FormatFrameKey(i.ToString()), this);
-                            baseAsset.AddChild(child);
+                    // save sprite index as data
+                    case { Type: SplitType.ByCount, WidthOrFrameCount: var frameCount }:
+                        for (var i = 0; i < frameCount; i++) {
+                            var child = new LazyAsset<Sprite>(string.Format(manifest?.NamingFormat ?? SpriteManifest.DefaultNamingFormat, key, i), this) {
+                                Data = i // save frame index for later
+                            };
 
+                            assetRoot.AddChild(child);
+
+                            // load each frame as individual asset
                             yield return child;
                         }
 
                         break;
 
-                    // split using frame size (requires image dimensions)
-                    case { type: SpriteSplitOptions.BySize, widthOrFrameCount: var width, height: var height }:
-                        if (!TryGetPngSize(def.key, out var imageDimensions)) {
-                            InstantApp.Logger.Warn($"Couldn't get image dimensions for sprite '{key}'");
+                    // save source rect as data
+                    case { Type: SplitType.BySize, WidthOrFrameCount: var width, Height: var height }:
+                        if (!TryGetPngSize(key, out var imageDimensions)) {
+                            InstantApp.Logger.Warn($"Couldn't get image dimensions for sprite '{key}'. This is required because Split.BySize was used.");
                             break;
                         }
 
-                        // crop the image by width x height 
+                        var spriteCount = 0;
                         for (var x = 0; x < imageDimensions.X; x += width) {
                             for (var y = 0; y < imageDimensions.Y; y += height) {
-                                var child = new LazyAsset<Sprite>(def.FormatFrameKey(i++.ToString()), this) {
+                                var child = new LazyAsset<Sprite>(string.Format(manifest?.NamingFormat ?? SpriteManifest.DefaultNamingFormat, key, spriteCount++), this) {
                                     // calculate the source rect while at it
                                     Data = new Rectangle(x, y, width, height)
                                 };
 
-                                baseAsset.AddChild(child);
+                                assetRoot.AddChild(child);
 
                                 yield return child;
                             }
@@ -120,9 +143,63 @@ namespace Instant2D.Assets.Loaders {
 
                         break;
                 }
+            }
+        }
 
-                // yield base asset now
-                yield return baseAsset;
+        void LoadSprite(LazyAsset asset) {
+            // load the texture
+            using var stream = AssetManager.Instance.OpenStream(asset.Key + ".png");
+            var texture = Texture2D.FromStream(InstantApp.Instance.GraphicsDevice, stream);
+            texture.Tag = asset.Key;
+
+            var (def, manifest) = ((SpriteDefinition, SpriteManifest?))asset.Data;
+
+            var sourceRect = new Rectangle(0, 0, texture.Width, texture.Height);
+
+            // create a sprite
+            var sprite = new Sprite(texture, sourceRect, def.Origin.Transform(sourceRect, manifest), asset.Key) { Points = def.Points };
+
+            var frames = new List<Sprite>();
+
+            if (asset.Children != null) {
+                Sprite childSprite = default;
+
+                // load child assets (animation frames, etc)
+                for (var i = 0; i < asset.Children.Count; i++) {
+                    var child = asset.Children[i] as LazyAsset<Sprite>;
+                    switch (child.Data) {
+                        case SubSprite subSprite:
+                            child.Content = new Sprite(texture, subSprite.Region, subSprite.Origin.Transform(subSprite.Region, manifest, def.Origin), child.Key);
+                            break;
+
+                        case Rectangle rect:
+                            childSprite = new Sprite(texture, rect, def.Origin.Transform(rect, manifest), child.Key);
+                            child.Content = childSprite;
+                            frames.Add(childSprite);
+                            break;
+
+                        case int index:
+                            var frame = new Rectangle(0, texture.Height / asset.Children.Count * index, texture.Width, texture.Height);
+                            childSprite = new Sprite(texture, frame, def.Origin.Transform(frame, manifest), child.Key);
+                            child.Content = childSprite;
+                            frames.Add(childSprite);
+                            break;
+                    }
+                }
+            }
+
+            switch (asset) {
+                default:
+                    InstantApp.Logger.Warn($"Unknown sprite asset type. ({asset.GetType().Name})");
+                    break;
+
+                case LazyAsset<SpriteAnimation> animationAsset when def.Animation is AnimationDefinition animation:
+                    animationAsset.Content = new SpriteAnimation(animation.Fps, frames.ToArray(), animation.Events, animationAsset.Key);
+                    break;
+
+                case LazyAsset<Sprite> spriteAsset:
+                    spriteAsset.Content = sprite;
+                    break;
             }
         }
 
@@ -133,65 +210,10 @@ namespace Instant2D.Assets.Loaders {
                 return;
             }
 
-            // load the texture
-            using var stream = AssetManager.Instance.OpenStream(asset.Key + ".png");
-            var texture = Texture2D.FromStream(InstantApp.Instance.GraphicsDevice, stream);
-            texture.Tag = asset.Key;
-
-            // make cool sprite
-            var def = asset.Data as SpriteDef;
-            var sprite = new Sprite(texture, new Rectangle(0, 0, texture.Width, texture.Height), SpriteDef.TransformOrigin(def.origin, new Rectangle(0, 0, texture.Width, texture.Height), def.manifest), asset.Key) {
-                Points = def.points?.ToDictionary(p => p.Key, p => p.Value.RoundToPoint())
-            };
-
-            // obtain the framebuffer when animation is needed
-            var frameBuffer = def.animation != null && def.split.type != SpriteSplitOptions.Manual ? ListPool<Sprite>.Get() : null;
-
-            // process children
-            if (asset.Children != null) {
-                for (var i = 0; i < asset.Children.Count; i++) {
-                    var child = asset.Children[i] as LazyAsset<Sprite>;
-                    switch (child.Data) {
-                        // split by size produces source rects in Load phase
-                        case Rectangle rect:
-                            var splitBySizeSprite = new Sprite(texture, rect, SpriteDef.TransformOrigin(def.origin, rect, def.manifest), child.Key);
-                            child.Content = splitBySizeSprite;
-                            frameBuffer?.Add(splitBySizeSprite);
-                            break;
-
-                        // manual split comes packaged with a nice struct
-                        case ManualSplitItem split:
-                            child.Content = new Sprite(texture, split.rect, SpriteDef.TransformOrigin(split.origin, split.rect, def.manifest, def.origin), child.Key);
-                            break;
-
-                        // and what does split by count get?
-                        default:
-                            var height = texture.Height / asset.Children.Count;
-                            var newRect = new Rectangle(0, height * i, texture.Width, height);
-                            var splitByCountSprite = new Sprite(texture, newRect, SpriteDef.TransformOrigin(def.origin, newRect, def.manifest));
-                            child.Content = splitByCountSprite;
-                            frameBuffer?.Add(splitByCountSprite);
-                            break;
-                    }
-                }
-            }
-
-            // add the texture for later disposal
-            // _textures.Add(texture);
-
-            // save asset data
-            switch (asset) {
-                default:
-                    InstantApp.Logger.Warn($"Unknown asset type '{asset.GetType().Name}'.");
-                    break;
-
-                case LazyAsset<SpriteAnimation> animationAsset when def.animation is SpriteAnimationDef animation:
-                    animationAsset.Content = new SpriteAnimation(animation.fps, frameBuffer.ToArray(), animation.events, def.key);
-                    break;
-
-                case LazyAsset<Sprite> spriteAsset:
-                    spriteAsset.Content = sprite;
-                    break;
+            try {
+                LoadSprite(asset);
+            } catch (Exception ex) {
+                InstantApp.Logger.Error($"Couldn't load Sprite '{asset.Key}'. ({ex.Message})");
             }
         }
 
@@ -227,6 +249,45 @@ namespace Instant2D.Assets.Loaders {
 
         IEnumerable<string> IHotReloader.WatcherPatterns { get; } = new[] { "*.png", "*.json" };
 
+        bool ReloadManifest(string assetPath, out IEnumerable<Asset> updatedAssets) {
+            using var stream = AssetManager.Instance.OpenStream(assetPath);
+            using var reader = new StreamReader(stream);
+
+            // read manifest file to ensure it is valid first
+            var manifest = SpriteManifestParser.Parse(assetPath, reader.ReadToEnd());
+            var assets = CreateAssets(manifest.Items.Select(i => new DefinitionManifestPair(i, manifest)))
+                .ToArray();
+
+            // clear previous assets
+            if (_manifests.TryGetValue(assetPath, out var oldManifest)) {
+                foreach (var item in oldManifest.Items) {
+                    var key = $"sprites/{item.Key}";
+                    if (AssetManager.Instance.GetContainer(key) is not Asset asset) 
+                        continue;
+
+                    // keep track of cleared assets for updatedAssets
+                    AssetManager.Instance.Remove(key);
+                }
+
+                // remove from registries too
+                _spritesByManifest.Remove(assetPath);
+                _manifests.Remove(assetPath);
+            }
+
+            // register new manifest
+            _spritesByManifest.Add(assetPath, manifest.Items);
+            _manifests.Add(assetPath, manifest);
+
+            // upload new assets
+            foreach (var asset in assets) {
+                AssetManager.Instance.Register(asset.Key, asset, false);
+            }
+
+            // display the updated assets
+            updatedAssets = assets;
+            return true;
+        }
+
         bool IHotReloader.TryReload(string assetKey, out IEnumerable<Asset> updatedAssets) {
             if (!assetKey.StartsWith(DIRECTORY + "/")) {
                 updatedAssets = null;
@@ -238,65 +299,13 @@ namespace Instant2D.Assets.Loaders {
 
             // ooh boy 
             if (extension == ".json") {
-                var oldManifest = _manifests.FirstOrDefault(m => m.Name == assetKey);
-
-                var removedDefs = ListPool<SpriteDef>.Get();
-
-                var changedDefs = new Dictionary<string, SpriteDef>();
-
-                // wipe the old manifest from existence
-                _manifests.Remove(oldManifest);
-                foreach (var item in oldManifest.Items) {
-                    var defKey = $"{DIRECTORY}/{item.key}";
-
-                    // clear sprite defs, keeping track of updated ones
-                    if (_definitions.Remove(defKey, out var removedDef)) {
-                        removedDefs.Add(removedDef);
-
-                        // try to remove assets too
-                        AssetManager.Instance.Remove(defKey);
-                    }
+                try {
+                    return ReloadManifest(assetKey, out updatedAssets);
+                } catch (Exception ex) {
+                    InstantApp.Logger.Error($"Couldn't hot reload Sprite Manifest '{assetKey}'. ({ex.Message})");
+                    updatedAssets = null;
+                    return false;
                 }
-
-                // read stream once again
-                using var stream = AssetManager.Instance.OpenStream(assetKey);
-                using var reader = new StreamReader(stream);
-
-                // deserialize and save the manifest
-                var manifest = JsonConvert.DeserializeObject<SpriteManifest>(reader.ReadToEnd(), new SpriteManifest.Converter());
-                manifest.Name = assetKey;
-                _manifests.Add(manifest);
-
-                // save sprite definitions
-                foreach (var item in manifest.Items) {
-                    var defKey = $"sprites/{item.key}";
-                    var newDef = item with {
-                        manifest = manifest,
-                        key = defKey,
-                    };
-
-                    _definitions.Add(defKey, newDef);
-
-                    // if it's an existing def, add it into updated pool
-                    if (removedDefs.Find(d => d.key == defKey) is SpriteDef changedDef) {
-                        changedDefs.Add(defKey, newDef);
-                        removedDefs.Remove(changedDef);
-                    }
-                }
-
-                // clear removed defs
-                removedDefs.ForEach(r => AssetManager.Instance.Remove(r.key));
-                removedDefs.Pool();
-
-                // re-add new sprite assets
-                var newAssets = ProcessAssets(changedDefs).ToList();
-                foreach (var asset in newAssets) {
-                    AssetManager.Instance.Register(asset.Key, asset, false);
-                }
-
-                // output
-                updatedAssets = newAssets;
-                return true;
             }
 
             if (extension == ".png") {
