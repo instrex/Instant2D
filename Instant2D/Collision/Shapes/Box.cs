@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Collision.Shapes {
-    public class Box : ICollisionShape, IPooled {
+    public class Box : ICollisionShape, IPooledInstance {
         Vector2 _size, _position;
         float _rotation;
 

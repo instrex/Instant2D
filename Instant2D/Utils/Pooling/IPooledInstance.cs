@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Utils {
-    public interface IPooled {
+    public interface IPooledInstance {
         /// <summary>
         /// Called after the object is returned into the pool. Make sure to null out all references and set default values here.
         /// </summary>

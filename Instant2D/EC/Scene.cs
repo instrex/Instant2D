@@ -131,6 +131,10 @@ namespace Instant2D.EC {
             entity.Name = name;
             entity.Scene = this;
 
+            // initialize transform state immediately so it doesnt flash
+            // for a single frame
+            entity.SetTransformState(entity.Transform.Data);
+
             return entity;
         }
 

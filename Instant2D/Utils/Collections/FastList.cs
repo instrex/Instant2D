@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.Utils {
-    public class FastList<T> : IList<T>, IPooled {
+    public class FastList<T> : IList<T>, IPooledInstance {
         const int DEFAULT_CAPACITY = 16;
 
         T[] _buffer;

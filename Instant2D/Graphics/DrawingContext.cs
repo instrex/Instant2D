@@ -379,8 +379,8 @@ namespace Instant2D.Graphics {
 				TransformMatrix = _transformMatrix
 			};
 
-			End();
-			Begin(material, transformMatrix ?? prevState.TransformMatrix, immediateMode ?? prevState.ImmediateMode);
+            EndBatch();
+            Begin(material, transformMatrix ?? prevState.TransformMatrix, immediateMode ?? prevState.ImmediateMode);
 
 			// push the prev state to retrieve it later in Pop()
 			_batchStack.Push(prevState);
@@ -391,13 +391,13 @@ namespace Instant2D.Graphics {
 		/// </summary>
 		public void Pop() {
 			if (!_batchStack.TryPop(out var prevBatch)) {
-				//throw new InvalidOperationException("No batch to Pop.");
-				End();
+                //throw new InvalidOperationException("No batch to Pop.");
+                EndBatch();
 				return;
             }
 
-			End();
-			Begin(prevBatch.Material, prevBatch.TransformMatrix, prevBatch.ImmediateMode);
+            EndBatch();
+            Begin(prevBatch.Material, prevBatch.TransformMatrix, prevBatch.ImmediateMode);
         }
 
 		/// <summary>
@@ -423,20 +423,26 @@ namespace Instant2D.Graphics {
             }
         }
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		internal void EndBatch() {
+            if (!_batchBegun) {
+                throw new InvalidOperationException("The batch wasn't started.");
+            }
+
+            // flush the batch if not immediate
+            if (!_isBatchingDisabled)
+                Flush();
+
+            _batchBegun = false;
+            _effect = null;
+        }
+
 		/// <summary>
 		/// Ends the current batch, flushing all the sprites (if set to non-immediate mode).
 		/// </summary>
 		public void End() {
-			if (!_batchBegun) {
-				throw new InvalidOperationException("The batch wasn't started.");
-            }
-
-			// flush the batch if not immediate
-			if (!_isBatchingDisabled)
-				Flush();
-
-			_batchBegun = false;
-			_effect = null;
+			if (_batchStack.Count > 0) _batchStack.Clear();
+            EndBatch();
         }
 
 		/// <summary>

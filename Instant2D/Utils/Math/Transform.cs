@@ -29,7 +29,7 @@ namespace Instant2D {
     /// Represents position, scale and rotation as well as object hierarchy. <br/> 
     /// <typeparamref name="T"/> can optionally implement <see cref="ITransformCallbacksHandler"/> to receive transform events.
     /// </summary>
-    public class Transform<T> : IPooled {
+    public class Transform<T> : IPooledInstance {
         /// <summary>
         /// An entity that will receive <see cref="Component.OnTransformUpdated(TransformComponentType)"/> events.
         /// </summary>

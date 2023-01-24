@@ -120,10 +120,13 @@ namespace Instant2D {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Color Multiply(this Color a, Color b, float? alpha = default) => new(
+        public static Color Multiply(this Color a, in Color b, float? alpha = default) => new(
             a.R / 255f * (b.R / 255f),
             a.G / 255f * (b.G / 255f),
             a.B / 255f * (b.B / 255f),
             alpha ?? a.A / 255f * (b.A / 255f));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Color WithAlpha(this Color color, float alpha) => new(color.R, color.G, color.B, (byte)(255 * alpha));
     }
 }

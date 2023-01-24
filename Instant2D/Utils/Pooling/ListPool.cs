@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 
 namespace Instant2D.Utils {
-
+    /// <summary>
+    /// Static utility pool for lists.
+    /// </summary>
     public static class ListPool<T> {
         static readonly Pool<List<T>> _internalPool = new(3);
 

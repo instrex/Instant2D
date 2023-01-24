@@ -19,9 +19,9 @@ namespace Instant2D.EC {
     /// <remarks>
     /// NOTE: preferably, avoid creating instances of this class using constructor, instead use <see cref="StaticPool{T}"/> to access pooled instances. <br/>
     /// This will allow future <see cref="Scene.CreateEntity(string, Vector2)"/> calls utilize already allocated entities, instead of creating new ones each time. <br/>
-    /// Same applies to components implementing <see cref="IPooled"/> interface.
+    /// Same applies to components implementing <see cref="IPooledInstance"/> interface.
     /// </remarks>
-    public sealed class Entity : IPooled, ITransformCallbacksHandler, ICoroutineTarget {
+    public sealed class Entity : IPooledInstance, ITransformCallbacksHandler, ICoroutineTarget {
         static uint _entityIdCounter;
 
         readonly List<Component> _components = new(16);
@@ -508,6 +508,15 @@ namespace Instant2D.EC {
 
         #endregion
 
+        /// <summary>
+        /// Sets transform data for previous and present frames. You shouldn't really call this unless you know what you're doing.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetTransformState(in TransformData data) {
+            _lastTransformState = data;
+            TransformState = data;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void PreUpdate() {
             if (!_isInitialized) {
@@ -517,8 +526,7 @@ namespace Instant2D.EC {
                 }
 
                 // set initial transform state
-                TransformState = Transform.Data;
-                _lastTransformState = TransformState;
+                SetTransformState(Transform.Data);
 
                 _isInitialized = true;
             }
@@ -652,12 +660,14 @@ namespace Instant2D.EC {
         }
 
         // IPooled impl
-        void IPooled.Reset() {
+        void IPooledInstance.Reset() {
             IsDestroyed = false;
             AlphaFrameTime = 0f;
             TimeScale = 1.0f;
             Name = null;
             Tags = 0;
+
+            _timestepCounter = 0;
 
             // reset the transform and reassign entity
             Transform.Reset();

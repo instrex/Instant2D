@@ -14,7 +14,7 @@ namespace Instant2D.Coroutines {
     /// <summary>
     /// Coroutine instance. Avoid storing references or null them out on completion, as they are pooled and may be replaced by another completely irrelevant coroutine.
     /// </summary>
-    public class Coroutine : IPooled {
+    public class Coroutine : IPooledInstance {
         internal WeakReference<ICoroutineTarget> _target;
         internal Action<Coroutine> _completionHandler;
         internal object _awaiter, _context;

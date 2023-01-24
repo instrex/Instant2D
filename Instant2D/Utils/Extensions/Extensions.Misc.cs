@@ -37,7 +37,7 @@ namespace Instant2D {
         /// Returns the value to shared pool of the type.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Pool<T>(this T value) where T: IPooled, new() {
+        public static void Pool<T>(this T value) where T: IPooledInstance, new() {
             Utils.Pool<T>.Shared.Return(value);
         }
 

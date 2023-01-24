@@ -54,7 +54,8 @@ namespace Instant2D.Assets.Loaders {
                 // save 'stray' definition for use later
                 _strayDefinitions.Add(new SpriteDefinition {
                     // remove 'sprites/' from the key
-                    Key = key[(DIRECTORY.Length + 1)..]
+                    Key = key[(DIRECTORY.Length + 1)..],
+                    IsAutomaticallyGenerated = true
                 });
             }
 
@@ -179,7 +180,7 @@ namespace Instant2D.Assets.Loaders {
                             break;
 
                         case int index:
-                            var frame = new Rectangle(0, texture.Height / asset.Children.Count * index, texture.Width, texture.Height);
+                            var frame = new Rectangle(0, texture.Height / asset.Children.Count * index, texture.Width, texture.Height / asset.Children.Count);
                             childSprite = new Sprite(texture, frame, def.Origin.Transform(frame, manifest), child.Key);
                             child.Content = childSprite;
                             frames.Add(childSprite);

@@ -246,6 +246,17 @@ namespace Instant2D.Collision {
             return _linecaster.End(out hits);
         }
 
+        /// <summary>
+        /// Simple linecast check without returning any colliders.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Linecast(Vector2 origin, Vector2 end, int layerMask = -1, bool ignoreOriginColliders = false) {
+            var result = Linecast(origin, end, out var hits, layerMask, 1, ignoreOriginColliders);
+            hits?.Pool();
+
+            return result;
+        }
+
         #endregion
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

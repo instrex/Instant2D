@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.Collision.Shapes {
-    public class Polygon : ICollisionShape, IPooled {
+    public class Polygon : ICollisionShape, IPooledInstance {
         internal Vector2[] _vertices, _edgeNormals;
         bool _edgeNormalsDirty = true, _boundsDirty = true;
         RectangleF _bounds;

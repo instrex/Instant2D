@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Instant2D.EC {
-    public class SpriteComponent : RenderableComponent, IPooled {
+    public class SpriteComponent : RenderableComponent, IPooledInstance {
         protected bool _isSpriteSet, _autocorrectOrigin = true;
         protected SpriteEffects _spriteFx;
 
@@ -127,7 +127,7 @@ namespace Instant2D.EC {
             );
         }
 
-        void IPooled.Reset() {
+        void IPooledInstance.Reset() {
             _spriteFx = SpriteEffects.None;
             _boundsDirty = true;
             _isSpriteSet = false;

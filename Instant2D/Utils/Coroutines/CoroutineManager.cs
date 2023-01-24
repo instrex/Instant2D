@@ -95,7 +95,6 @@ namespace Instant2D.Coroutines {
 
                 // coroutine was stopped
                 if (_stoppedCoroutines.Contains(coroutine)) {
-                    _stoppedCoroutines.Remove(coroutine);
                     continue;
                 }
 
@@ -122,6 +121,9 @@ namespace Instant2D.Coroutines {
             // push next frame coroutines to the active stack
             _activeCoroutines.AddRange(_nextFrameBuffer);
             _nextFrameBuffer.Clear();
+
+            // clear stopped coroutines
+            _stoppedCoroutines.Clear();
 
             _isCurrentlyUpdating = false;
         }
