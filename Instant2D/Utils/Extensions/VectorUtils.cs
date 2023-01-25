@@ -1,4 +1,4 @@
-﻿using Instant2D.Utils.Math;
+﻿using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
 using System.Runtime.CompilerServices;

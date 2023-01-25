@@ -1,7 +1,6 @@
 ﻿using Instant2D.Graphics;
 using Instant2D.Input;
 using Instant2D.Utils;
-using Instant2D.Utils.Math;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;

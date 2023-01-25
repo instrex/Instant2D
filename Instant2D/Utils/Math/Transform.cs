@@ -1,6 +1,5 @@
 ﻿using Instant2D.EC;
 using Instant2D.Utils;
-using Instant2D.Utils.Math;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;

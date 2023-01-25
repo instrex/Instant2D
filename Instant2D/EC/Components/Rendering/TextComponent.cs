@@ -1,5 +1,5 @@
 ﻿using Instant2D.Graphics;
-using Instant2D.Utils.Math;
+using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System.Runtime.CompilerServices;
 

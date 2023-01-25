@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D.Utils.Math {
+namespace Instant2D.Utils {
     /// <summary>
     /// Represents the right-handed 3x3 floating point matrix, which can store translation, scale and rotation information.
     /// </summary>
