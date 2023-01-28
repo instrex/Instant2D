@@ -187,6 +187,10 @@ namespace Instant2D.Collision.Shapes {
                 return ICollisionShape.PolygonToPolygon(this, otherPolygon, out _, out _);
             }
 
+            if (other is Box box) {
+                return ICollisionShape.PolygonToPolygon(this, box.Polygon, out _, out _);
+            }
+
             throw new NotImplementedException();
         }
 

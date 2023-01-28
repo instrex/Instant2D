@@ -95,7 +95,7 @@ namespace Instant2D.EC.Components {
         }
 
         public override void Draw(DrawingContext drawing, CameraComponent camera) {
-            drawing.DrawString(_text, (Entity.Transform.Position + _offset * Entity.Transform.Scale + Offset).Round(),
+            drawing.DrawString(Font, _text, (Entity.Transform.Position + _offset * Entity.Transform.Scale + Offset).Round(),
                 Color, Entity.Transform.Scale, Entity.Transform.Rotation, _displayedCharacters);
         }
     }
