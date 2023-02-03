@@ -38,6 +38,12 @@ namespace Instant2D {
         public static Vector2 NextDirection(this Random random, float length = 1.0f) => NextAngle(random).ToVector2() * length;
 
         /// <summary>
+        /// Gets a random normalized vector multiplied by random value between <paramref name="minLength"/> and <paramref name="maxLength"/>.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector2 NextDirectionRange(this Random random, float minLength, float maxLength) => NextAngle(random).ToVector2() * NextFloat(random, minLength, maxLength);
+
+        /// <summary>
         /// Gets a random point from rectangle.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

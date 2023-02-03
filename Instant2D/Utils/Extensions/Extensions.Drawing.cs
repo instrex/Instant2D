@@ -118,6 +118,9 @@ namespace Instant2D {
             DrawString(drawing, GraphicsManager.DefaultFont, text, position, color, scale, rotation, maxDisplayedCharacters, drawOutline);
         }
 
+        /// <summary>
+        /// Multiplies two colors, optionally overriding the alpha channel.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Color Multiply(this Color a, in Color b, float? alpha = default) => new(
             a.R / 255f * (b.R / 255f),
@@ -125,6 +128,9 @@ namespace Instant2D {
             a.B / 255f * (b.B / 255f),
             alpha ?? a.A / 255f * (b.A / 255f));
 
+        /// <summary>
+        /// Overrides the alpha channel of a color.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Color WithAlpha(this Color color, float alpha) => new(color.R, color.G, color.B, (byte)(255 * alpha));
     }

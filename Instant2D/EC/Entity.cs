@@ -121,7 +121,7 @@ namespace Instant2D.EC {
 
         /// <summary> Shortcut for creating an entity using <see cref="Scene.CreateEntity(string, Vector2)"/> and setting its <see cref="Parent"/> to this. </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Entity AddChild(string name) => AddChild(_scene?.CreateEntity(name, Vector2.Zero) ?? Pool<Entity>.Shared.Get());
+        public Entity AddChild(string name) => AddChild(_scene?.CreateEntity(name, Vector2.Zero) ?? Pool<Entity>.Shared.Rent());
 
         #endregion
 
@@ -309,7 +309,7 @@ namespace Instant2D.EC {
         /// <summary>
         /// Attempts to find a component of given type.
         /// </summary>
-        public bool TryGetComponent<T>(out T component) where T: Component {
+        public bool TryGetComponent<T>(out T component) {
             for (var i = 0; i < _components.Count; i++) {
                 if (_components[i] is T foundComponent) {
                     component = foundComponent;
@@ -324,12 +324,12 @@ namespace Instant2D.EC {
         /// <summary>
         /// Attempts to find a component of given type, returning <see langword="null"/> if unsuccessful.
         /// </summary>
-        public T GetComponent<T>() where T: Component => TryGetComponent<T>(out var component) ? component : default;
+        public T GetComponent<T>() => TryGetComponent<T>(out var component) ? component : default;
 
         /// <summary>
         /// Enumerates all components of provided type <typeparamref name="T"/>.
         /// </summary>
-        public IEnumerable<T> GetComponents<T>() where T: Component {
+        public IEnumerable<T> GetComponents<T>() {
             for (var i = 0; i < _components.Count; i++) {
                 if (_components[i] is T foundComponent) {
                     yield return foundComponent;

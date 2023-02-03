@@ -23,7 +23,7 @@ namespace Instant2D.Utils {
         /// <summary>
         /// Obtain an instance from the pool.
         /// </summary>
-        T Get();
+        T Rent();
 
         /// <summary>
         /// Return an instance to the pool. <see cref="IPooledInstance.Reset"/> will be called when implemented.

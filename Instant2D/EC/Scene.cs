@@ -125,7 +125,7 @@ namespace Instant2D.EC {
         /// Creates an entity and automatically adds it onto the scene.
         /// </summary>
         public Entity CreateEntity(string name, Vector2 position = default) {
-            var entity = Pool<Entity>.Shared.Get();
+            var entity = Pool<Entity>.Shared.Rent();
             entity.Transform.Position = position;
             entity.Name = name;
             entity.Scene = this;

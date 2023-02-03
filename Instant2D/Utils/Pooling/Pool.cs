@@ -50,7 +50,7 @@ namespace Instant2D.Utils {
             }
         }
 
-        public T Get() {
+        public T Rent() {
             if (_items.TryPop(out var instance))
                 return instance;
 
