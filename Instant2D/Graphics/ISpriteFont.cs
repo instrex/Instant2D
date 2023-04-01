@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 
 namespace Instant2D.Graphics {
     /// <summary> 
@@ -13,12 +14,12 @@ namespace Instant2D.Graphics {
         /// <summary>
         /// Measures maximum line width and heigh of <paramref name="text"/>.
         /// </summary>
-        Vector2 MeasureString(string text);
+        Vector2 MeasureString(ReadOnlySpan<char> text);
 
         /// <summary>
         /// Renders the <paramref name="text"/> into <paramref name="drawing"/>.
         /// </summary>
-        void DrawString(DrawingContext drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue);
+        void DrawString(DrawingContext drawing, ReadOnlySpan<char> text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue);
 
         /// <summary>
         /// Get the sprite of a text character.

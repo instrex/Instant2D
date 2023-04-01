@@ -7,9 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Instant2D", "Instant2D\Inst
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Instant2D.TestGame", "Instant2D.TestGame\Instant2D.TestGame.csproj", "{64EB14D0-FDA6-4B31-A832-0107ACED365F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FNA.Core", "FNA\FNA.Core.csproj", "{91E0BFC2-A836-4C19-A3DF-37A9A8F10F1F}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "i2dFontTool", "i2dFontTool\i2dFontTool.csproj", "{BF853756-3DAA-4B38-B2B6-377B730A95E5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FNA.Core", "..\FNA\FNA.Core.csproj", "{FA019AE6-4442-4605-806E-F27EF4184232}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,14 +35,6 @@ Global
 		{64EB14D0-FDA6-4B31-A832-0107ACED365F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{64EB14D0-FDA6-4B31-A832-0107ACED365F}.Release|x64.ActiveCfg = Release|x64
 		{64EB14D0-FDA6-4B31-A832-0107ACED365F}.Release|x64.Build.0 = Release|x64
-		{91E0BFC2-A836-4C19-A3DF-37A9A8F10F1F}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{91E0BFC2-A836-4C19-A3DF-37A9A8F10F1F}.Debug|Any CPU.Build.0 = Debug|x64
-		{91E0BFC2-A836-4C19-A3DF-37A9A8F10F1F}.Debug|x64.ActiveCfg = Debug|x64
-		{91E0BFC2-A836-4C19-A3DF-37A9A8F10F1F}.Debug|x64.Build.0 = Debug|x64
-		{91E0BFC2-A836-4C19-A3DF-37A9A8F10F1F}.Release|Any CPU.ActiveCfg = Release|x64
-		{91E0BFC2-A836-4C19-A3DF-37A9A8F10F1F}.Release|Any CPU.Build.0 = Release|x64
-		{91E0BFC2-A836-4C19-A3DF-37A9A8F10F1F}.Release|x64.ActiveCfg = Release|x64
-		{91E0BFC2-A836-4C19-A3DF-37A9A8F10F1F}.Release|x64.Build.0 = Release|x64
 		{BF853756-3DAA-4B38-B2B6-377B730A95E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BF853756-3DAA-4B38-B2B6-377B730A95E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF853756-3DAA-4B38-B2B6-377B730A95E5}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -51,6 +43,14 @@ Global
 		{BF853756-3DAA-4B38-B2B6-377B730A95E5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BF853756-3DAA-4B38-B2B6-377B730A95E5}.Release|x64.ActiveCfg = Release|Any CPU
 		{BF853756-3DAA-4B38-B2B6-377B730A95E5}.Release|x64.Build.0 = Release|Any CPU
+		{FA019AE6-4442-4605-806E-F27EF4184232}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{FA019AE6-4442-4605-806E-F27EF4184232}.Debug|Any CPU.Build.0 = Debug|x64
+		{FA019AE6-4442-4605-806E-F27EF4184232}.Debug|x64.ActiveCfg = Debug|x64
+		{FA019AE6-4442-4605-806E-F27EF4184232}.Debug|x64.Build.0 = Debug|x64
+		{FA019AE6-4442-4605-806E-F27EF4184232}.Release|Any CPU.ActiveCfg = Release|x64
+		{FA019AE6-4442-4605-806E-F27EF4184232}.Release|Any CPU.Build.0 = Release|x64
+		{FA019AE6-4442-4605-806E-F27EF4184232}.Release|x64.ActiveCfg = Release|x64
+		{FA019AE6-4442-4605-806E-F27EF4184232}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

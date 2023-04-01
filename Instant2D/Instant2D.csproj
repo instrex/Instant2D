@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-	<ProjectReference Include="..\FNA\FNA.Core.csproj" />
+	<ProjectReference Include="..\..\FNA\FNA.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -40,7 +40,7 @@ namespace Instant2D.Graphics {
             get => _glyphs.TryGetValue(character, out var glyph) ? glyph.sprite : null;
         }
 
-        public void DrawString(DrawingContext drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue) {
+        public void DrawString(DrawingContext drawing, ReadOnlySpan<char> text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue) {
             var length = Math.Min(text.Length, maxDisplayedCharacters);
             var currentPos = new Vector2();
             for (var i = 0; i < length; i++) {
@@ -70,9 +70,9 @@ namespace Instant2D.Graphics {
             }
         }
 
-        public Vector2 MeasureString(string text) {
+        public Vector2 MeasureString(ReadOnlySpan<char> text) {
             // empty string passed...
-            if (string.IsNullOrEmpty(text)) {
+            if (text.IsEmpty) {
                 return Vector2.Zero;
             }
 
