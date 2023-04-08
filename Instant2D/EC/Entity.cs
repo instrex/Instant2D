@@ -627,7 +627,7 @@ namespace Instant2D.EC {
             IsDestroyed = true;
 
             // release all the coroutines attached to this entity
-            CoroutineManager.Instance.StopAll(this);
+            CoroutineManager.StopByTarget(this);
 
             // notify components of death and detach
             for (var i = 0; i < _components.Count; i++) {

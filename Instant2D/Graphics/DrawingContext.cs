@@ -403,7 +403,7 @@ namespace Instant2D.Graphics {
 		/// <summary>
 		/// Begins a new batch. Pass in <see langword="true"/> for <paramref name="immediateMode"/> to disable batching and draw sprites immediately.
 		/// </summary>
-		public void Begin(Material material, Matrix transformMatrix, bool immediateMode = false) {
+		public void Begin(in Material material, Matrix transformMatrix, bool immediateMode = false) {
 			_batchBegun = true;
 
 			// set material properties

@@ -4,6 +4,7 @@ using Instant2D.Coroutines;
 using Instant2D.Diagnostics;
 using Instant2D.Graphics;
 using Instant2D.Input;
+using Instant2D.Modules;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
@@ -12,221 +13,139 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Instant2D {
-    public abstract class InstantApp : Game {
-        public static InstantApp Instance { get; private set; }
+namespace Instant2D;
 
-        // GameSystem loading
-        internal readonly List<GameSystem> 
-            _GameSystems = new(16),
-            _updatableSystems = new(8),
-            _renderableSystems = new(8);
+public abstract class InstantApp : Game {
 
-        internal ILogger _logger;
-        internal bool _systemOrderDirty;
-        bool _initialized;
+    /// <summary>
+    /// Currently running InstantApp.
+    /// </summary>
+    public static InstantApp Instance { get; private set; }
 
-        // fps stuff
-        TimeSpan _fpsTimer;
-        int _framesPerSecond;
-        int _fpsCounter;
+    readonly List<IRenderableGameSystem> _renderableModules = new(8);
+    readonly List<IGameSystem> _modules = new(16);
 
-        // window
-        string _title;
+    string _defaultTitle;
+    ILogger _logger;
 
-        /// <summary>
-        /// Gets or sets the window's title taking FPS counter into account.
-        /// </summary>
-        public string Title {
-            get {
-                _title ??= AppDomain.CurrentDomain.FriendlyName;
-                return _title;
-            }
+    public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
-            set {
-                Window.Title = value;
-                _title = value;
-            }
+    /// <summary>
+    /// Gets or sets the game's base title. <br/>
+    /// Allows systems like <see cref="PerformanceCounter"/> to modify the title with necessary information.
+    /// </summary>
+    public string DefaultTitle {
+        get => _defaultTitle;
+        set => Window.Title = _defaultTitle = value;
+    }
+    
+    public InstantApp() {
+        GraphicsDeviceManager = new GraphicsDeviceManager(this);
+        IsMouseVisible = true;
+        IsFixedTimeStep = false;
+        Instance = this;
+    }
+
+    #region System Management
+
+    /// <summary>
+    /// Logger implementation used for this app.
+    /// </summary>
+    public static ILogger Logger {
+        get {
+            // initialize default logger on-demand
+            return Instance._logger ??= Instance.AddModule<DefaultLogger>(logger => {
+                logger.SetOutputFile(".log");
+            });
         }
 
-        /// <summary>
-        /// Current number of frames per second.
-        /// </summary>
-        public int FPS => _framesPerSecond;
+        set => Instance._logger = value;
+    }
 
-        public void SetTargetFramerate(int framesPerSecond) {
-            if (framesPerSecond == -1) {
-                IsFixedTimeStep = false;
-                return;
-            }
+    /// <summary>
+    /// Register game system using default constructor.
+    /// </summary>
+    /// <param name="initializer"> Optional initializer delegate. </param>
+    public T AddModule<T>(Action<T> initializer = default) where T : IGameSystem, new() => AddModule(new T(), initializer);
 
-            TargetElapsedTime = TimeSpan.FromSeconds(1.0f / framesPerSecond);
-            IsFixedTimeStep = true;
+    /// <summary>
+    /// Register game system.
+    /// </summary>
+    /// <param name="initializer"> Optional initializer delegate. </param>
+    public T AddModule<T>(T system, Action<T> initializer = default) where T : IGameSystem {
+        initializer?.Invoke(system);
+        _modules.Add(system);
+
+        // register renderable systems
+        if (system is IRenderableGameSystem renderableGameSystem) {
+            _renderableModules.Add(renderableGameSystem);
         }
 
-        public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
+        return system;
+    }
 
-        public InstantApp() {
-            Instance = this;
+    /// <summary>
+    /// Attempts to find game system of type <typeparamref name="T"/>. Returns <see langword="null"/> if not found.
+    /// </summary>
+    public T GetModule<T>() where T : IGameSystem => (T)_modules.Find(m => m is T);
 
-            GraphicsDeviceManager = new GraphicsDeviceManager(this);
-            IsMouseVisible = true;
+    /// <summary>
+    /// Attempts to remove module of type <typeparamref name="T"/>. Return <see langword="true"/> on success.
+    /// </summary>
+    public bool RemoveModule<T>() where T : IGameSystem => _modules.Remove(_modules.Find(m => m is T));
+
+    /// <summary>
+    /// Triggers module reinitialization. Should be used after you modify existing modules at runtime.
+    /// </summary>
+    public void InitializeModules() {
+        _modules.Sort();
+        foreach (var module in _modules.ToList()) {
+            module.Initialize(this);
         }
+    }
 
-        #region System Management
+    /// <summary>
+    /// Setups <see cref="InputManager"/>, <see cref="CoroutineManager"/>, <see cref="GraphicsManager"/> and <see cref="AudioManager"/>.
+    /// </summary>
+    protected void AddDefaultModules() {
+        AddModule<InputManager>();
+        AddModule<CoroutineManager>();
+        AddModule<GraphicsManager>();
+        AddModule<AudioManager>();
+    }
 
-        /// <summary>
-        /// Logger implementation used for this game.
-        /// </summary>
-        public static ILogger Logger {
-            get {
-                if (Instance._logger == null) {
-                    var defaultLogger = new DefaultLogger();
-                    Instance._logger = defaultLogger;
-                }
+    #endregion
 
-                return Instance._logger;
-            }
+    /// <summary>
+    /// Called after each system has been initialized and the game is ready to run.
+    /// </summary>
+    protected virtual new void Initialize() { }
 
-            set => Instance._logger = value;
+    protected sealed override void LoadContent() {
+        DefaultTitle = AppDomain.CurrentDomain.FriendlyName;
+        AddModule<PerformanceCounter>(counter => counter.DisplayInTitle = true);
+        AddModule<Time>();
+
+        // trigger module init
+        InitializeModules();
+        Initialize();
+    }
+
+    protected override void Update(GameTime gameTime) {
+        var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        // update modules
+        for (var i = 0; i < _modules.Count; i++) {
+            var system = _modules[i];
+            system.Update(this, deltaTime);
         }
+    }
 
-        public T AddSystem<T>(Action<T> initializer = default) where T: GameSystem, new() {
-            var instance = new T { Game = this };
-            initializer?.Invoke(instance);
-            _GameSystems.Add(instance);
-
-            // if the game has already been initialized,
-            // initialize this system as well
-            if (_initialized) {
-                instance.Initialize();
-            }
-
-            return instance;
-        }
-
-        /// <summary>
-        /// Attempts to get a system.
-        /// </summary>
-        public bool TryGetSystem<T>(out T system) where T: GameSystem {
-            for (var i = 0; i < _GameSystems.Count; i++) {
-                if (_GameSystems[i] is T foundSystem) {
-                    system = foundSystem;
-                    return true;
-                }
-            }
-
-            system = default;
-            return false;
-        }
-
-        /// <summary>
-        /// Gets the system, throwing an exception if it doesn't exist.
-        /// </summary>
-        public T GetSystem<T>() where T : GameSystem {
-            for (var i = 0; i < _GameSystems.Count; i++) {
-                if (_GameSystems[i] is T foundSystem) {
-                    return foundSystem;
-                }
-            }
-
-            throw new InvalidOperationException($"{GetType().Name} has no {typeof(T).Name} attached.");
-        }
-
-        #endregion
-
-        #region Game Lifecycle
-
-        /// <summary>
-        /// Setup all of the systems in there using <see cref="AddSystem{T}(Action{T})"/>.
-        /// </summary>
-        protected virtual void SetupSystems() { }
-
-        /// <summary>
-        /// Called after each system has been initialized.
-        /// </summary>
-        protected virtual new void Initialize() { }
-
-        #endregion
-
-        /// <summary>
-        /// Setups <see cref="InputManager"/>, <see cref="CoroutineManager"/>, <see cref="GraphicsManager"/> and <see cref="AudioManager"/>.
-        /// </summary>
-        protected void SetupDefaultSystems() {
-            AddSystem<InputManager>();
-            AddSystem<CoroutineManager>();
-            AddSystem<GraphicsManager>();
-            AddSystem<AudioManager>();
-        }
-
-        protected sealed override void LoadContent() {
-            base.LoadContent();
-
-            // save the original title
-            if (_title == null) {
-                _title = AppDomain.CurrentDomain.FriendlyName;
-            }
-
-            AddSystem<TimeManager>();
-
-            SetupSystems();
-
-            // initialize systems in order of definition
-            _initialized = true;
-            foreach (var system in _GameSystems.ToList()) {
-                system.Initialize();
-            }
-
-            // setup file logging
-            if (_logger is DefaultLogger defaultLogger)
-                defaultLogger.SetOutputFile(".log");
-
-            // then, sort them for later update tasks
-            _GameSystems.Sort();
-
-            Initialize();
-        }
-
-        protected override void Update(GameTime gameTime) {
-            // sort the systems when needed
-            if (_systemOrderDirty) {
-                _systemOrderDirty = false;
-                _updatableSystems.Sort();
-            }
-
-            // update the GameSystems
-            for (var i = 0; i < _updatableSystems.Count; i++) {
-                var system = _updatableSystems[i];
-                system.Update(gameTime);
-            }
-        }
-
-        static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
-
-        protected override void OnExiting(object sender, EventArgs args) {
-            _logger?.Close();
-
-            base.OnExiting(sender, args);
-        }
-
-        protected override void Draw(GameTime gameTime) {
-            // calculate FPS 
-            _fpsCounter++;
-            _fpsTimer += gameTime.ElapsedGameTime;
-            if (_fpsTimer >= _oneSecond) {
-                Window.Title = $"{_title} [{_fpsCounter} FPS, {GC.GetTotalMemory(false) / 1048576f:F1} MB]";
-
-                // reset the FPS metrics
-                _framesPerSecond = _fpsCounter;
-                _fpsTimer -= _oneSecond;
-                _fpsCounter = 0;
-            }
-
-            // draw systems
-            for (var i = 0; i < _renderableSystems.Count; i++) {
-                var system = _renderableSystems[i];
-                system.Render(gameTime);
-            }
+    protected override void Draw(GameTime gameTime) {
+        // present modules
+        for (var i = 0; i < _renderableModules.Count; i++) {
+            var system = _renderableModules[i];
+            system.Present(this);
         }
     }
 }

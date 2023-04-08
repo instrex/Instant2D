@@ -1,6 +1,7 @@
 ﻿using Instant2D.Graphics;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D.EC.Components {
@@ -95,8 +96,13 @@ namespace Instant2D.EC.Components {
         }
 
         public override void Draw(DrawingContext drawing, CameraComponent camera) {
-            drawing.DrawString(Font, _text, (Entity.Transform.Position + _offset * Entity.Transform.Scale + Offset).Round(),
-                Color, Entity.Transform.Scale, Entity.Transform.Rotation, _displayedCharacters);
+            ReadOnlySpan<char> text = _text;
+            if (_displayedCharacters != 0) {
+                text = text[.._displayedCharacters];
+            }
+
+            drawing.DrawString(Font, text, (Entity.Transform.Position + _offset * Entity.Transform.Scale + Offset).Round(),
+                Color, Entity.Transform.Scale, Entity.Transform.Rotation);
         }
     }
 }

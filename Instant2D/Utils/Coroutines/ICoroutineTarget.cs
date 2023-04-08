@@ -1,12 +1,11 @@
-﻿namespace Instant2D.Coroutines {
+﻿namespace Instant2D.Coroutines;
+
+/// <summary>
+/// Optional interface for objects that may be tracked for coroutine usage. // TODO: how to use
+/// </summary>
+public interface ICoroutineTarget {
     /// <summary>
-    /// Marking object with this interface will allow you to attach coroutines to it, inheriting its properties and being able to stop coroutines by target. <br/>
-    /// If you're implementing this interface on your own entities, make sure to call <see cref="CoroutineManager.StopAll(ICoroutineTarget)"/> when yout target is destroyed or it goes inactive.
+    /// Current time scale of this object. Used by WaitForSeconds.
     /// </summary>
-    public interface ICoroutineTarget {
-        /// <summary>
-        /// Timescale used for coroutines. Will affect <see cref="WaitForSeconds"/> and <see cref="WaitForFixedUpdate"/>.
-        /// </summary>
-        float TimeScale { get; }
-    }
+    float TimeScale { get; }
 }

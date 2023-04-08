@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Instant2D.Modules;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ using static FAudio;
 
 namespace Instant2D.Audio {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1806:Do not ignore method results", Justification = "<Pending>")]
-    public class AudioManager : GameSystem, IDisposable {
+    public class AudioManager : IGameSystem, IDisposable {
         public readonly IntPtr AudioHandle;
 
         public readonly FAudioDeviceDetails DeviceDetails;
@@ -54,18 +55,6 @@ namespace Instant2D.Audio {
             }
         }
 
-        public override void Initialize() {
-            IsUpdatable = true;
-        }
-
-        public override void Update(GameTime time) {
-            for (var i = _streamingInstances.Count - 1; i >= 0; i--) {
-                if (_streamingInstances[i].TryGetTarget(out var instance))
-                    instance.Update();
-                else _streamingInstances.RemoveAt(i);
-            }
-        }
-
         #region Disposal
 
         protected virtual void Dispose(bool disposing) {
@@ -92,6 +81,17 @@ namespace Instant2D.Audio {
             GC.SuppressFinalize(this);
         }
 
+
         #endregion
+
+        float IGameSystem.UpdateOrder { get; }
+        void IGameSystem.Initialize(InstantApp app) { }
+        void IGameSystem.Update(InstantApp app, float deltaTime) {
+            for (var i = _streamingInstances.Count - 1; i >= 0; i--) {
+                if (_streamingInstances[i].TryGetTarget(out var instance))
+                    instance.Update();
+                else _streamingInstances.RemoveAt(i);
+            }
+        }
     }
 }

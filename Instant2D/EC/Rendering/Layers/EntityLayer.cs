@@ -77,6 +77,8 @@ namespace Instant2D.EC.Rendering {
             var bounds = camera.Bounds;
 
             Material material = default;
+            bool isMaterialSet = false;
+
             foreach (var component in CollectionsMarshal.AsSpan(Components)) {
                 // cull the objects outside the camera view
                 if (EnableCulling && !component.DisableCulling && !(component.IsVisible = bounds.Intersects(component.Bounds)))
@@ -91,11 +93,12 @@ namespace Instant2D.EC.Rendering {
                     continue;
 
                 if (material != component.Material) {
-                    if (material != null)
+                    if (isMaterialSet) 
                         drawing.Pop();
 
                     // restart the batch when new material appears
                     drawing.Push(material = component.Material, camera.TransformMatrix);
+                    isMaterialSet = true;
                 }
 
                 // finally, present the object

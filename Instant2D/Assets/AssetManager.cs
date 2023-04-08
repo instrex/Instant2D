@@ -14,15 +14,18 @@ using Instant2D.Assets.Containers;
 using System.Text.RegularExpressions;
 using Instant2D.EC;
 using Instant2D.Coroutines;
+using Instant2D.Modules;
 
 namespace Instant2D {
-    public class AssetManager : GameSystem, IAssetRepository {
+    public class AssetManager : IGameSystem, IAssetRepository {
         public static AssetManager Instance { get; set; }
 
         /// <summary>
         /// The folder at which assets should be loaded, relative to the app path. Defaults to 'Assets/'
         /// </summary>
         public string Folder => _assetFolder;
+
+        
 
         /// <summary>
         /// Asset repository which could be used to enumerate or load files. Provides a nice way to plug in your own asset reading middleware. <br/>
@@ -32,7 +35,7 @@ namespace Instant2D {
 
         readonly List<(int order, IAssetLoader)> _loaders = new();
         readonly Dictionary<string, Asset> _assets = new();
-        readonly Dictionary<string, Coroutine> _hotReloadTimers = new();
+        readonly Dictionary<string, CoroutineDriver> _hotReloadTimers = new();
         FileSystemWatcher _hotReloadWatcher;
         string _assetFolder = "Assets/";
         bool _assetsLoaded;
@@ -153,7 +156,7 @@ namespace Instant2D {
 
             // if we do it immediately, there's a chance the file could be used by something
             // adding a little bit of delay helps making sure that wouldn't happen
-            _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.Instance.Schedule(0.5f, () => {
+            _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.RunTracked(CoroutineDriver.Timer(0.5f, () => {
                 var format = Path.GetExtension(assetKey);
                 foreach (var loader in _loaders.Select(p => p.Item2)
                     .OfType<IHotReloader>()) {
@@ -172,12 +175,14 @@ namespace Instant2D {
 
                 // clear the timer
                 _hotReloadTimers.Remove(assetKey);
-            }));
+            })));
         }
 
         #endregion
 
-        public override void Initialize() {
+        float IGameSystem.UpdateOrder { get; }
+        void IGameSystem.Update(InstantApp app, float deltaTime) { }
+        void IGameSystem.Initialize(InstantApp app) {
             Instance = this;
 
             // create repository
@@ -206,6 +211,7 @@ namespace Instant2D {
             // lock the assets
             _assetsLoaded = true;
         }
+
 
         #region Asset Access
 

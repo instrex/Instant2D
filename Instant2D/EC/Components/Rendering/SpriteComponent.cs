@@ -132,7 +132,7 @@ namespace Instant2D.EC {
             _isSpriteSet = false;
             _sprite = default;
             Color = Color.White;
-            _material = Material.Default;
+            _material = Material.AlphaBlend;
             _depth = 0;
             _z = 0;
         }

@@ -3,6 +3,7 @@ using Instant2D.Graphics;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Instant2D {
@@ -13,12 +14,12 @@ namespace Instant2D {
             drawing.DrawSprite(sprite, position, color, rotation, new Vector2(scale), spriteEffects);
 
         /// <summary>
-        /// Draws a looped animation using <see cref="TimeManager.TotalTime"/> or <see cref="Scene.TotalTime"/> when available.
+        /// Draws a looped animation using <see cref="Time.Total"/> or <see cref="Scene.TotalTime"/> when available.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void DrawAnimation(this DrawingContext drawing, in SpriteAnimation animation, Vector2 position, Color color, float rotation, Vector2 scale, SpriteEffects spriteEffects = SpriteEffects.None) {
             var timePerFrame = 1.0f / animation.Fps;
-            var time = SceneManager.Instance?.Current?.TotalTime ?? TimeManager.TotalTime;
+            var time = SceneManager.Instance?.Current?.TotalTime ?? Time.Total;
             drawing.DrawSprite(animation.Frames[(int)(time / timePerFrame % animation.Frames.Length)], position, color, rotation, scale, spriteEffects);
         }
 
@@ -100,22 +101,22 @@ namespace Instant2D {
         /// Draws text using specified font.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawString(this DrawingContext drawing, ISpriteFont font, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue, bool drawOutline = false) {
+        public static void DrawString(this DrawingContext drawing, ISpriteFont font, ReadOnlySpan<char> text, Vector2 position, Color color, Vector2 scale, float rotation, bool drawOutline = false) {
             if (drawOutline) {
                 for (var i = 0; i < 4; i++) {
-                    font.DrawString(drawing, text, position + new Vector2(1, 0).RotatedBy(i * MathHelper.PiOver2) * scale, Color.Black, scale, rotation, maxDisplayedCharacters);
+                    font.DrawString(drawing, text, position + new Vector2(1, 0).RotatedBy(i * MathHelper.PiOver2) * scale, Color.Black, scale, rotation);
                 }
             }
 
-            font.DrawString(drawing, text, position, color, scale, rotation, maxDisplayedCharacters);
+            font.DrawString(drawing, text, position, color, scale, rotation);
         }
 
         /// <summary>
         /// Draws text using <see cref="GraphicsManager.DefaultFont"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DrawString(this DrawingContext drawing, string text, Vector2 position, Color color, Vector2 scale, float rotation, int maxDisplayedCharacters = int.MaxValue, bool drawOutline = false) {
-            DrawString(drawing, GraphicsManager.DefaultFont, text, position, color, scale, rotation, maxDisplayedCharacters, drawOutline);
+        public static void DrawString(this DrawingContext drawing, ReadOnlySpan<char> text, Vector2 position, Color color, Vector2 scale, float rotation, bool drawOutline = false) {
+            DrawString(drawing, GraphicsManager.DefaultFont, text, position, color, scale, rotation, drawOutline);
         }
 
         /// <summary>

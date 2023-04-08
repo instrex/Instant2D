@@ -209,7 +209,7 @@ namespace Instant2D.EC {
         #endregion
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void InternalUpdate(GameTime time) {
+        internal void InternalUpdate(float timeDelta) {
             // initialize the scene first
             // TODO: move initialiation into SceneManager instead?
             if (!_isInitialized) {
@@ -240,11 +240,10 @@ namespace Instant2D.EC {
                 _entities[i].PreUpdate();
             }
 
-            var dt = (float)time.ElapsedGameTime.TotalSeconds;
-            TotalTime += dt * TimeScale;
+            TotalTime += timeDelta * TimeScale;
 
             var fixedUpdateCount = 0;
-            _fixedTimestepProgress += dt * TimeScale;
+            _fixedTimestepProgress += timeDelta * TimeScale;
 
             // determine amount of fixed updates
             while (_fixedTimestepProgress >= FixedTimeStep) {
@@ -275,7 +274,7 @@ namespace Instant2D.EC {
                     entity.FixedUpdateGlobal(fixedUpdateCount);
                     entity.AlphaFrameTime = AlphaFrameTime;
                 } else {
-                    entity.FixedUpdateCustom(dt);
+                    entity.FixedUpdateCustom(timeDelta);
                 }
             }
 
@@ -292,12 +291,12 @@ namespace Instant2D.EC {
 
             // apply Updates
             foreach (var entity in span) {
-                entity.UpdateComponents(dt);
+                entity.UpdateComponents(timeDelta);
             }
 
             // apply LateUpdates
             foreach (var entity in span) {
-                entity.LateUpdate(dt);
+                entity.LateUpdate(timeDelta);
             }
 
             // switch debug render
@@ -351,7 +350,7 @@ namespace Instant2D.EC {
 
         internal void Cleanup() {
             for (var i = 0; i<_entities.Count; i++) {
-                CoroutineManager.Instance.StopAll(_entities[i]);
+                CoroutineManager.StopByTarget(_entities[i]);
             }
 
             // destroy all entities before switching scenes
@@ -360,7 +359,7 @@ namespace Instant2D.EC {
             }
 
             // release all the coroutines attached to this scene
-            CoroutineManager.Instance.StopAll(this);
+            CoroutineManager.StopByTarget(this);
             OnExiting();
 
             // raise the cleanup event
@@ -495,49 +494,6 @@ namespace Instant2D.EC {
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Plays one-shot sound effect and automatically recycles it with optional cool features: <list type="bullet">
-        /// <item> You can position the sound in world-space using <paramref name="position"/> parameter. In order for it to work, <paramref name="rolloff"/> should not be <see langword="default"/>. </item>
-        /// <item> 
-        /// You can control the way audio rolloff is applied to this sound using <paramref name="rolloff"/> parameter. <br/>
-        /// By default, depending on if <paramref name="position"/> is set, the sound will either use default rolloff of MaxDistance = 200 or not use it at all. <br/>
-        /// Pass in <see cref="AudioRolloff.None"/> to make the sound global (or just dont pass <paramref name="position"/> lol, not much use for it in this case). 
-        /// </item>
-        /// <item> 
-        /// <paramref name="volume"/>, <paramref name="pan"/> and <paramref name="pitch"/> can be used to adjust characteristics of the sound. <br/>
-        /// Note that <paramref name="pan"/> will be overriden if AudioRolloff is enabled.
-        /// </item>
-        /// <item> 
-        /// The sound may be attached to a moving entity (meaning it will continuosly update position) using <paramref name="followEntity"/> parameter. <br/>
-        /// If <paramref name="followEntity"/> is destroyed during the sound playback, it will remain on the last position it had.
-        /// </item>
-        /// </list>
-        /// </summary>
-        public Coroutine PlaySound(Sound sound, Vector2? position = default, AudioRolloff? rolloff = default, float volume = 1.0f, float pan = 0f, float pitch = 0f, Entity followEntity = default) {
-            var instance = sound.CreateStaticInstance();
-            instance.Pitch = pitch;
-            instance.Pan = pan;
-
-            // determine rolloff for this
-            var actualRolloff = (position, rolloff) switch {
-                // in case rolloff is explicitly provided, just use it
-                (_, AudioRolloff setRolloff) => setRolloff,
-
-                // if position is provided, but not the rolloff initialize the default instance
-                (Vector2 setPosition, null) => new AudioRolloff(),
-
-                // guh!
-                _ => AudioRolloff.None
-            };
-
-            // TODO: update to new coroutine system
-            return null;
-            //return this.RunCoroutine(
-            //    AudioComponent.OneShotSound(instance, position, actualRolloff, volume, followEntity),
-            //    (coroutine, _) => coroutine.Context<StaticAudioInstance>().Pool()
-            //).SetContext(instance);
         }
 
         // simple assets shortcut to avoid some verbosity

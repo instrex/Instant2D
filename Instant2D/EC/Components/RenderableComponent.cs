@@ -14,7 +14,7 @@ namespace Instant2D.EC {
         static Matrix2D _tempMatrix, _tempTransform;
 
         // those are internal so I can acces them easier inside SceneLayers
-        internal Material _material = Material.Default;
+        internal Material _material = Material.AlphaBlend;
         internal float _depth;
         internal int _z;
 
