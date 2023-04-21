@@ -106,7 +106,7 @@ namespace Instant2D.EC.Rendering {
             }
 
             // reset the batch
-            if (material != null)
+            if (isMaterialSet)
                 drawing.Pop();
         }
     }

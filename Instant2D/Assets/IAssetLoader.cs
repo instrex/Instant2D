@@ -12,7 +12,7 @@ namespace Instant2D.Assets {
 
     public interface IAssetLoader {
         /// <summary>
-        /// Load all of the assets from game folder.
+        /// Loads assets from game's repository.
         /// </summary>
         IEnumerable<Asset> Load(AssetManager assets);
     }
