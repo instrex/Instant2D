@@ -28,9 +28,9 @@ public class I2dFont : ISpriteFont {
             var currentChar = text[i];
 
             // check glyph
-            if (!Glyphs.TryGetValue(currentChar, out var glyph)) {
+            if (!Glyphs.TryGetValue(currentChar, out var glyph) || glyph.Sprite.Texture is null) {
                 // try fallback to default char
-                if (!Glyphs.TryGetValue(DefaultCharacter, out glyph)) {
+                if (!Glyphs.TryGetValue(DefaultCharacter, out glyph) || glyph.Sprite.Texture is null) {
                     InstantApp.Logger.Error($"The font is missing the character '{currentChar}' and default is not set.");
                     break;
                 }

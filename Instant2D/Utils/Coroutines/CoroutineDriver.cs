@@ -76,6 +76,12 @@ public class CoroutineDriver : ICoroutineAwaiter, IPooledInstance {
     /// </summary>
     public Action CompletionHandler { get; set; }
 
+    /// <inheritdoc cref="CompletionHandler"/>
+    public CoroutineDriver SetCompletionHandler(Action completionHandler) {
+        CompletionHandler = completionHandler;
+        return this;
+    }
+
     /// <summary>
     /// Advance this coroutine. Returns <see langword="true"/> if coroutine is still active and should be ticked next frame.
     /// </summary>

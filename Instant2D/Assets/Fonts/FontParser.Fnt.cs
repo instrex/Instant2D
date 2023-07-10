@@ -45,11 +45,11 @@ public static partial class FontParser {
                 if (Array.Find(items, i => i.StartsWith("id")) is not string rawId || Array.Find(items, i => i.StartsWith("file")) is not string rawPath)
                     throw new InvalidOperationException("'page' property is missing 'id' and/or 'file' attributes.");
 
-                if (!int.TryParse(rawId["id".Length..], out var id) || id < 0 || id >= pages.Length)
+                if (!int.TryParse(rawId["id=".Length..], out var id) || id < 0 || id >= pages.Length)
                     throw new InvalidOperationException($"'id' attribute has invalid value. ({rawId["id".Length..]})");
 
                 // load the page
-                using var stream = AssetManager.Instance.OpenStream(Path.Combine(FontLoader.DIRECTORY, rawPath["file=".Length..].Trim('"')));
+                using var stream = AssetManager.Instance.OpenStream(Path.Combine(FontLoader.DIRECTORY, rawPath["file=".Length..].Trim('"')) + ".png");
                 pages[id] = Texture2D.FromStream(InstantApp.Instance.GraphicsDevice, stream);
             }
         }

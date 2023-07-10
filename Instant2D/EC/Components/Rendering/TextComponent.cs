@@ -98,7 +98,7 @@ namespace Instant2D.EC.Components {
         public override void Draw(DrawingContext drawing, CameraComponent camera) {
             ReadOnlySpan<char> text = _text;
             if (_displayedCharacters != 0) {
-                text = text[.._displayedCharacters];
+                text = text[..Math.Min(_displayedCharacters, _text.Length)];
             }
 
             drawing.DrawString(Font, text, (Entity.Transform.Position + _offset * Entity.Transform.Scale + Offset).Round(),

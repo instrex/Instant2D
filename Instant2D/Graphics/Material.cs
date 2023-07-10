@@ -35,7 +35,7 @@ public readonly struct Material {
             SamplerState = samplerState;
         if (depthStencilState is not null) 
             DepthStencilState = depthStencilState;
-        if (Effect is not null) 
+        if (effect is not null) 
             Effect = effect;
     }
 
