@@ -3,8 +3,8 @@ using Instant2D.Audio;
 using Instant2D.Coroutines;
 using Instant2D.Diagnostics;
 using Instant2D.Graphics;
-using Instant2D.Input;
 using Instant2D.Modules;
+using Instant2D.Input;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
@@ -16,7 +16,6 @@ using System.Threading.Tasks;
 namespace Instant2D;
 
 public abstract class InstantApp : Game {
-
     /// <summary>
     /// Currently running InstantApp.
     /// </summary>
@@ -105,12 +104,19 @@ public abstract class InstantApp : Game {
     }
 
     /// <summary>
-    /// Setups <see cref="InputManager"/>, <see cref="CoroutineManager"/>, <see cref="GraphicsManager"/> and <see cref="AudioManager"/>.
+    /// Adds commonly used systems to the app, such as:
+    /// <list type="bullet">
+    /// <item> <see cref="GraphicsManager"/> is required for any rendering done in the app. </item>
+    /// <item> <see cref="KeyboardInput"/>, <see cref="MouseInput"/> for basic input processing; </item>
+    /// <item> <see cref="CoroutineManager"/> for yieldable, continuous functions, scheduling timers and more; </item>
+    /// <item> <see cref="AudioManager"/> for handling sounds and music in streaming/immediate modes; </item>
+    /// </list>
     /// </summary>
     protected void AddDefaultModules() {
-        AddModule<InputManager>();
-        AddModule<CoroutineManager>();
         AddModule<GraphicsManager>();
+        AddModule<KeyboardInput>();
+        AddModule<MouseInput>();
+        AddModule<CoroutineManager>();
         AddModule<AudioManager>();
     }
 
