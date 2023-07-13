@@ -23,6 +23,11 @@ public class SceneManager : IGameSystem, IRenderableGameSystem {
     Scene _current, _next;
 
     /// <summary>
+    /// When <see langword="true"/>, game will not be updated when minimized.
+    /// </summary>
+    public bool PauseOnFocusLost { get; set; } = true;
+
+    /// <summary>
     /// Resolution scaler which will apply to all scenes this SceneManager uses. May be null.
     /// </summary>
     public IResolutionScaler ResolutionScaler { 
@@ -88,7 +93,7 @@ public class SceneManager : IGameSystem, IRenderableGameSystem {
         }
 
         // setup the client size change callback for resizing RTs and stuff
-        InstantApp.Instance.Window.ClientSizeChanged += OnClientSizeChanged;
+        app.Window.ClientSizeChanged += OnClientSizeChanged;
         _attachedApp = app;
 
         // initialize the resolution
@@ -97,6 +102,9 @@ public class SceneManager : IGameSystem, IRenderableGameSystem {
     }
 
     void IGameSystem.Update(InstantApp app, float deltaTime) {
+        if (PauseOnFocusLost && !app.IsActive)
+            return;
+
         _current?.InternalUpdate(deltaTime);
         if (_next != null) {
             _current.Cleanup();

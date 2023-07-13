@@ -9,6 +9,12 @@ namespace Instant2D.Input;
 /// Provides an easy interface over mouse states.
 /// </summary>
 public class MouseInput : IGameSystem {
+    public enum Button {
+        Left,
+        Middle,
+        Right
+    }
+
     static MouseState _prevMouseState, _currentMouseState;
     static Vector2 _rawMousePosition, _scaledMousePosition;
     static float _mouseWheelDelta;
@@ -21,34 +27,67 @@ public class MouseInput : IGameSystem {
     public static Vector2 RawPosition => _rawMousePosition;
 
     /// <summary> Is true when the left mouse button was pressed this frame. </summary>
-    public static bool LeftMousePressed => InstantApp.Instance.IsActive && _currentMouseState.LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released;
+    public static bool LeftPressed => InstantApp.Instance.IsActive && _currentMouseState.LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released;
 
     /// <summary> Is true when the left mouse button was released this frame. </summary>
-    public static bool LeftMouseReleased => InstantApp.Instance.IsActive && _currentMouseState.LeftButton == ButtonState.Released && _prevMouseState.LeftButton == ButtonState.Pressed;
+    public static bool LeftReleased => InstantApp.Instance.IsActive && _currentMouseState.LeftButton == ButtonState.Released && _prevMouseState.LeftButton == ButtonState.Pressed;
 
     /// <summary> Is true when the left mouse button is down. </summary>
-    public static bool LeftMouseDown => InstantApp.Instance.IsActive && _currentMouseState.LeftButton == ButtonState.Pressed;
+    public static bool LeftDown => InstantApp.Instance.IsActive && _currentMouseState.LeftButton == ButtonState.Pressed;
 
     /// <summary> Is true when the right mouse button was pressed this frame. </summary>
-    public static bool RightMousePressed => InstantApp.Instance.IsActive && _currentMouseState.RightButton == ButtonState.Pressed && _prevMouseState.RightButton == ButtonState.Released;
+    public static bool RightPressed => InstantApp.Instance.IsActive && _currentMouseState.RightButton == ButtonState.Pressed && _prevMouseState.RightButton == ButtonState.Released;
 
     /// <summary> Is true when the right mouse button was released this frame. </summary>
-    public static bool RightMouseReleased => InstantApp.Instance.IsActive && _currentMouseState.RightButton == ButtonState.Released && _prevMouseState.RightButton == ButtonState.Pressed;
+    public static bool RightReleased => InstantApp.Instance.IsActive && _currentMouseState.RightButton == ButtonState.Released && _prevMouseState.RightButton == ButtonState.Pressed;
 
     /// <summary> Is true when the right mouse button is down. </summary>
-    public static bool RightMouseDown => InstantApp.Instance.IsActive && _currentMouseState.RightButton == ButtonState.Pressed;
+    public static bool RightDown => InstantApp.Instance.IsActive && _currentMouseState.RightButton == ButtonState.Pressed;
 
     /// <summary> Is true when the middle mouse button was pressed this frame. </summary>
-    public static bool MiddleMousePressed => InstantApp.Instance.IsActive && _currentMouseState.MiddleButton == ButtonState.Pressed && _prevMouseState.MiddleButton == ButtonState.Released;
+    public static bool MiddlePressed => InstantApp.Instance.IsActive && _currentMouseState.MiddleButton == ButtonState.Pressed && _prevMouseState.MiddleButton == ButtonState.Released;
 
     /// <summary> Is true when the middle mouse button was released this frame. </summary>
-    public static bool MiddleMouseReleased => InstantApp.Instance.IsActive && _currentMouseState.MiddleButton == ButtonState.Released && _prevMouseState.MiddleButton == ButtonState.Pressed;
+    public static bool MiddleReleased => InstantApp.Instance.IsActive && _currentMouseState.MiddleButton == ButtonState.Released && _prevMouseState.MiddleButton == ButtonState.Pressed;
 
     /// <summary> Is true when the middle mouse button is down. </summary>
-    public static bool MiddleMouseDown => InstantApp.Instance.IsActive && _currentMouseState.MiddleButton == ButtonState.Pressed;
+    public static bool MiddleDown => InstantApp.Instance.IsActive && _currentMouseState.MiddleButton == ButtonState.Pressed;
 
     /// <summary> How much the mouse wheel has moved during this frame. </summary>
-    public static float MouseWheelDelta => _mouseWheelDelta;
+    public static float WheelDelta => _mouseWheelDelta;
+
+    /// <summary>
+    /// Checks if provided mouse button is pressed.
+    /// </summary>
+    public static bool IsPressed(Button button) => 
+        button switch {
+            Button.Left => LeftPressed,
+            Button.Right => RightPressed,
+            Button.Middle => MiddlePressed,
+            _ => false
+        };
+
+    /// <summary>
+    /// Checks if provided mouse button is down.
+    /// </summary>
+    public static bool IsDown(Button button) =>
+        button switch {
+            Button.Left => LeftDown,
+            Button.Right => RightDown,
+            Button.Middle => MiddleDown,
+            _ => false
+        };
+
+    /// <summary>
+    /// Checks if provided mouse button is down.
+    /// </summary>
+    public static bool IsReleased(Button button) =>
+        button switch {
+            Button.Left => LeftReleased,
+            Button.Right => RightReleased,
+            Button.Middle => MiddleReleased,
+            _ => false
+        };
 
     float IGameSystem.UpdateOrder => float.MinValue + 0.5f;
     void IGameSystem.Initialize(InstantApp app) {

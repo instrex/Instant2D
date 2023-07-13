@@ -84,6 +84,13 @@ public abstract class InstantApp : Game {
     }
 
     /// <summary>
+    /// Adds a module if it wasn't present.
+    /// </summary>
+    public T AddModuleIfMissing<T>() where T: IGameSystem, new() {
+        return GetModule<T>() ?? AddModule<T>();
+    }
+
+    /// <summary>
     /// Attempts to find game system of type <typeparamref name="T"/>. Returns <see langword="null"/> if not found.
     /// </summary>
     public T GetModule<T>() where T : IGameSystem => (T)_modules.Find(m => m is T);
