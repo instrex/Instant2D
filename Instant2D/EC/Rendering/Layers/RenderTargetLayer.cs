@@ -122,7 +122,7 @@ namespace Instant2D.EC.Rendering {
                 return;
             }
 
-            drawing.DrawTexture(_renderTarget, Vector2.Zero, null, Color.White, 0, Vector2.Zero, Vector2.One);
+            drawing.DrawTexture(_renderTarget, Vector2.Zero, null, PresentColor, 0, Vector2.Zero, Vector2.One);
         }
 
         public void Dispose() {
