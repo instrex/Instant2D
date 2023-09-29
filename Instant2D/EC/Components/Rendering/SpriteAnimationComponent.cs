@@ -210,6 +210,7 @@ namespace Instant2D.EC {
 
         Dictionary<string, Vector2> _capturedPoints;
 
+        // TODO: there seems to be disparity in how dontApplyTransform operates for SpriteComponent and SpriteAnimationComponent
         public override bool TryGetPoint(string key, out Vector2 point, bool dontApplyTransform = false) {
             point = dontApplyTransform ? Vector2.Zero : Entity.Transform.Position;
             if (_capturedPoints == null || !_capturedPoints.TryGetValue(key, out var rawPoint)) {

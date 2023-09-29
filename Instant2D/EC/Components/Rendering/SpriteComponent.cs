@@ -72,12 +72,12 @@ namespace Instant2D.EC {
         /// </summary>
         public virtual bool TryGetPoint(string key, out Vector2 point, bool dontApplyTransform = false) {
             if (!_isSpriteSet || _sprite.Points == null || !_sprite.Points.TryGetValue(key, out var rawPoint)) {
-                point = Transform.Position;
+                point = Entity.TransformState.Position;
                 return false;
             }
 
             var offset = rawPoint.ToVector2() - _sprite.Origin;
-            point = Entity.Transform.Position + (dontApplyTransform ? offset : TransformPointOffset(offset));
+            point = Entity.TransformState.Position + (dontApplyTransform ? offset : TransformPointOffset(offset));
             return true;
         }
 
@@ -92,9 +92,10 @@ namespace Instant2D.EC {
             }
         }
 
+        // TODO: this seems pretty wacky, replace it with matrix multiplication maybe?
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Vector2 TransformPointOffset(Vector2 offset) => 
-            offset.RotatedBy(Entity.Transform.Rotation) * Entity.Transform.Scale
+            offset.RotatedBy(Entity.Transform.Rotation * (FlipX ? 1 : -1)) * Entity.Transform.Scale
             * new Vector2(FlipX ? 1 : -1, FlipY ? 1 : -1)
             + Offset;
 

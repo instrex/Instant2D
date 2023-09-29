@@ -335,7 +335,7 @@ public abstract class Scene : ICoroutineTarget {
 
                 // replace materials with reloaded effects
                 case IAssetContainer<Effect> effectAsset:
-                    foreach (var renderable in Entities.SelectMany(e => e.Components.OfType<RenderableComponent>()).Where(r => r.Material != null && r.Material.Effect != null)) {
+                    foreach (var renderable in Entities.SelectMany(e => e.Components.OfType<RenderableComponent>()).Where(r => r.Material.Effect != null)) {
                         if (renderable.Material.Effect.Tag is string key && key == asset.Key)
                             renderable.Material = renderable.Material with { Effect = effectAsset.Content };
                     }
