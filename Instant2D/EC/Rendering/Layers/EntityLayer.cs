@@ -88,8 +88,8 @@ namespace Instant2D.EC.Rendering {
                 if (IncludeEntityTags != -1 && component.Entity.Tags != 0 && !IncludeEntityTags.IsFlagSet(component.Entity.Tags, false))
                     continue;
 
-                // run custom conditions
-                if (!ShouldDrawObject(component))
+                // check init and run custom conditions
+                if (component.Entity?.IsInitialized == false || !ShouldDrawObject(component))
                     continue;
 
                 if (material != component.Material) {

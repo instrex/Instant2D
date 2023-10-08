@@ -30,10 +30,13 @@ namespace Instant2D.EC {
         internal List<ILateUpdate> _lateUpdateComponents;
         internal float _timestepCounter, _timescale = 1.0f;
         internal TransformData _lastTransformState;
-        bool _shouldDestroy, _isInitialized;
+        bool _shouldDestroy;
         Scene _scene;
 
-        internal int _fixedUpdatesPassed;
+        /// <summary>
+        /// Is set to <see langword="true"/> before this entity's first update cycle is ran.
+        /// </summary>
+        public bool IsInitialized { get; private set; }
 
         /// <summary> Unique number identifier for this entity. </summary>
         public readonly uint Id = _entityIdCounter++;
@@ -297,7 +300,7 @@ namespace Instant2D.EC {
                 component.OnEnabled();
             }
 
-            if (_isInitialized) {
+            if (IsInitialized) {
                 // call post initialize immediately
                 // when active and already initialized
                 component.PostInitialize();
@@ -519,7 +522,7 @@ namespace Instant2D.EC {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void PreUpdate() {
-            if (!_isInitialized) {
+            if (!IsInitialized) {
                 // call post initialize on all components
                 for (var i = 0; i < _components.Count; i++) {
                     _components[i].PostInitialize();
@@ -528,7 +531,7 @@ namespace Instant2D.EC {
                 // set initial transform state
                 SetTransformState(Transform.Data);
 
-                _isInitialized = true;
+                IsInitialized = true;
             }
 
             if (_shouldDestroy) {
@@ -547,8 +550,6 @@ namespace Instant2D.EC {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FixedUpdateGlobal(int updateCount, bool useChildren = false) {
-            _fixedUpdatesPassed += updateCount;
-
             if (_fixedUpdateComponents != null && updateCount > 0) {
                 // do several updates at once to reduce looping overhead
                 foreach (var comp in CollectionsMarshal.AsSpan(_fixedUpdateComponents)) {
@@ -674,7 +675,7 @@ namespace Instant2D.EC {
             Transform.Entity = this;
 
             // reset other fields
-            _isInitialized = false;
+            IsInitialized = false;
             _updatedComponents?.Pool();
             _updatedComponents = null;
             _fixedUpdateComponents?.Pool();
