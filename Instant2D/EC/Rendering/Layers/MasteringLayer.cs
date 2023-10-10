@@ -59,6 +59,15 @@ namespace Instant2D.EC.Rendering {
         }
 
         /// <summary>
+        /// Forces this mastering layer to render into its <see cref="RenderTarget"/>. By default, it tries to avoid creating new RTs for layers that don't need them. <br/>
+        /// Cases in which RenderTarget is instantiated: using <see cref="SetColor(Color)"/> or <see cref="AddPostProcessor{T}(T)"/>.
+        /// </summary>
+        public MasteringLayer ForceUseRenderTarget() {
+            _useRenderTarget = true;
+            return this;
+        }
+
+        /// <summary>
         /// Sets <see cref="IRenderLayer.Order"/> range of layers this one should master. 
         /// </summary>
         public MasteringLayer SetLayerRange(float min, float max) {
