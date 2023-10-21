@@ -1,4 +1,5 @@
-﻿using Instant2D.Utils;
+﻿using Instant2D.EC;
+using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -39,6 +40,16 @@ namespace Instant2D {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pool<T>(this T value) where T: IPooledInstance, new() {
             Utils.Pool<T>.Shared.Return(value);
+        }
+
+        /// <summary>
+        /// Enumerates entity children.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static IEnumerable<Entity> GetChildren(this Entity entity) {
+            for (var i = 0; i < entity.ChildrenCount; i++) {
+                yield return entity[i];
+            }
         }
 
         /// <summary>

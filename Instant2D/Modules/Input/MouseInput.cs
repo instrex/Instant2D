@@ -16,7 +16,7 @@ public class MouseInput : IGameSystem {
     }
 
     static MouseState _prevMouseState, _currentMouseState;
-    static Vector2 _rawMousePosition, _scaledMousePosition;
+    static Vector2 _rawMousePosition, _scaledMousePosition, _prevMousePosition;
     static float _mouseWheelDelta;
     static bool _shouldScaleMouse;
 
@@ -55,6 +55,9 @@ public class MouseInput : IGameSystem {
 
     /// <summary> How much the mouse wheel has moved during this frame. </summary>
     public static float WheelDelta => _mouseWheelDelta;
+
+    /// <summary> Indicates how much did the mouse move last frame. </summary>
+    public static Vector2 PositionDelta => _scaledMousePosition - _prevMousePosition;
 
     /// <summary>
     /// Checks if provided mouse button is pressed.
@@ -101,6 +104,9 @@ public class MouseInput : IGameSystem {
 
         // get current states
         _currentMouseState = Mouse.GetState();
+
+        // capture previous mouse position for delta calculations
+        _prevMousePosition = _scaledMousePosition;
 
         // record mouse state
         _rawMousePosition = new(_currentMouseState.X, _currentMouseState.Y);
