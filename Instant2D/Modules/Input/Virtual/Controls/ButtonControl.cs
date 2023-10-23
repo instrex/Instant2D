@@ -13,6 +13,10 @@ public class ButtonControl : IVirtualControl {
     public readonly List<IButtonInput> Inputs = new(6);
     float _bufferDuration, _bufferTimer;
 
+    // retrigger values
+    float _retriggerDelay, _retriggerInterval, _retriggerTimer;
+    bool _retriggerHappened;
+
     // cached values
     bool _isPressed, _isReleased, _isDown;
 
@@ -29,6 +33,16 @@ public class ButtonControl : IVirtualControl {
         return this;
     }
 
+    /// <summary>
+    /// Allows you to set up retriggering. This sets <see cref="IsPressed"/> to <see langword="true"/> at a certain <paramref name="interval"/> while this button is held. <br/>
+    /// <paramref name="delay"/> allows you to modify how long it takes for the first retrigger instance to occur.
+    /// </summary>
+    public ButtonControl SetRetrigger(float interval = 0.05f, float delay = 0.4f) {
+        _retriggerInterval = interval;
+        _retriggerDelay = delay;
+        return this;
+    }
+
     public ButtonControl AddInput(IButtonInput input) {
         Inputs.Add(input);
         return this;
@@ -40,6 +54,7 @@ public class ButtonControl : IVirtualControl {
 
     void IVirtualControl.Reset() {
         _isPressed = _isReleased = _isDown = false;
+        _retriggerTimer = 0;
         _bufferTimer = 0;
     }
 
@@ -50,6 +65,7 @@ public class ButtonControl : IVirtualControl {
             _bufferTimer -= dt;
         }
 
+        // process inputs
         for (var i = 0; i < Inputs.Count; i++) {
             var input = Inputs[i];
             if (!_isReleased && input.IsReleased())
@@ -65,6 +81,23 @@ public class ButtonControl : IVirtualControl {
                     _bufferTimer = _bufferDuration;
                 }
             }
+        }
+
+        if (_retriggerInterval == 0 || !_isDown) {
+            _retriggerHappened = false;
+            _retriggerTimer = 0;
+            return;
+        }
+
+        // use retriggerDelay for first instance
+        var period = _retriggerDelay != 0 && !_retriggerHappened ? _retriggerDelay : _retriggerInterval;
+        _retriggerTimer += dt;
+
+        // set isPressed each period tick
+        if (_retriggerTimer >= period) {
+            _retriggerHappened = true;
+            _retriggerTimer = 0;
+            _isPressed = true;
         }
     }
 
