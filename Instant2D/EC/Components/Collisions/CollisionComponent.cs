@@ -366,5 +366,7 @@ namespace Instant2D.EC.Components {
         }
 
         #endregion
+
+        public override string ToString() => $"{GetType().Name} ({Entity})";
     }
 }

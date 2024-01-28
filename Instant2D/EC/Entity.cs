@@ -660,6 +660,8 @@ namespace Instant2D.EC {
             Pool<Entity>.Shared.Return(this);
         }
 
+        public override string ToString() => $"{Name} #{Id}";
+
         // IPooled impl
         void IPooledInstance.Reset() {
             IsDestroyed = false;
