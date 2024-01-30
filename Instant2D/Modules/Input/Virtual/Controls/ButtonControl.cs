@@ -43,6 +43,14 @@ public class ButtonControl : IVirtualControl {
         return this;
     }
 
+    /// <summary>
+    /// Consumes any buffered inputs and resets the timer.
+    /// </summary>
+    public void ConsumeBufferedInput() {
+        _isPressed = false;
+        _bufferTimer = 0;
+    }
+
     public ButtonControl AddInput(IButtonInput input) {
         Inputs.Add(input);
         return this;
