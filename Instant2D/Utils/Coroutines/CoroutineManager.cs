@@ -22,7 +22,7 @@ public class CoroutineManager : IGameSystem {
 
         // init the pool
         if (!TargetTable.TryGetValue(target, out var list)) {
-            list = ListPool<CoroutineDriver>.Get();
+            list = ListPool<CoroutineDriver>.Rent();
             TargetTable.Add(target, list);
         }
 

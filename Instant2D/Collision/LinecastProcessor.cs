@@ -55,7 +55,7 @@ namespace Instant2D.Collision {
 
                         if (_hits == 0)
                             // initialize the list on first hit
-                            _output = ListPool<LineCastResult<T>>.Get();
+                            _output = ListPool<LineCastResult<T>>.Rent();
 
                         _output.Add(hit);
 

@@ -210,7 +210,7 @@ namespace Instant2D.EC {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T AddTriggerHandler<T>(this T collisionComponent, ITriggerCallbacksHandler triggerHandler) where T : CollisionComponent {
             // initialize a new list when needed
-            collisionComponent._triggerHandlers ??= ListPool<ITriggerCallbacksHandler>.Get();
+            collisionComponent._triggerHandlers ??= ListPool<ITriggerCallbacksHandler>.Rent();
             collisionComponent._triggerHandlers.Add(triggerHandler);
             return collisionComponent;
         }

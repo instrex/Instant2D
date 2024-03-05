@@ -27,7 +27,7 @@ namespace Instant2D {
         }
 
         /// <summary>
-        /// Returns the list to <see cref="ListPool{T}"/>. Call <see cref="ListPool{T}.Get"/> to get a reused list.
+        /// Returns the list to <see cref="ListPool{T}"/>. Call <see cref="ListPool{T}.Rent"/> to get a reused list.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pool<T>(this List<T> value) {

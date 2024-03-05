@@ -192,7 +192,7 @@ namespace Instant2D.EC.Components {
                         velocity -= hit.PenetrationVector;
 
                         // add the hit to hits array
-                        hits ??= ListPool<CollisionResult<CollisionComponent>>.Get();
+                        hits ??= ListPool<CollisionResult<CollisionComponent>>.Rent();
                         hits.Add(hit);
                     }
                 }

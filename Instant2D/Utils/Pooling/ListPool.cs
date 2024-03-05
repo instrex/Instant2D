@@ -8,7 +8,7 @@ namespace Instant2D.Utils {
         static readonly Pool<List<T>> _internalPool = new(3);
 
         /// <inheritdoc cref="Pool{T}.Rent"/>
-        public static List<T> Get() => _internalPool.Rent();
+        public static List<T> Rent() => _internalPool.Rent();
 
         /// <inheritdoc cref="Pool{T}.Return(T)"/>
         public static void Return(List<T> obj) {

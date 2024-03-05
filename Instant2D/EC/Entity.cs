@@ -278,19 +278,19 @@ namespace Instant2D.EC {
             // register updatable components
             if (component is IUpdate updatable) {
                 // allocate the updated component buffer when needed
-                _updatedComponents ??= ListPool<IUpdate>.Get();
+                _updatedComponents ??= ListPool<IUpdate>.Rent();
                 _updatedComponents.Add(updatable);
             }
 
             // register fixed update components
             if (component is IFixedUpdate fixedUpdatable) {
-                _fixedUpdateComponents ??= ListPool<IFixedUpdate>.Get();
+                _fixedUpdateComponents ??= ListPool<IFixedUpdate>.Rent();
                 _fixedUpdateComponents.Add(fixedUpdatable);
             }
 
             // register late update components
             if (component is ILateUpdate lateUpdatable) {
-                _lateUpdateComponents ??= ListPool<ILateUpdate>.Get();
+                _lateUpdateComponents ??= ListPool<ILateUpdate>.Rent();
                 _lateUpdateComponents.Add(lateUpdatable);
             }
 

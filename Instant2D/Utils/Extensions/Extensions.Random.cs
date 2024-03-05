@@ -86,7 +86,7 @@ namespace Instant2D {
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T NextItemWeighted<T>(this Random random, IReadOnlyList<T> collection, Func<T, float> weightSelector) {
-            var itemPool = ListPool<(T item, float weight)>.Get();
+            var itemPool = ListPool<(T item, float weight)>.Rent();
             itemPool.AddRange(collection.Select(i => (i, weightSelector(i))));
 
             // pick a random float value based on maxWeight
@@ -116,11 +116,11 @@ namespace Instant2D {
                 throw new InvalidOperationException();
 
             // pool a backing list for values
-            var values = ListPool<T>.Get();
+            var values = ListPool<T>.Rent();
             values.AddRange(collection);
 
             // gather enough items
-            var list = ListPool<T>.Get();
+            var list = ListPool<T>.Rent();
             while (list.Count < count) {
                 var item = NextItem(random, values);
                 values.Remove(item);

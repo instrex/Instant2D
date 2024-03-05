@@ -152,7 +152,7 @@ namespace Instant2D.Collision {
                         // if bounds intersect, try adding into the hash
                         // if successful, add it into the buffer
                         if (bounds.Intersects(collider.Shape.Bounds) && _colliderHash.Add(collider)) {
-                            results ??= ListPool<T>.Get();
+                            results ??= ListPool<T>.Rent();
                             results.Add(collider);
                         }
                     }
