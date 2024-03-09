@@ -46,6 +46,16 @@ namespace Instant2D {
             return new RectangleF(min, max - min);
         }
 
+        /// <inheritdoc cref="FromCenteredBox(Vector2, Vector2)"/>
+        public static RectangleF FromCenteredBox(Vector2 position, float size) => FromCenteredBox(position, new Vector2(size));
+
+        /// <summary>
+        /// Constructs a new <see cref="RectangleF"/> instance representing a box with <paramref name="size"/> centered around <paramref name="position"/>.
+        /// </summary>
+        public static RectangleF FromCenteredBox(Vector2 position, Vector2 size) {
+            return new(position - size * 0.5f, size);
+        }
+
         /// <summary>
         /// Top-left coordinates of the rectangle.
         /// </summary>

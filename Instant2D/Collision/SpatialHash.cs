@@ -169,7 +169,7 @@ namespace Instant2D.Collision {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool OverlapRect(RectangleF bounds, out List<T> results, int layerMask = -1) {
             // update the overlap test box
-            _overlapTestBox.Position = bounds.Position;
+            _overlapTestBox.Position = bounds.Position + bounds.Size * 0.5f;
             _overlapTestBox.Size = bounds.Size;
 
             // do a broadphase and narrow down overlapping colliders
