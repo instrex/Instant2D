@@ -189,5 +189,15 @@ namespace Instant2D {
 
             return res;
         }
+
+        public RectangleF Inflated(float amount) => Inflated(amount, amount);
+        public RectangleF Inflated(Vector2 amount) => Inflated(amount.X, amount.Y);
+        public RectangleF Inflated(float horizontalAmount, float verticalAmount) {
+            var offset = new Vector2(horizontalAmount, verticalAmount);
+            return this with {
+                Position = Position - offset * 0.5f,
+                Size = Size + offset
+            };
+        }
     }
 }

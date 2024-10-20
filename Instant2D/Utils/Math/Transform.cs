@@ -251,11 +251,12 @@ namespace Instant2D {
             }
 
             if (_parent != null) {
+                _parent.CalculateTransform();
+
                 Matrix2D.Multiply(ref _localTransform, ref _parent._worldTransform, out _worldTransform);
-                _rotation = _localRotation + _parent.Rotation;
+                _rotation = _localRotation + _parent._rotation;
                 _scale = _parent._scale * _localScale;
 
-                _parent.CalculateTransform();
                 ApplyTransform(ref _localPosition, ref _parent._worldTransform, out _position);
             } else {
                 _position = _localPosition;

@@ -83,6 +83,18 @@ public class CoroutineDriver : ICoroutineAwaiter, IPooledInstance {
     }
 
     /// <summary>
+    /// When set to <see langword="true"/>, yielding floats or ints in coroutine will scale to <see cref="Target"/>'s timescale automatically. <br/>
+    /// May be set to <see langword="false"/> to prevent that behaviour from applying (such as when used inside fixed-update context).
+    /// </summary>
+    public bool UseTargetTimescaleByDefault { get; set; } = true;
+
+    /// <inheritdoc cref="UseTargetTimescaleByDefault"/>
+    public CoroutineDriver SetUseTargetTimescaleByDefault(bool useTargetTimescaleByDefault) {
+        UseTargetTimescaleByDefault = useTargetTimescaleByDefault;
+        return this;
+    }
+
+    /// <summary>
     /// Advance this coroutine. Returns <see langword="true"/> if coroutine is still active and should be ticked next frame.
     /// </summary>
     public bool Tick(float dt = 1.0f / 60) {
@@ -103,8 +115,8 @@ public class CoroutineDriver : ICoroutineAwaiter, IPooledInstance {
         // assign some common awaiter shortcuts
         _awaiter = Enumerator.Current switch {
             null => new WaitForNextFrame(),
-            float duration => new WaitForSeconds(duration),
-            int durationWhole => new WaitForSeconds(durationWhole),
+            float duration => new WaitForSeconds(duration, UseTargetTimescaleByDefault),
+            int durationWhole => new WaitForSeconds(durationWhole, UseTargetTimescaleByDefault),
             ICoroutineAwaiter customAwaiter => customAwaiter,
             _ => throw new InvalidOperationException($"Invalid coroutine awaiter: expected null, int, float or ICoroutineAwaiter. ({_awaiter})")
         };
@@ -132,6 +144,7 @@ public class CoroutineDriver : ICoroutineAwaiter, IPooledInstance {
     }
 
     public void Reset() {
+        UseTargetTimescaleByDefault = true;
         CompletionHandler = null;
         ShouldRecycle = false;
         Enumerator = null;

@@ -247,17 +247,20 @@ namespace Instant2D.EC.Components {
             return hit;
         }
 
+        /// <inheritdoc cref="CollidesWithAny(out CollisionResult{CollisionComponent}, int, Vector2)"/>
+        public bool CollidesWithAny(int layerMask = -1, Vector2 velocity = default) => CollidesWithAny(out _, layerMask, velocity);
+
         /// <summary>
         /// Checks for any collisions using specified <paramref name="layerMask"/> and optional <paramref name="velocity"/>.
         /// </summary>
-        public bool CollidesWithAny(int layerMask = -1, Vector2 velocity = default) {
+        public bool CollidesWithAny(out CollisionResult<CollisionComponent> collision, int layerMask = -1, Vector2 velocity = default) {
             var oldPosition = Shape.Position;
             Shape.Position += velocity;
 
             // broadphase potential hits and check more precisely
             if (Scene.Collisions.Broadphase(Shape.Bounds, out var colliders, layerMask)) {
                 foreach (var potential in colliders) {
-                    if (potential != this && potential.CollidesWith(this, out var _)) {
+                    if (potential != this && potential.CollidesWith(this, out collision)) {
                         Shape.Position = oldPosition;
                         return true;
                     }
@@ -269,6 +272,7 @@ namespace Instant2D.EC.Components {
             // revert to previous position
             Shape.Position = oldPosition;
 
+            collision = default;
             return false;
         }
 
