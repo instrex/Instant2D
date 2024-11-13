@@ -43,7 +43,7 @@ namespace Instant2D {
         Matrix2D _localTransform, _worldTransform = Matrix2D.Identity;
         Matrix2D _translationMatrix, _rotationMatrix, _scaleMatrix;
         Matrix2D _worldToLocalTransform = Matrix2D.Identity;
-        TransformComponentType _matricesDirty, _localMatricesDirty;
+        TransformComponentType _matricesDirty = TransformComponentType.All, _localMatricesDirty = TransformComponentType.All;
 
         bool _worldToLocalDirty;
         public Matrix2D WorldToLocalTransform {
@@ -84,7 +84,7 @@ namespace Instant2D {
                 if ((_parent = value) != null)
                     Position = Vector2.Zero;
 
-                MarkDirty(TransformComponentType.Position);
+                MarkDirty(TransformComponentType.All);
             }
         }
 

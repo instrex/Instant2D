@@ -217,8 +217,8 @@ namespace Instant2D.EC {
                 return false;
             }
 
-            var offset = rawPoint - Sprite.Origin;
-            point += TransformPointOffset(offset);
+            var offset = rawPoint - _origin;
+            point += offset * Entity.Scale;
 
             return true;
         }
@@ -238,6 +238,8 @@ namespace Instant2D.EC {
 
             // advance the animation based on timescale and speed
             _elapsedTime += dt * Scene.TimeScale * Entity.TimeScale * Speed;
+            Frame = (int)MathF.Floor(_elapsedTime / _timePerFrame);
+
             if (_elapsedTime >= _duration) {
                 _elapsedTime = 0;
                 switch (_loopType) {
@@ -246,11 +248,9 @@ namespace Instant2D.EC {
                         State = AnimatorState.Completed;
                         OnAnimationComplete?.Invoke(this);
 
-                        return;
+                        break;
                 }
             }
-
-            Frame = (int)MathF.Floor(_elapsedTime / _timePerFrame);
         }
     }
 }

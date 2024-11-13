@@ -188,8 +188,8 @@ namespace Instant2D.EC.Components {
                     var other = colliders[i];
 
                     // check for collision, skipping self and triggers
-                    if (other != this && !other.IsTrigger && CollidesWith(other, velocity, out var hit)) {
-                        velocity -= hit.PenetrationVector;
+                    if (other != this && CollidesWith(other, velocity, out var hit)) {
+                        if (!other.IsTrigger) velocity -= hit.PenetrationVector;
 
                         // add the hit to hits array
                         hits ??= ListPool<CollisionResult<CollisionComponent>>.Rent();
@@ -248,12 +248,12 @@ namespace Instant2D.EC.Components {
         }
 
         /// <inheritdoc cref="CollidesWithAny(out CollisionResult{CollisionComponent}, int, Vector2)"/>
-        public bool CollidesWithAny(int layerMask = -1, Vector2 velocity = default) => CollidesWithAny(out _, layerMask, velocity);
+        public bool CollidesWithAny(int layerMask = -1, Vector2 velocity = default, bool ignoreTriggers = true) => CollidesWithAny(out _, layerMask, velocity, ignoreTriggers);
 
         /// <summary>
         /// Checks for any collisions using specified <paramref name="layerMask"/> and optional <paramref name="velocity"/>.
         /// </summary>
-        public bool CollidesWithAny(out CollisionResult<CollisionComponent> collision, int layerMask = -1, Vector2 velocity = default) {
+        public bool CollidesWithAny(out CollisionResult<CollisionComponent> collision, int layerMask = -1, Vector2 velocity = default, bool ignoreTriggers = true) {
             var oldPosition = Shape.Position;
             Shape.Position += velocity;
 
@@ -261,6 +261,9 @@ namespace Instant2D.EC.Components {
             if (Scene.Collisions.Broadphase(Shape.Bounds, out var colliders, layerMask)) {
                 foreach (var potential in colliders) {
                     if (potential != this && potential.CollidesWith(this, out collision)) {
+                        if (ignoreTriggers && potential.IsTrigger)
+                            continue;
+
                         Shape.Position = oldPosition;
                         return true;
                     }

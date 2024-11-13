@@ -68,7 +68,7 @@ namespace Instant2D.Audio {
 
                 // allocate and populate the sample buffer
                 var sampleCount = stb_vorbis_stream_length_in_samples(ogg);
-                var buffer = new float[sampleCount * info.channels];
+                var buffer = new float[sampleCount * info.channels * 2];
                 stb_vorbis_get_samples_float_interleaved(ogg, info.channels, buffer, buffer.Length);
 
                 // allocate the buffer

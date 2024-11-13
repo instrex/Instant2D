@@ -122,7 +122,11 @@ namespace Instant2D.EC.Rendering {
                 return;
             }
 
+            drawing.Push(Material.AlphaBlend);
+
             drawing.DrawTexture(_renderTarget, Vector2.Zero, null, PresentColor, 0, Vector2.Zero, Vector2.One);
+
+            drawing.Pop();
         }
 
         public void Dispose() {

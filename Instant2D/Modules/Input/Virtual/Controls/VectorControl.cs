@@ -53,7 +53,9 @@ public class VectorControl : IVirtualControl {
         public int PlayerIndex { get; set; }
 
         Vector2 IVectorInput.GetValue() {
-            var controller = GamePadInput.Controllers[PlayerIndex];
+            if (GamePadInput.Controllers[PlayerIndex] is not GamePadInput.GamePadWrapper controller)
+                return Vector2.Zero;
+
             var value = RightStick ? controller.RightStick : controller.LeftStick;
 
             // apply deadzones

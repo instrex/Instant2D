@@ -101,7 +101,7 @@ namespace Instant2D.Utils.ResolutionScaling {
             var (scaleX, scaleY) = (screenDimensions.X / (float)_designResolution.X, screenDimensions.Y / (float)_designResolution.Y);
 
             // calculate the scale factor
-            var rawScale = MathF.Max(1.0f, MathF.Min(scaleX, scaleY));
+            var rawScale = MathF.Max(1.0f, MathF.Max(scaleX, scaleY));
             var scale = rawScale;
 
             // clamp the scale

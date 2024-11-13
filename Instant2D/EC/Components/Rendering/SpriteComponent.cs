@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Instant2D.EC {
     public class SpriteComponent : RenderableComponent, IPooledInstance {
-        protected bool _isSpriteSet, _autocorrectOrigin = true;
+        protected bool _isSpriteSet;
         protected SpriteEffects _spriteFx;
 
         protected Vector2 _origin;
@@ -25,6 +25,7 @@ namespace Instant2D.EC {
             set {
                 _sprite = value;
                 _origin = _sprite.Origin;
+                CalculateOrigin();
                 _isSpriteSet = true;
                 _boundsDirty = true;
             } 
@@ -34,26 +35,21 @@ namespace Instant2D.EC {
         /// Whether or not this sprite should be horizontally flipped. Transformations will be applied to the origin.
         /// </summary>
         public bool FlipX {
-            get => (_spriteFx & SpriteEffects.FlipHorizontally) == 0;
-            set {
-                _spriteFx = value ? _spriteFx | SpriteEffects.FlipHorizontally : _spriteFx & ~SpriteEffects.FlipHorizontally;
-                if (_autocorrectOrigin) {
-                    _origin.X = value ? _sprite.SourceRect.Width - _sprite.Origin.X : _sprite.Origin.X;
-                }
-            }
+            get => _spriteFx.HasFlag(SpriteEffects.FlipHorizontally);
+            set => SpriteEffects = value ? _spriteFx | SpriteEffects.FlipHorizontally : _spriteFx & ~SpriteEffects.FlipHorizontally;
         }
 
         /// <summary>
         /// Whether or not this sprite should be vertically flipped. Transformations will be applied to the origin.
         /// </summary>
         public bool FlipY {
-            get => (_spriteFx & SpriteEffects.FlipVertically) == 0;
-            set {
-                _spriteFx = value ? _spriteFx | SpriteEffects.FlipVertically : _spriteFx & ~SpriteEffects.FlipVertically;
-                if (_autocorrectOrigin) {
-                    _origin.Y = value ? _sprite.SourceRect.Height - _sprite.Origin.Y : _sprite.Origin.Y;
-                }
-            } 
+            get => _spriteFx.HasFlag(SpriteEffects.FlipVertically);
+            set => SpriteEffects = value ? _spriteFx | SpriteEffects.FlipVertically : _spriteFx & ~SpriteEffects.FlipVertically; 
+        }
+
+        void CalculateOrigin() {
+            _origin.X = FlipX ? _sprite.SourceRect.Width - _sprite.Origin.X : _sprite.Origin.X;
+            _origin.Y = FlipY ? _sprite.SourceRect.Height - _sprite.Origin.Y : _sprite.Origin.Y;
         }
 
         /// <summary>
@@ -61,7 +57,10 @@ namespace Instant2D.EC {
         /// </summary>
         public SpriteEffects SpriteEffects {
             get => _spriteFx;
-            set => _spriteFx = value;
+            set {
+                _spriteFx = value;
+                CalculateOrigin();
+            }
         }
 
         #region Point handling
@@ -76,7 +75,7 @@ namespace Instant2D.EC {
                 return false;
             }
 
-            var offset = rawPoint.ToVector2() - _sprite.Origin;
+            var offset = rawPoint.ToVector2() - _origin;
             point = Entity.TransformState.Position + (dontApplyTransform ? offset : TransformPointOffset(offset));
             return true;
         }
@@ -107,7 +106,7 @@ namespace Instant2D.EC {
                 return;
             }
 
-            bounds = CalculateBounds(Transform.Position, Vector2.Zero, Sprite.Origin, new(Sprite.SourceRect.Width, Sprite.SourceRect.Height),
+            bounds = CalculateBounds(Transform.Position, Vector2.Zero, _origin, new(Sprite.SourceRect.Width, Sprite.SourceRect.Height),
                 Transform.Rotation, Transform.Scale);
         }
 

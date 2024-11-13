@@ -520,6 +520,14 @@ namespace Instant2D.EC {
             TransformState = data;
         }
 
+        /// <summary>
+        /// Sets transform state to current data.  You shouldn't really call this unless you know what you're doing.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetTransformState() {
+            SetTransformState(Transform.Data);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void PreUpdate() {
             if (!IsInitialized) {
@@ -541,6 +549,9 @@ namespace Instant2D.EC {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void UpdateComponents(float dt) {
+            if (!_isActive)
+                return;
+
             if (_updatedComponents != null) {
                 foreach (var comp in CollectionsMarshal.AsSpan(_updatedComponents)) {
                     if (comp.IsActive) comp.Update(dt);
@@ -550,11 +561,14 @@ namespace Instant2D.EC {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FixedUpdateGlobal(int updateCount, bool useChildren = false) {
+            if (!_isActive)
+                return;
+
             if (_fixedUpdateComponents != null && updateCount > 0) {
                 // do several updates at once to reduce looping overhead
                 foreach (var comp in CollectionsMarshal.AsSpan(_fixedUpdateComponents)) {
                     for (var i = 0; i < updateCount; i++) {
-                        comp.FixedUpdate();
+                        if (comp.IsActive) comp.FixedUpdate();
                     }
                 }
             }
@@ -569,7 +583,8 @@ namespace Instant2D.EC {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FixedUpdateCustom(float dt) {
             // parents handle their children themselves
-            if (Parent != null) return;
+            if (Parent != null || !_isActive) 
+                return;
 
             var fixedUpdateCount = 0;
             _timestepCounter += dt * _timescale * Scene.TimeScale;
@@ -605,6 +620,9 @@ namespace Instant2D.EC {
         }
 
         internal void LateUpdate(float dt) {
+            if (!_isActive)
+                return;
+
             // perform transform interpolation
             if (InterpolateTransform) {
                 var (lastPos, lastScale, lastRot) = _lastTransformState;

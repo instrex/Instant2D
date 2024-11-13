@@ -119,6 +119,9 @@ namespace Instant2D.EC.Rendering {
 
                 // collect layers based on Order range
                 foreach (var layer in Scene.RenderLayers.Where(layer => layer.Order >= range.Min && layer.Order < range.Max)) {
+                    if (layer == this)
+                        continue;
+
                     layer.ShouldPresent = false;
                     _masteredLayers.Add(layer);
                 }
