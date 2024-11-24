@@ -21,7 +21,7 @@ namespace Instant2D.EC {
     /// This will allow future <see cref="Scene.CreateEntity(string, Vector2)"/> calls utilize already allocated entities, instead of creating new ones each time. <br/>
     /// Same applies to components implementing <see cref="IPooledInstance"/> interface.
     /// </remarks>
-    public sealed class Entity : IPooledInstance, ITransformCallbacksHandler, ICoroutineTarget {
+    public sealed class Entity : ITransformCallbacksHandler, ICoroutineTarget {
         static uint _entityIdCounter;
 
         readonly List<Component> _components = new(16);
@@ -679,34 +679,6 @@ namespace Instant2D.EC {
         }
 
         public override string ToString() => $"{Name} #{Id}";
-
-        // IPooled impl
-        void IPooledInstance.Reset() {
-            IsDestroyed = false;
-            AlphaFrameTime = 0f;
-            TimeScale = 1.0f;
-            Name = null;
-            Tags = 0;
-
-            _timestepCounter = 0;
-
-            // reset the transform and reassign entity
-            Transform.Reset();
-            Transform.Entity = this;
-
-            // reset other fields
-            IsInitialized = false;
-            _updatedComponents?.Pool();
-            _updatedComponents = null;
-            _fixedUpdateComponents?.Pool();
-            _fixedUpdateComponents = null;
-            _lateUpdateComponents?.Pool();
-            _lateUpdateComponents = null;
-            _components.Clear();
-            _shouldDestroy = false;
-            _isActive = true;
-            _scene = null;
-        }
 
         // ICoroutineTarget impl
         float ICoroutineTarget.TimeScale => TimeScale * (Scene?.TimeScale ?? 1.0f);
