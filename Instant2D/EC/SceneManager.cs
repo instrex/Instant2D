@@ -1,4 +1,5 @@
-﻿using Instant2D.Graphics;
+﻿using Instant2D.Coroutines;
+using Instant2D.Graphics;
 using Instant2D.Modules;
 using Instant2D.Utils;
 using Instant2D.Utils.ResolutionScaling;
@@ -18,6 +19,8 @@ namespace Instant2D.EC;
 public class SceneManager : IGameSystem, IRenderableGameSystem {
     public static SceneManager Instance { get; set; }
 
+    CoroutineManager _coroutineManager;
+
     InstantApp _attachedApp;
     ScaledResolution _resolution;
     Scene _current, _next;
@@ -26,6 +29,12 @@ public class SceneManager : IGameSystem, IRenderableGameSystem {
     /// When <see langword="true"/>, game will not be updated when minimized.
     /// </summary>
     public bool PauseOnFocusLost { get; set; } = true;
+
+    /// <summary>
+    /// Makes it possible to use WaitForSceneEvent inside coroutines. <br/>
+    /// Defaults to <see langword="true"/>, may be disabled if you control it manually.
+    /// </summary>
+    public bool TickCoroutineEvents { get; set; } = true;
 
     /// <summary>
     /// Resolution scaler which will apply to all scenes this SceneManager uses. May be null.
@@ -92,6 +101,12 @@ public class SceneManager : IGameSystem, IRenderableGameSystem {
             app.AddModule<GraphicsManager>();
         }
 
+        // get coroutine module for tick synchronization
+        _coroutineManager = app.GetModule<CoroutineManager>();  
+        if (_coroutineManager != null) {
+            _coroutineManager.IsManuallyControlled = true;
+        }
+
         // setup the client size change callback for resizing RTs and stuff
         app.Window.ClientSizeChanged += OnClientSizeChanged;
         _attachedApp = app;
@@ -106,6 +121,8 @@ public class SceneManager : IGameSystem, IRenderableGameSystem {
             return;
 
         _current?.InternalUpdate(deltaTime);
+        _coroutineManager?.Tick();
+
         if (_next != null) {
             _current.Cleanup();
             _current = _next;

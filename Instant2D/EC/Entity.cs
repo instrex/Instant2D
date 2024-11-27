@@ -16,11 +16,6 @@ namespace Instant2D.EC {
     /// <summary>
     /// Represents an entity in the game world that may have components attached to it.
     /// </summary>
-    /// <remarks>
-    /// NOTE: preferably, avoid creating instances of this class using constructor, instead use <see cref="StaticPool{T}"/> to access pooled instances. <br/>
-    /// This will allow future <see cref="Scene.CreateEntity(string, Vector2)"/> calls utilize already allocated entities, instead of creating new ones each time. <br/>
-    /// Same applies to components implementing <see cref="IPooledInstance"/> interface.
-    /// </remarks>
     public sealed class Entity : ITransformCallbacksHandler, ICoroutineTarget {
         static uint _entityIdCounter;
 
@@ -646,7 +641,7 @@ namespace Instant2D.EC {
             IsDestroyed = true;
 
             // release all the coroutines attached to this entity
-            CoroutineManager.StopByTarget(this);
+            Coroutine.StopAllWithTarget(this);
 
             // notify components of death and detach
             for (var i = 0; i < _components.Count; i++) {
@@ -673,14 +668,11 @@ namespace Instant2D.EC {
 
             // detach from the scene
             Scene = null;
-
-            // put the entity into the pool for reuse
-            Pool<Entity>.Shared.Return(this);
         }
 
         public override string ToString() => $"{Name} #{Id}";
 
         // ICoroutineTarget impl
-        float ICoroutineTarget.TimeScale => TimeScale * (Scene?.TimeScale ?? 1.0f);
+        float ICoroutineTarget.Timescale => TimeScale * (Scene?.TimeScale ?? 1.0f);
     }
 }

@@ -23,10 +23,6 @@ public abstract class Scene : ICoroutineTarget {
     RenderTarget2D _sceneTarget, _tempTarget;
     float _fixedTimestepProgress;
     bool _isInitialized, _isCleanedUp;
-    bool _debugRender;
-
-    // how many fixed updates have been completed
-    internal int _fixedUpdatesPassed;
 
     readonly List<IRenderLayer> _renderLayers = new(12);
 
@@ -275,15 +271,14 @@ public abstract class Scene : ICoroutineTarget {
             }
         }
 
+        var shouldTickCoroutineEvents = SceneManager.Instance.TickCoroutineEvents;
+
         // call scene FixedUpdate
         for (var i = 0; i < fixedUpdateCount; i++) {
             FixedUpdate();
 
-            // increment the fixedUpdate counter
-            _fixedUpdatesPassed++;
-
-            // tick all WaitForFixedUpdate coroutines
-            // CoroutineManager.TickFixedUpdate(this);
+            // tick FixedUpdate blocked coroutines
+            if (shouldTickCoroutineEvents) Coroutine.TickSceneLoopBlockedCoroutines(SceneLoopEvent.FixedUpdate, this);
         }
 
         // apply Updates
@@ -291,19 +286,18 @@ public abstract class Scene : ICoroutineTarget {
             entity.UpdateComponents(timeDelta);
         }
 
+        if (IsActive) Update();
+
+        // tick Update blocked coroutines
+        if (shouldTickCoroutineEvents) Coroutine.TickSceneLoopBlockedCoroutines(SceneLoopEvent.Update, this);
+
         // apply LateUpdates
         foreach (var entity in span) {
             entity.LateUpdate(timeDelta);
         }
 
-        // switch debug render
-        // TODO: move to a component
-        if (KeyboardInput.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.OemTilde)) {
-            _debugRender = !_debugRender;
-        }
-
-        if (IsActive)
-            Update();
+        // tick LateUpdate blocked coroutines
+        if (shouldTickCoroutineEvents) Coroutine.TickSceneLoopBlockedCoroutines(SceneLoopEvent.LateUpdate, this);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -347,7 +341,7 @@ public abstract class Scene : ICoroutineTarget {
 
     internal void Cleanup() {
         for (var i = 0; i<_entities.Count; i++) {
-            CoroutineManager.StopByTarget(_entities[i]);
+            Coroutine.StopAllWithTarget(_entities[i]);
         }
 
         // destroy all entities before switching scenes
@@ -356,7 +350,7 @@ public abstract class Scene : ICoroutineTarget {
         }
 
         // release all the coroutines attached to this scene
-        CoroutineManager.StopByTarget(this);
+        Coroutine.StopAllWithTarget(this);
         OnExiting();
 
         // raise the cleanup event
@@ -497,5 +491,5 @@ public abstract class Scene : ICoroutineTarget {
     public static AssetManager Assets => AssetManager.Instance;
 
     // ICoroutineTarget impl
-    float ICoroutineTarget.TimeScale => TimeScale;
+    float ICoroutineTarget.Timescale => TimeScale;
 }

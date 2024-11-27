@@ -32,9 +32,9 @@ public class AssetManager : IGameSystem, IAssetRepository {
     /// </summary>
     public IAssetRepository Repository;
 
-    readonly List<(int order, IAssetLoader)> _loaders = new();
-    readonly Dictionary<string, Asset> _assets = new();
-    readonly Dictionary<string, CoroutineDriver> _hotReloadTimers = new();
+    readonly List<(int order, IAssetLoader)> _loaders = [];
+    readonly Dictionary<string, Asset> _assets = [];
+    readonly Dictionary<string, Coroutine> _hotReloadTimers = [];
     FileSystemWatcher _hotReloadWatcher;
     string _assetFolder = "Assets/";
     bool _assetsLoaded;
@@ -150,12 +150,11 @@ public class AssetManager : IGameSystem, IAssetRepository {
         // stop existing timer
         if (_hotReloadTimers.TryGetValue(assetKey, out var timer)) {
             timer.Stop();
-            //Pool<Coroutine>.Shared.Return(timer);
         }
 
         // if we do it immediately, there's a chance the file could be used by something
         // adding a little bit of delay helps making sure that wouldn't happen
-        _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.RunTracked(CoroutineDriver.Timer(0.5f, () => {
+        _hotReloadTimers.AddOrSet(assetKey, CoroutineManager.Defer(0.5f, () => {
             var format = Path.GetExtension(assetKey);
             foreach (var loader in _loaders.Select(p => p.Item2)
                 .OfType<IHotReloader>()) {
@@ -174,7 +173,7 @@ public class AssetManager : IGameSystem, IAssetRepository {
 
             // clear the timer
             _hotReloadTimers.Remove(assetKey);
-        })));
+        }));
     }
 
     #endregion
@@ -188,7 +187,6 @@ public class AssetManager : IGameSystem, IAssetRepository {
         Repository = new FileSystemRepository(_assetFolder);
 
         // load assets
-        var progress = new LoadingProgress();
         _loaders.Sort((a, b) => a.order.CompareTo(b.order));
         foreach (var (_, loader) in _loaders) {
             if (loader is IHotReloader hotReloadable)
