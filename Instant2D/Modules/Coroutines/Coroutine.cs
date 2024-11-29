@@ -42,14 +42,19 @@ public partial class Coroutine(ICoroutineTarget target = default) {
         get => _targetRef.TryGetTarget(out var target) && target is not CoroutineManager ? target : null;
 
         set {
-            // remove this coroutine reference from old target table
-            if (_isAttachedToTarget && _targetRef.TryGetTarget(out var oldTarget))
-                DetachFrom(oldTarget);
-
-            if (value != null) {
-                _isAttachedToTarget = true;
-                AttachTo(value);
+            if (IsRunning) {
+                InstantApp.Logger.Warn($"Attempted to change Coroutine target object during its execution. ({this})");
+                return;
             }
+
+            //// remove this coroutine reference from old target table
+            //if (_isAttachedToTarget && _targetRef.TryGetTarget(out var oldTarget))
+            //    DetachFrom(oldTarget);
+
+            //if (value != null && IsRunning) {
+            //    _isAttachedToTarget = true;
+            //    AttachTo(value);
+            //}
 
             // set target
             _targetRef.SetTarget(value ?? InstantApp.Instance.GetModule<CoroutineManager>());
@@ -73,13 +78,7 @@ public partial class Coroutine(ICoroutineTarget target = default) {
         if (!_coroutinesByTarget.TryGetValue(target, out var list))
             return;
 
-        // pool and clear the target slot if last
-        if (list.Count == 1) {
-            _coroutinesByTarget.Remove(target);
-            list.Pool();
-
-            // else, just remove it
-        } else list.Remove(this);
+        list.Remove(this);
     }
 
     /// <summary>
@@ -99,6 +98,8 @@ public partial class Coroutine(ICoroutineTarget target = default) {
     /// </summary>
     public Coroutine Start(IEnumerator<ICoroutineAwaitable> enumerator) {
         _enumerator = enumerator;
+        _isAttachedToTarget = true;
+        AttachTo(Target);
         return this;
     }
 
@@ -107,17 +108,7 @@ public partial class Coroutine(ICoroutineTarget target = default) {
     /// </summary>
     public bool Tick() {
         if (_enumerator == null) {
-            if (_isAttachedToTarget) {
-                _isAttachedToTarget = false;
-                DetachFrom(Target);
-            }
-
             return false;
-        }
-
-        if (!_isAttachedToTarget) {
-            _isAttachedToTarget = true;
-            AttachTo(Target);
         }
 
         // wait for current awaitable
@@ -141,12 +132,15 @@ public partial class Coroutine(ICoroutineTarget target = default) {
     /// Halt coroutine's execution and call its completion handlers.
     /// </summary>
     public void Stop(bool triggerCompletionHandlers = true) {
-        if (triggerCompletionHandlers) CompletionHandler?.Invoke();
         if (_isAttachedToTarget) {
             _isAttachedToTarget = false;
             DetachFrom(Target);
         }
 
+        if (!IsRunning)
+            return;
+
+        if (triggerCompletionHandlers) CompletionHandler?.Invoke();
         if (CurrentAwaitable is WaitForSceneEvent waitForSceneEvent) {
             if (_sceneBlockedCoroutines.TryGetValue(waitForSceneEvent.EventType, out var list)) {
                 // pool and clear the slot if last
@@ -160,6 +154,11 @@ public partial class Coroutine(ICoroutineTarget target = default) {
         }
 
         _enumerator = null;
+    }
+
+    public override string ToString() {
+        var enumeratorStr = _enumerator.ToString();
+        return $"{Target?.ToString() ?? "No Target"}: {enumeratorStr[enumeratorStr.IndexOf('<')..enumeratorStr.IndexOf('>')]}, x{GetHashCode():X8}";
     }
 
     #region Setters
@@ -249,12 +248,25 @@ public partial class Coroutine(ICoroutineTarget target = default) {
         if (!_coroutinesByTarget.TryGetValue(target, out var list))
             return;
 
-        // stop every owner coroutine
-        foreach (var coroutine in list) coroutine.Stop(invokeCompletionHandlers);
+        // save entries into a temporary buffer
+        var buffer = ListPool<Coroutine>.Rent();
+        buffer.AddRange(list);
 
-        // clear the slot
-        _coroutinesByTarget.Remove(target);
-        list.Pool();
+        // clear all entries from actual list before stopping
+        list.Clear();
+
+        // stop every entry coroutine
+        foreach (var coroutine in buffer) coroutine.Stop(invokeCompletionHandlers);
+
+        // dispose of the buffer
+        buffer.Pool();
+
+        // check if the slot is actually empty now, then pool and remove it
+        // this may not happen if any of the coroutines start new coroutines from their CompletionHandlers
+        if (list.Count == 0) {
+            _coroutinesByTarget.Remove(target);
+            list.Pool();
+        }
     }
 
     #endregion

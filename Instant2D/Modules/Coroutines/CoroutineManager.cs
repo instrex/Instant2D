@@ -1,4 +1,5 @@
 ﻿using Instant2D.Modules;
+using Instant2D.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,11 +68,16 @@ public class CoroutineManager : IGameSystem, ICoroutineTarget {
         if (_activeCoroutines.Count == 0)
             return;
 
+        var buffer = ListPool<Coroutine>.Rent();
+        buffer.AddRange(_activeCoroutines);
+
         var clearExpiredCoroutines = false;
-        foreach (var coroutine in _activeCoroutines) {
-            if (!coroutine.Tick())
-                clearExpiredCoroutines = true;
+        for (int i = 0; i < buffer.Count; i++) {
+            if (!buffer[i].Tick())
+                _activeCoroutines.Remove(buffer[i]);
         }
+
+        buffer.Pool();
 
         if (clearExpiredCoroutines) _activeCoroutines.RemoveAll(c => !c.IsRunning);
     }
