@@ -63,6 +63,9 @@ public partial class Coroutine(ICoroutineTarget target = default) {
 
     // adds coroutine to target table
     void AttachTo(ICoroutineTarget target) {
+        if (target is null)
+            return;
+
         // initialize the list if it doesn't exist yet
         if (!_coroutinesByTarget.TryGetValue(target, out var list)) {
             list = ListPool<Coroutine>.Rent();
@@ -75,6 +78,9 @@ public partial class Coroutine(ICoroutineTarget target = default) {
 
     // removes coroutine and handles removing the list
     void DetachFrom(ICoroutineTarget target) {
+        if (target is null)
+            return;
+
         if (!_coroutinesByTarget.TryGetValue(target, out var list))
             return;
 
@@ -157,8 +163,8 @@ public partial class Coroutine(ICoroutineTarget target = default) {
     }
 
     public override string ToString() {
-        var enumeratorStr = _enumerator.ToString();
-        return $"{Target?.ToString() ?? "No Target"}: {enumeratorStr[enumeratorStr.IndexOf('<')..enumeratorStr.IndexOf('>')]}, x{GetHashCode():X8}";
+        var enumeratorStr = _enumerator?.ToString() ?? "<None>";
+        return $"{Target?.ToString() ?? "no_target"}.{enumeratorStr[(enumeratorStr.IndexOf('<') + 1)..enumeratorStr.IndexOf('>')]}({GetHashCode():X6})";
     }
 
     #region Setters
@@ -248,18 +254,20 @@ public partial class Coroutine(ICoroutineTarget target = default) {
         if (!_coroutinesByTarget.TryGetValue(target, out var list))
             return;
 
-        // save entries into a temporary buffer
-        var buffer = ListPool<Coroutine>.Rent();
-        buffer.AddRange(list);
+        if (list.Count > 0) {
+            // save entries into a temporary buffer
+            var buffer = ListPool<Coroutine>.Rent();
+            buffer.AddRange(list);
 
-        // clear all entries from actual list before stopping
-        list.Clear();
+            // clear all entries from actual list before stopping
+            list.Clear();
 
-        // stop every entry coroutine
-        foreach (var coroutine in buffer) coroutine.Stop(invokeCompletionHandlers);
+            // stop every entry coroutine
+            foreach (var coroutine in buffer) coroutine.Stop(invokeCompletionHandlers);
 
-        // dispose of the buffer
-        buffer.Pool();
+            // dispose of the buffer
+            buffer.Pool();
+        }
 
         // check if the slot is actually empty now, then pool and remove it
         // this may not happen if any of the coroutines start new coroutines from their CompletionHandlers

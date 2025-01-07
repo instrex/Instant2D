@@ -25,9 +25,15 @@ public class CoroutineManager : IGameSystem, ICoroutineTarget {
     /// </summary>
     public static Coroutine Start(IEnumerator<ICoroutineAwaitable> enumerator, ICoroutineTarget target = default) {
         var coroutine = new Coroutine(target);
-        _activeCoroutines.Add(coroutine);
+        coroutine.Start(enumerator);
 
-        return coroutine.Start(enumerator);
+        // if coroutine finishes in one tick, leave it alone
+        if (!coroutine.Tick()) 
+            return coroutine;
+        
+        // else add it for later execution
+        _activeCoroutines.Add(coroutine);
+        return coroutine;
     }
 
     /// <summary>
@@ -39,6 +45,10 @@ public class CoroutineManager : IGameSystem, ICoroutineTarget {
 
         coroutine.Start(enumerator);
 
+        // if coroutine finishes in one tick, leave it alone
+        if (!coroutine.Tick()) 
+            return coroutine;
+        
         // register the coroutine as active if haven't already
         if (!_activeCoroutines.Contains(coroutine))
             _activeCoroutines.Add(coroutine);

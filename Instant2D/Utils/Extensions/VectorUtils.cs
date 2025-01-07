@@ -94,7 +94,7 @@ namespace Instant2D {
                 num -= MathHelper.TwoPi;
             }
 
-            return value1 + num * MathHelper.Clamp(amount, 0, 1);
+            return value1 + num * amount;
         }
 
         /// <summary>

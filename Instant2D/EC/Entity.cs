@@ -670,7 +670,7 @@ namespace Instant2D.EC {
             Scene = null;
         }
 
-        public override string ToString() => $"{Name} #{Id}";
+        public override string ToString() => $"{Name}";
 
         // ICoroutineTarget impl
         float ICoroutineTarget.Timescale => TimeScale * (Scene?.TimeScale ?? 1.0f);
