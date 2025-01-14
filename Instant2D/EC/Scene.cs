@@ -11,6 +11,7 @@ using Instant2D.Utils;
 using Instant2D.Utils.ResolutionScaling;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -348,6 +349,10 @@ public abstract class Scene : ICoroutineTarget {
         for (var i = 0; i<_entities.Count; i++) {
             _entities[i].ImmediateDestroy();
         }
+
+        // dispose of every renderlayer which needs it
+        foreach (var layer in _renderLayers.OfType<IDisposable>())
+            layer.Dispose();
 
         // release all the coroutines attached to this scene
         Coroutine.StopAllWithTarget(this);

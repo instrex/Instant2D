@@ -154,6 +154,9 @@ namespace Instant2D.EC.Components {
         }
 
         public override void OnTransformUpdated(TransformComponentType components) {
+            if (!IsActive)
+                return;
+
             // update components when needed
             if ((components & TransformComponentType.Position) != 0 ||
                 (ShouldScaleWithTransform && (components & TransformComponentType.Scale) != 0) ||

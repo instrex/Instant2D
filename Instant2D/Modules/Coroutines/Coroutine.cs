@@ -164,7 +164,7 @@ public partial class Coroutine(ICoroutineTarget target = default) {
 
     public override string ToString() {
         var enumeratorStr = _enumerator?.ToString() ?? "<None>";
-        return $"{Target?.ToString() ?? "no_target"}.{enumeratorStr[(enumeratorStr.IndexOf('<') + 1)..enumeratorStr.IndexOf('>')]}({GetHashCode():X6})";
+        return $"{Target?.ToString() ?? "NullTarget"}.{enumeratorStr[(enumeratorStr.IndexOf('<') + 1)..enumeratorStr.IndexOf('>')]}({GetHashCode():X6})";
     }
 
     #region Setters

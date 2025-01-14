@@ -663,7 +663,7 @@ namespace Instant2D.EC {
 
             // destroy children
             for (var i = 0; i < ChildrenCount; i++) {
-                this[i].Destroy();
+                this[i].ImmediateDestroy();
             }
 
             // detach from the scene

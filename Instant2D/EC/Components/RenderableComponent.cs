@@ -200,6 +200,10 @@ namespace Instant2D.EC {
             _layer = layer;
         }
 
+        public override void OnRemovedFromEntity() {
+            RenderLayer = null;
+        }
+
         public override void PostInitialize() {
             if (_layer == null) {
                 // assign default renderlayer if its null

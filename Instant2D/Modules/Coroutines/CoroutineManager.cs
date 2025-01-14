@@ -81,15 +81,12 @@ public class CoroutineManager : IGameSystem, ICoroutineTarget {
         var buffer = ListPool<Coroutine>.Rent();
         buffer.AddRange(_activeCoroutines);
 
-        var clearExpiredCoroutines = false;
         for (int i = 0; i < buffer.Count; i++) {
             if (!buffer[i].Tick())
                 _activeCoroutines.Remove(buffer[i]);
         }
 
         buffer.Pool();
-
-        if (clearExpiredCoroutines) _activeCoroutines.RemoveAll(c => !c.IsRunning);
     }
 
     float ICoroutineTarget.Timescale => 1.0f;
