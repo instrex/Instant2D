@@ -106,7 +106,7 @@ namespace Instant2D.EC {
                 return;
             }
 
-            bounds = CalculateBounds(Transform.Position, Vector2.Zero, _origin, new(Sprite.SourceRect.Width, Sprite.SourceRect.Height),
+            bounds = CalculateBounds(Transform.Position + Offset, Vector2.Zero, _origin, new(Sprite.SourceRect.Width, Sprite.SourceRect.Height),
                 Transform.Rotation, Transform.Scale);
         }
 

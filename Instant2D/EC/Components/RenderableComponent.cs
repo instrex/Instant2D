@@ -21,20 +21,28 @@ namespace Instant2D.EC {
         // bounds business
         protected bool _boundsDirty = true;
         RectangleF _bounds;
+        bool _isVisible = true;
+
+        Vector2 _offset;
 
         /// <summary>
         /// When <see langword="true"/>, the object will not be culled when out of view.
         /// </summary>
         public bool DisableCulling;
 
-        bool _isVisible = true;
 
         public Color Color = Color.White;
 
         /// <summary>
         /// An additional offset applied when rendering. Note that this doesn't rotate nor scale with <see cref="Entity.Transform"/>.
         /// </summary>
-        public Vector2 Offset;
+        public Vector2 Offset {
+            get => _offset;
+            set {
+                _offset = value;
+                _boundsDirty = true;
+            }
+        }
 
         /// <summary>
         /// Whether or not this RenderableComponent was visible during last render.
