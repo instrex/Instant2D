@@ -473,7 +473,7 @@ public abstract class Scene : ICoroutineTarget {
     /// <summary>
     /// Enumerates over all of the component instances in this scene.
     /// </summary>
-    public IEnumerable<T> FindComponentsOfType<T>() where T: Component {
+    public IEnumerable<T> FindComponentsOfType<T>() {
         for (var i = 0; i < _entities.Count; i++) {
             foreach (var comp in _entities[i].GetComponents<T>()) {
                 yield return comp;

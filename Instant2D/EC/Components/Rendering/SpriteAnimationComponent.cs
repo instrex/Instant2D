@@ -210,6 +210,17 @@ namespace Instant2D.EC {
 
         Dictionary<string, Vector2> _capturedPoints;
 
+        public override bool TryGetRawPoint(string key, out Vector2 point) {
+            if (_capturedPoints?.TryGetValue(key, out var rawPoint) is true) {
+                point = rawPoint - _origin;
+                point.X *= FlipX ? -1 : 1;
+                point.Y *= FlipY ? -1 : 1;
+                return true;
+            }
+
+            return base.TryGetRawPoint(key, out point);
+        }
+
         // TODO: there seems to be disparity in how dontApplyTransform operates for SpriteComponent and SpriteAnimationComponent
         public override bool TryGetPoint(string key, out Vector2 point, bool dontApplyTransform = false) {
             point = dontApplyTransform ? Vector2.Zero : Entity.Transform.Position;
@@ -218,7 +229,7 @@ namespace Instant2D.EC {
             }
 
             var offset = rawPoint - _origin;
-            point += offset * Entity.Scale;
+            point += offset * Entity.Scale * new Vector2(FlipX ? -1 : 1, FlipY ? -1 : 1);
 
             return true;
         }

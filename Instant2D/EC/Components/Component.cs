@@ -99,11 +99,11 @@ namespace Instant2D.EC {
 
         /// <inheritdoc cref="Entity.GetComponent{T}"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T GetComponent<T>() where T: Component => Entity.GetComponent<T>();
+        public T GetComponent<T>() => Entity.GetComponent<T>();
 
         /// <inheritdoc cref="Entity.TryGetComponent{T}(out T)"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGetComponent<T>(out T component) where T : Component => Entity.TryGetComponent(out component);
+        public bool TryGetComponent<T>(out T component) => Entity.TryGetComponent(out component);
 
         // a shortcut to avoid writing .Entity in some places
         // pretty stupid, I know, but very cozy when you stumble on it
