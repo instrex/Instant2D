@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Instant2D.Assets.Sprites {
     public readonly partial record struct SpriteDefinition {
@@ -14,7 +15,7 @@ namespace Instant2D.Assets.Sprites {
         /// <summary>
         /// Collection of points in the sprite space. Is only valid for definitions with no animation defined.
         /// </summary>
-        public Dictionary<string, Point> Points { get; init; }
+        public List<PointDefinition> Points { get; init; }
 
         /// <summary>
         /// Signalizes if this definition was not defined in any manifest, thus its entry was created automatically.

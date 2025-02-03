@@ -157,8 +157,12 @@ namespace Instant2D.Assets.Loaders {
 
             var sourceRect = new Rectangle(0, 0, texture.Width, texture.Height);
 
-            // create a sprite
-            var sprite = new Sprite(texture, sourceRect, def.Origin.Transform(sourceRect, manifest), asset.Key) { Points = def.Points };
+            // create the sprite
+            var sprite = new Sprite(texture, sourceRect, def.Origin.Transform(sourceRect, manifest), asset.Key) { 
+                // create a sprite using static points only, as for animations this sprite only represents the spritesheet itself
+                Points = def.Points?.Where(p => p.FrameIndex is null && p.FrameKey is null)
+                    .ToDictionary(p => p.Key, p => p.Position)
+            };
 
             var frames = new List<Sprite>();
 
@@ -168,20 +172,51 @@ namespace Instant2D.Assets.Loaders {
                 // load child assets (animation frames, etc)
                 for (var i = 0; i < asset.Children.Count; i++) {
                     var child = asset.Children[i] as LazyAsset<Sprite>;
+
+                    // we need this for point evaluation
+                    var frameKey = child.Data is SubSprite { Key: var spriteKey } ? spriteKey : null;
+
+                    // iterate and parse point definitions
+                    Dictionary<string, Point> points = default;
+                    if (def.Points != null) {
+                        for (var p = 0; p < def.Points.Count; p++) {
+                            var pointDef = def.Points[p];
+
+                            // static points will always match
+                            var matches = pointDef.FrameKey == null && pointDef.FrameIndex == null;
+                            matches |= pointDef.FrameIndex is int pointFrameIndex && pointFrameIndex == i;
+                            matches |= pointDef.FrameKey != null && pointDef.FrameKey == frameKey;
+
+                            // set the point value to last matching definition
+                            if (matches) {
+                                points ??= [];
+                                points[pointDef.Key] = pointDef.Position;
+                            }
+                        }
+                    }
+                    
                     switch (child.Data) {
                         case SubSprite subSprite:
-                            child.Content = new Sprite(texture, subSprite.Region, subSprite.Origin.Transform(subSprite.Region, manifest, def.Origin), child.Key);
+                            child.Content = new Sprite(texture, subSprite.Region, subSprite.Origin.Transform(subSprite.Region, manifest, def.Origin), child.Key) {
+                                Points = points
+                            };
+
                             break;
 
                         case Rectangle rect:
-                            childSprite = new Sprite(texture, rect, def.Origin.Transform(rect, manifest), child.Key);
+                            childSprite = new Sprite(texture, rect, def.Origin.Transform(rect, manifest), child.Key) {
+                                Points = points
+                            };
+
                             child.Content = childSprite;
                             frames.Add(childSprite);
                             break;
 
                         case int index:
                             var frame = new Rectangle(0, texture.Height / asset.Children.Count * index, texture.Width, texture.Height / asset.Children.Count);
-                            childSprite = new Sprite(texture, frame, def.Origin.Transform(frame, manifest), child.Key);
+                            childSprite = new Sprite(texture, frame, def.Origin.Transform(frame, manifest), child.Key) {
+                                Points = points
+                            };
                             child.Content = childSprite;
                             frames.Add(childSprite);
                             break;

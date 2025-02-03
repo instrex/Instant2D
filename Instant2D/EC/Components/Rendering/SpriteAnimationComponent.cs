@@ -156,8 +156,10 @@ namespace Instant2D.EC {
 
                     // update point location instead
                      if (ev.Key == "point") {
+                        InstantApp.Logger.Warn("'point' event is deprecated, consider defining sprite points in 'points' property.");
+
                         // initialize points dict
-                        _capturedPoints ??= new();
+                        // _capturedPoints ??= new();
 
                         // ass
                         if (ev.Args.Length < 2 || ev.Args[0] is not string pointName || ev.Args[1] is not Vector2 pointOffset) {
@@ -165,7 +167,7 @@ namespace Instant2D.EC {
                             continue;
                         }
 
-                        _capturedPoints.AddOrSet(pointName, pointOffset);
+                        // _capturedPoints.AddOrSet(pointName, pointOffset);
 
                         continue;
                     }
@@ -207,32 +209,6 @@ namespace Instant2D.EC {
         }
 
         #endregion
-
-        Dictionary<string, Vector2> _capturedPoints;
-
-        public override bool TryGetRawPoint(string key, out Vector2 point) {
-            if (_capturedPoints?.TryGetValue(key, out var rawPoint) is true) {
-                point = rawPoint - _origin;
-                point.X *= FlipX ? -1 : 1;
-                point.Y *= FlipY ? -1 : 1;
-                return true;
-            }
-
-            return base.TryGetRawPoint(key, out point);
-        }
-
-        // TODO: there seems to be disparity in how dontApplyTransform operates for SpriteComponent and SpriteAnimationComponent
-        public override bool TryGetPoint(string key, out Vector2 point, bool dontApplyTransform = false) {
-            point = dontApplyTransform ? Vector2.Zero : Entity.Transform.Position;
-            if (_capturedPoints == null || !_capturedPoints.TryGetValue(key, out var rawPoint)) {
-                return false;
-            }
-
-            var offset = rawPoint - _origin;
-            point += offset * Entity.Scale * new Vector2(FlipX ? -1 : 1, FlipY ? -1 : 1);
-
-            return true;
-        }
 
         public override void PostInitialize() {
             base.PostInitialize();

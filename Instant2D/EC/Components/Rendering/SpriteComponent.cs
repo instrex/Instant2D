@@ -66,10 +66,10 @@ namespace Instant2D.EC {
         #region Point handling
 
         /// <summary>
-        /// Attempts to get raw sprite point offset relative to its origin.
+        /// Attempts to get sprite point offset relative to its origin.
         /// Can be used to set an entity child's LocalPosition to apply transform.
         /// </summary>
-        public virtual bool TryGetRawPoint(string key, out Vector2 point) {
+        public bool TryGetSpritePoint(string key, out Vector2 point) {
             if (_sprite.Points?.TryGetValue(key, out var rawPoint) is true) {
                 point = rawPoint.ToVector2() - _origin;
                 point.X *= FlipX ? -1 : 1;
@@ -85,7 +85,7 @@ namespace Instant2D.EC {
         /// Attempts to get the sprite point with Entity tranformations applied. If it fails, Entity position is returned instead. <br/>
         /// If you need to get a raw point in sprite space, set <paramref name="dontApplyTransform"/> to <see langword="true"/>.
         /// </summary>
-        [Obsolete("TryGetPoint is obsolete. Use TryGetRawPoint instead.")]
+        [Obsolete("TryGetPoint is obsolete. Use TryGetSpritePoint instead.")]
         public virtual bool TryGetPoint(string key, out Vector2 point, bool dontApplyTransform = false) {
             if (!_isSpriteSet || _sprite.Points == null || !_sprite.Points.TryGetValue(key, out var rawPoint)) {
                 point = Entity.TransformState.Position;

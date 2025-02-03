@@ -43,13 +43,20 @@ namespace Instant2D.Assets.Sprites {
 
                 if (def.Inherit != null) {
                     if (!buffer.TryGetValue(def.Inherit, out var other))
-                        throw new InvalidOperationException($"Attempted to inherit unknown sprite definition '{def.Inherit}' for '{def.Key}'. It should be defined before this one in order for it to be copied.");
+                        throw new InvalidOperationException($"Attempted to inherit unknown sprite definition '{def.Inherit}' for '{def.Key}'. Parent definition should be defined before their children.");
+
+                    var points = other.Points;
+
+                    if (def.Points != null) {
+                        // concatenate points from two sprites with later ones taking precedence
+                        points.AddRange(def.Points);
+                    }
 
                     def = def with {
                         Origin = def.Origin == default ? other.Origin : def.Origin,
                         Animation = def.Animation == default ? other.Animation : def.Animation,
                         SplitOptions = def.SplitOptions == default ? other.SplitOptions : def.SplitOptions,
-                        Points = def.Points != null ? def.Points.Concat(other.Points).ToDictionary(k => k.Key, v => v.Value) : other.Points
+                        Points = points
                     };
                 }
 
@@ -240,12 +247,52 @@ namespace Instant2D.Assets.Sprites {
             return buffer.ToArray();
         }
 
-        internal static Dictionary<string, Point> ParseSpritePoints(JsonNode node) {
+        internal static List<SpriteDefinition.PointDefinition> ParseSpritePoints(JsonNode node) {
             if (node is not JsonObject pointsObj)
                 throw new InvalidOperationException($"'points' property should be an object.");
 
-            return pointsObj.Select(kv => new KeyValuePair<string, Point>(kv.Key, ParsePoint(kv.Value)))
-                .ToDictionary(k => k.Key, v => v.Value);
+            // theres probably a way to do this with just one list but im lazy
+            var staticPoints = new List<SpriteDefinition.PointDefinition>();
+            var points = new List<SpriteDefinition.PointDefinition>();
+
+            foreach (var (key, pointVal) in pointsObj) {
+                // TODO: warn of duplicate keys
+                if (pointVal is not JsonArray pointValArr)
+                    throw new InvalidOperationException($"Expected sprite point value definition to be an array.");
+
+                // static point definition for all frames of the sprite
+                if (pointValArr.Count == 2 && pointValArr[0] is JsonValue xValueTest && xValueTest.GetValueKind() is System.Text.Json.JsonValueKind.Number) {
+                    staticPoints.Add(new SpriteDefinition.PointDefinition {
+                        Key = key,
+                        Position = ParsePoint(pointValArr)
+                    });
+
+                    continue;
+                }
+
+                // dynamic points which may change during specific frames
+                foreach (var item in pointValArr) {
+                    if (item is not JsonArray itemDef || itemDef.Count != 3)
+                        throw new InvalidOperationException("Sprite point definitions should contain frame index (or key), X and Y position values.");
+
+                    var frameIndex = itemDef[0].AsValue();
+                    if (itemDef[1] is not JsonValue xVal || !xVal.TryGetValue<int>(out var x) 
+                        || itemDef[2] is not JsonValue yVal || !yVal.TryGetValue<int>(out var y)) {
+                        throw new InvalidOperationException("Sprite point definition should have X and Y coordinates defined as integers.");
+                    }
+
+                    points.Add(new SpriteDefinition.PointDefinition {
+                        Key = key,
+                        FrameIndex = frameIndex.TryGetValue<int>(out var frameNumber) ? frameNumber : null,
+                        FrameKey = frameIndex.TryGetValue<string>(out var frameKey) ? frameKey : null,
+                        Position = new(x, y),
+                    });
+                }
+            }
+
+            staticPoints.AddRange(points);
+
+            return staticPoints;
         }
 
         internal static Point ParsePoint(JsonNode node) {
