@@ -70,11 +70,6 @@ public abstract class Scene : ICoroutineTarget {
     public float TotalTime;
 
     /// <summary>
-    /// The listener object to use with spatial sounds. By default, it is assigned to <see cref="Camera"/>'s Entity.
-    /// </summary>
-    public Entity Listener;
-
-    /// <summary>
     /// Default Entity RenderLayer used for components with nothing specified.
     /// </summary>
     public EntityLayer DefaultRenderLayer;
@@ -213,8 +208,6 @@ public abstract class Scene : ICoroutineTarget {
             if (Camera is null) {
                 Camera = CreateEntity("camera", Vector2.Zero)
                     .AddComponent<CameraComponent>();
-
-                Listener = Camera;
             }
 
             Initialize();

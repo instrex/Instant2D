@@ -1,5 +1,4 @@
 ﻿using Instant2D.Assets;
-using Instant2D.Audio;
 using Instant2D.Coroutines;
 using Instant2D.Diagnostics;
 using Instant2D.Graphics;
@@ -124,7 +123,6 @@ public abstract class InstantApp : Game {
         AddModule<KeyboardInput>();
         AddModule<MouseInput>();
         AddModule<CoroutineManager>();
-        AddModule<AudioManager>();
     }
 
     #endregion
@@ -152,6 +150,9 @@ public abstract class InstantApp : Game {
             var system = _modules[i];
             system.Update(this, deltaTime);
         }
+
+        // update internals
+        FrameworkDispatcher.Update();
     }
 
     protected override void Draw(GameTime gameTime) {
