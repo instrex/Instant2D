@@ -9,12 +9,22 @@ using System.Threading.Tasks;
 namespace Instant2D.Sounds;
 
 public class SoundLoader : IAssetLoader, ILazyAssetLoader {
-    const string SoundDirectory = "sfx";
-    const string MusicDirectory = "music";
+    /// <summary>
+    /// Default sound folder.
+    /// </summary>
+    public string SoundDirectory { get; set; } = "sfx";
+
+    /// <summary>
+    /// Default music folder. Sounds from here will always be created as streamed instances.
+    /// </summary>
+    public string MusicDirectory { get; set; } = "music";
 
     IEnumerable<Asset> IAssetLoader.Load(AssetManager assets) {
-        var files = assets.EnumerateFiles(SoundDirectory, "*.ogg", true)
-            .Concat(assets.EnumerateFiles(MusicDirectory, "*.ogg", true));
+        var oggPattern = "*.ogg";
+
+        // get files from both folders
+        var files = assets.EnumerateFiles(SoundDirectory, oggPattern, true)
+            .Concat(assets.EnumerateFiles(MusicDirectory, oggPattern, true));
 
         foreach (var file in files) {
             yield return new LazyAsset<Sound>(file.Replace(".ogg", ""), this);

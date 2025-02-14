@@ -19,7 +19,7 @@ public class Sound : IDisposable {
     float[] _samples;
 
     // basic info
-    bool _hasInfo;
+    bool _hasVorbisInfo;
     int _sampleRate, _channels;
     float _duration;
 
@@ -28,7 +28,7 @@ public class Sound : IDisposable {
     /// </summary>
     public int SampleRate {
         get {
-            if (!_hasInfo) ReadInfo(IntPtr.Zero);
+            if (!_hasVorbisInfo) ReadVorbisInfo(IntPtr.Zero);
             return _sampleRate;
         }
     }
@@ -38,7 +38,7 @@ public class Sound : IDisposable {
     /// </summary>
     public int Channels {
         get {
-            if (!_hasInfo) ReadInfo(IntPtr.Zero);
+            if (!_hasVorbisInfo) ReadVorbisInfo(IntPtr.Zero);
             return _channels;
         }
     }
@@ -48,7 +48,7 @@ public class Sound : IDisposable {
     /// </summary>
     public float Duration {
         get {
-            if (!_hasInfo) ReadInfo(IntPtr.Zero);
+            if (!_hasVorbisInfo) ReadVorbisInfo(IntPtr.Zero);
             return _duration;
         }
     }
@@ -72,7 +72,7 @@ public class Sound : IDisposable {
 
     /// <summary>
     /// When <see langword="true"/>, will always create streaming instances. <br/>
-    /// Is automatically set for sounds in music folder.
+    /// Is automatically set for files in music folder.
     /// </summary>
     public bool PreferStreaming { get; init; }
 
@@ -89,7 +89,7 @@ public class Sound : IDisposable {
 
         // get basic file info
         var totalSamples = stb_vorbis_stream_length_in_samples(vorbis);
-        ReadInfo(vorbis);
+        ReadVorbisInfo(vorbis);
 
         _samples = new float[totalSamples * _channels];
 
@@ -143,19 +143,18 @@ public class Sound : IDisposable {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         if (PreferStreaming || streaming) {
-            // return streaming instance...
-            throw new NotImplementedException();
+            return new FAudioStreamingSoundInstance(this);
         }
 
         // initialize the FAudioSoundEffect
         _FAudioSoundEffect ??= new(GetByteSamples(), _sampleRate, (AudioChannels)_channels);
 
         // create the instance
-        return new FAudioSoundInstance(_FAudioSoundEffect.CreateInstance(), _sampleRate, this);
+        return new FAudioSoundInstance(_FAudioSoundEffect.CreateInstance(), this);
     }
 
-    void ReadInfo(nint vorbisHandle) {
-        if (_hasInfo) return;
+    internal void ReadVorbisInfo(nint vorbisHandle) {
+        if (_hasVorbisInfo) return;
 
         var oneShotHandle = vorbisHandle == IntPtr.Zero;
 
@@ -165,7 +164,7 @@ public class Sound : IDisposable {
         var info = stb_vorbis_get_info(vorbisHandle);
         _sampleRate = (int)info.sample_rate;
         _channels = info.channels;
-        _hasInfo = true;
+        _hasVorbisInfo = true;
 
         // get duration in seconds as well
         _duration = stb_vorbis_stream_length_in_seconds(vorbisHandle);

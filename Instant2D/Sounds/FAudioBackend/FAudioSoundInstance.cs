@@ -13,8 +13,10 @@ public class FAudioSoundInstance : ISoundInstance, IDisposable {
     protected readonly SoundEffectInstance _instance;
     protected readonly int _sampleRate;
 
-    internal FAudioSoundInstance(SoundEffectInstance instance, int sampleRate, Sound sound) {
-        _sampleRate = sampleRate;
+    // used for tracking playback position of streaming instances which may be seeked
+    protected ulong _playbackPositionOffset;
+
+    internal FAudioSoundInstance(SoundEffectInstance instance, Sound sound) {
         _instance = instance;
         Sound = sound;
 
@@ -77,12 +79,20 @@ public class FAudioSoundInstance : ISoundInstance, IDisposable {
 
     public float PlaybackPosition {
         get {
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
+
             var handle = GetVoiceHandle(_instance);
             if (handle == nint.Zero)
                 return 0.0f;
 
             FAudioSourceVoice_GetState(handle, out var state, 0);
-            return (float)state.SamplesPlayed / _sampleRate;
+
+            // 1. get the number of samples played by the source voice
+            // 2. subtract _playbackPositionOffset, since SamplesPlayed doesn't reset when restarting sound
+            //    (this is mainly required for streaming instances, since it is possible to seek playback position)
+            // 3. apply modulus duration, this is required for streaming instances too since they loop
+            //    (and it is hard to determine when to reset position, as we have no control over which buffer is played when)
+            return (state.SamplesPlayed - _playbackPositionOffset) / (float)Sound.SampleRate % Sound.Duration;
         }
     }
 
@@ -93,19 +103,23 @@ public class FAudioSoundInstance : ISoundInstance, IDisposable {
     };
 
     public void Pause() {
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
         _instance.Pause();
     }
 
     public void Play() {
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
         _instance.Play();
         UpdatePitch();
     }
 
     public void Resume() {
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
         _instance.Resume();
     }
 
     public void Stop() {
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
         _instance.Stop();
     }
 

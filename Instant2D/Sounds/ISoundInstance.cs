@@ -7,7 +7,7 @@ public interface ISoundInstance {
     /// <summary>
     /// Parent sound of this instance.
     /// </summary>
-    public Sound Sound { get; init; }
+    public Sound Sound { get; }
 
     /// <summary>
     /// Volume scale of this sound instance from 0.0 to 1.0

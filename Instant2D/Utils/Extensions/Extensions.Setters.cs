@@ -2,6 +2,7 @@
 using Instant2D.EC.Components;
 using Instant2D.EC.Rendering;
 using Instant2D.Graphics;
+using Instant2D.Sounds;
 using Instant2D.Utils;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -329,6 +330,38 @@ namespace Instant2D.EC {
             layer.Content = content;
 
             return layer;
+        }
+
+        #endregion
+
+        #region Sounds
+
+        /// <inheritdoc cref="ISoundInstance.Volume"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetVolume<T>(this T instance, float volume) where T: ISoundInstance {
+            instance.Volume = volume;
+            return instance;
+        }
+
+        /// <inheritdoc cref="ISoundInstance.Pan"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetPan<T>(this T instance, float pan) where T : ISoundInstance {
+            instance.Pan = pan;
+            return instance;
+        }
+
+        /// <inheritdoc cref="ISoundInstance.Pitch"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetPitch<T>(this T instance, float pitch) where T : ISoundInstance {
+            instance.Pitch = pitch;
+            return instance;
+        }
+
+        /// <inheritdoc cref="IStreamingSoundInstance.IsLooping"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetLooping<T>(this T instance, bool isLooping) where T : IStreamingSoundInstance {
+            instance.IsLooping = isLooping;
+            return instance;
         }
 
         #endregion

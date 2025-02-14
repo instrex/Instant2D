@@ -7,7 +7,7 @@ public interface IStreamingSoundInstance : ISoundInstance {
     /// <summary>
     /// Audio playback won't stop when reaching the end and instead seek back to the start.
     /// </summary>
-    bool Looped { get; set; }
+    bool IsLooping { get; set; }
 
     /// <summary>
     /// Sets the playback position to provided time in seconds.
