@@ -32,7 +32,7 @@ public readonly struct Sprite {
     /// Access to normalized origin, uses values ranging [0.0 - 1.0]
     /// </summary>
     public Vector2 NormalizedOrigin {
-        get => _origin;
+        get => _origin / new Vector2(SourceRect.Width, SourceRect.Height);
         init => Origin = new Vector2(SourceRect.Width, SourceRect.Height) * value;
     }
 

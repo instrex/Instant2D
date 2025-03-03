@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Instant2D.EC;
 
 namespace Instant2D;
 
@@ -36,7 +37,7 @@ public abstract class InstantApp : Game {
         get => _defaultTitle;
         set => Window.Title = _defaultTitle = value;
     }
-    
+
     public InstantApp() {
         GraphicsDeviceManager = new GraphicsDeviceManager(this);
         IsMouseVisible = true;
@@ -126,6 +127,33 @@ public abstract class InstantApp : Game {
     }
 
     #endregion
+
+    /// <summary>
+    /// Sets window size.
+    /// </summary>
+    public void SetWindowSize(int width, int height) {
+        GraphicsDeviceManager.PreferredBackBufferWidth = width;
+        GraphicsDeviceManager.PreferredBackBufferHeight = height;
+        GraphicsDeviceManager.ApplyChanges();
+
+        // trigger scene resolution calculations
+        SceneManager.Instance.OnClientSizeChanged(null, null);
+    }
+
+    /// <summary>
+    /// Sets target framerate. Pass <c>-1</c> to set fps to uncapped. <br/>
+    /// Defaults to uncapped framerate.
+    /// </summary>
+    public void SetTargetFrameRate(int fps = -1) {
+        if (fps == -1) {
+            IsFixedTimeStep = false;
+            return;
+        }
+
+        // set target framerate
+        TargetElapsedTime = TimeSpan.FromSeconds(1.0f / fps);
+        IsFixedTimeStep = true;
+    }
 
     /// <summary>
     /// Called after each system has been initialized and the game is ready to run.

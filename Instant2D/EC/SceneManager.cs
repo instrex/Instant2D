@@ -84,7 +84,7 @@ public class SceneManager : IGameSystem, IRenderableGameSystem {
         Instance.Current = scene;
     }
 
-    void OnClientSizeChanged(object sender, EventArgs e) {
+    internal void OnClientSizeChanged(object sender, EventArgs e) {
         var screenSize = new Point(_attachedApp.GraphicsDevice.Viewport.Width, _attachedApp.GraphicsDevice.Viewport.Height);
         _resolution = ResolutionScaler?.Calculate(screenSize) ?? new ScaledResolution { scaleFactor = 1.0f, renderTargetSize = screenSize };
         _current?.ResizeRenderTargets(_resolution);
