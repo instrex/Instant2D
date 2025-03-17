@@ -16,7 +16,27 @@ namespace Instant2D.EC.Components {
     /// Base class for all collider components. Contains useful methods for overlap checking and moving with callback support.
     /// </summary>
     public abstract class CollisionComponent : Component, ICollider<CollisionComponent> {
-        bool _scaleWithTransform = true, _rotateWithTransform = true;
+        [Flags]
+        public enum ColliderTransformBehaviour {
+            None,
+
+            /// <summary>
+            /// Collider will be scaled.
+            /// </summary>
+            Scale = 1,
+
+            /// <summary>
+            /// Collider will rotate.
+            /// </summary>
+            Rotate = 2,
+
+            /// <summary>
+            /// Collider will be scaled and rotated.
+            /// </summary>
+            ScaleAndRotate = Scale | Rotate
+        }
+
+        int _transformBehaviour = (int)ColliderTransformBehaviour.ScaleAndRotate;
 
         // trigger stuff
         HashSet<CollisionComponent> _contactTriggers, _tempTriggerSet;
@@ -89,15 +109,26 @@ namespace Instant2D.EC.Components {
         }
 
         /// <summary>
+        /// Defines how collider reacts to transform changes. By default, it will scale and rotate accordingly. <br/>
+        /// Can be disabled to improve performance and stability by switching to optimized collision handling for boxes (AABB).
+        /// </summary>
+        public ColliderTransformBehaviour TransformBehaviour {
+            get => (ColliderTransformBehaviour)_transformBehaviour;
+            set {
+                _transformBehaviour = (int)value;
+                UpdateCollider();
+            }
+        }
+
+        /// <summary>
         /// When <see langword="true"/>, shape of the collider will be modified based on Entity's <see cref="Transform{T}.Scale"/>.
         /// </summary>
         public bool ShouldScaleWithTransform {
-            get => _scaleWithTransform;
+            get => IntFlags.IsFlagSet(_transformBehaviour, (int)ColliderTransformBehaviour.Scale);
             set {
-                if (_scaleWithTransform == value)
-                    return;
+                if (value) IntFlags.SetFlag(ref _transformBehaviour, (int)ColliderTransformBehaviour.Scale);
+                else IntFlags.RemoveFlag(ref _transformBehaviour, (int)ColliderTransformBehaviour.Scale);
 
-                _scaleWithTransform = value;
                 UpdateCollider();
             }
         }
@@ -107,12 +138,11 @@ namespace Instant2D.EC.Components {
         /// Could be set to <see langword="false"/> for box colliders to reduce the overhead introduced by rotation calculation.
         /// </summary>
         public bool ShouldRotateWithTransform {
-            get => _rotateWithTransform;
+            get => IntFlags.IsFlagSet(_transformBehaviour, (int)ColliderTransformBehaviour.Rotate);
             set {
-                if (_rotateWithTransform == value)
-                    return;
+                if (value) IntFlags.SetFlag(ref _transformBehaviour, (int)ColliderTransformBehaviour.Rotate);
+                else IntFlags.RemoveFlag(ref _transformBehaviour, (int)ColliderTransformBehaviour.Rotate);
 
-                _rotateWithTransform = value;
                 UpdateCollider();
             }
         }
@@ -263,7 +293,7 @@ namespace Instant2D.EC.Components {
             // broadphase potential hits and check more precisely
             if (Scene.Collisions.Broadphase(Shape.Bounds, out var colliders, layerMask)) {
                 foreach (var potential in colliders) {
-                    if (potential != this && potential.CollidesWith(this, out collision)) {
+                    if (potential != this && CollidesWith(potential, out collision)) {
                         if (ignoreTriggers && potential.IsTrigger)
                             continue;
 
@@ -333,8 +363,8 @@ namespace Instant2D.EC.Components {
         public void UpdateTriggers() {
             // initialize the sets
             if (_tempTriggerSet == null) {
-                _contactTriggers = new();
-                _tempTriggerSet = new();
+                _contactTriggers = [];
+                _tempTriggerSet = [];
             }
 
             // scan nearby area for overlapping triggers
@@ -373,6 +403,21 @@ namespace Instant2D.EC.Components {
             }
 
             _tempTriggerSet.Clear();
+        }
+
+        /// <summary>
+        /// Clears all triggers this object is in contact with. Will trigger all events as if the object just entered next time <see cref="UpdateTriggers"/> is called.
+        /// </summary>
+        public void ReleaseTriggers() {
+            if (_contactTriggers is null)
+                return;
+
+            foreach (var trigger in _contactTriggers) {
+                TriggerCallbacks(trigger, false);
+                trigger.TriggerCallbacks(this, false);
+            }
+
+            _contactTriggers.Clear();
         }
 
         #endregion

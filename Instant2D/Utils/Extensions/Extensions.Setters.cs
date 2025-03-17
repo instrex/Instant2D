@@ -183,6 +183,13 @@ namespace Instant2D.EC {
             return collisionComponent;
         }
 
+        /// <inheritdoc cref="CollisionComponent.TransformBehaviour"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T SetTransformBehaviour<T>(this T collisionComponent, CollisionComponent.ColliderTransformBehaviour transformBehaviour) where T : CollisionComponent {
+            collisionComponent.TransformBehaviour = transformBehaviour;
+            return collisionComponent;
+        }
+
         /// <inheritdoc cref="CollisionComponent.Origin"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T SetOrigin<T>(this T collisionComponent, Vector2 origin) where T : CollisionComponent {

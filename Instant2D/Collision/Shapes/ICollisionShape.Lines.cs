@@ -65,11 +65,50 @@ namespace Instant2D.Collision.Shapes {
             if (hasIntersection) {
                 normal.Normalize();
                 Vector2.Distance(ref start, ref intersectionPoint, out distance);
-                //hit.SetValues(fraction, distance, intersectionPoint, normal);
                 return true;
             }
 
             return false;
+        }
+
+        public static bool LineToBox(Vector2 boxTopLeft, Vector2 boxBottomRight, Vector2 rayOrigin, Vector2 rayDirection, out float entryDist, out float exitDist, out Vector2 normal) {
+            entryDist = 0f;
+            exitDist = float.MaxValue;
+            normal = Vector2.Zero;
+
+            var hitAxis = -1;
+            for (int i = 0; i < 2; i++) {
+                var isX = i == 0;
+                float origin = isX ? rayOrigin.X : rayOrigin.Y;
+                float min = isX ? boxTopLeft.X : boxTopLeft.Y;
+                float max = isX ? boxBottomRight.X : boxBottomRight.Y;
+                float direction = isX ? rayDirection.X : rayDirection.Y;
+
+                if (Math.Abs(direction) < 1e-6f) {
+                    if (origin < min || origin > max)
+                        return false;
+                } else {
+                    float invD = 1.0f / direction;
+                    float t0 = (min - origin) * invD;
+                    float t1 = (max - origin) * invD;
+                    if (t0 > t1) (t0, t1) = (t1, t0);
+                    if (t0 > entryDist) {
+                        entryDist = t0;
+                        hitAxis = i;
+                    }
+                    exitDist = Math.Min(exitDist, t1);
+                }
+            }
+
+            if (exitDist < entryDist)
+                return false;
+
+            if (hitAxis == 0)
+                normal = new Vector2(rayOrigin.X < boxTopLeft.X ? -1 : 1, 0);
+            else if (hitAxis == 1)
+                normal = new Vector2(0, rayOrigin.Y < boxTopLeft.Y ? -1 : 1);
+
+            return true;
         }
     }
 }

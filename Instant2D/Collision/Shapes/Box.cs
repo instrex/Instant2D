@@ -124,13 +124,31 @@ namespace Instant2D.Collision.Shapes {
         }
 
         public bool CollidesWithLine(Vector2 start, Vector2 end, out float fraction, out float distance, out Vector2 intersectionPoint, out Vector2 normal) {
+            // use an optimized linecast for AABB colliders
             if (_rotation == 0) {
-                // TODO: add an optimized linecast version?
+                intersectionPoint = Vector2.Zero;
+                distance = 0;
+                fraction = 0; // do we even need fractions anyway?
+
+                var rayHit = ICollisionShape.LineToBox(Bounds.TopLeft, Bounds.BottomRight, start, start.DirectionTo(end), out var inDist, out var outDist, out normal);
+
+                if (!rayHit) return false;
+
+                var lengthSq = Vector2.DistanceSquared(start, end);
+
+                // check if too far away
+                if (lengthSq < inDist * inDist)
+                    return false;
+
+                intersectionPoint = start + start.DirectionTo(end) * inDist;
+                distance = inDist;
+
+                return rayHit;
             }
 
+            // fallback to expensive polygon check, which supports rotation and scale
             return Polygon.CollidesWithLine(start, end, out fraction, out distance, out intersectionPoint, out normal);
         }
-            
 
         public bool ContainsPoint(Vector2 point) {
             if (_rotation == 0) {
