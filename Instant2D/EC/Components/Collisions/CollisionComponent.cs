@@ -257,7 +257,7 @@ namespace Instant2D.EC.Components {
         }
 
         public bool CollidesWithLine(Vector2 start, Vector2 end, out LineCastResult<CollisionComponent> result) {
-            if (Shape.CollidesWithLine(start, end, out _, out var distance, out var intersection, out var normal)) {
+            if (Shape.CollidesWithLine(start, end, out var distance, out var intersection, out var normal)) {
                 result = new(this, start, end, distance, intersection, normal);
                 return true;
             }

@@ -44,7 +44,7 @@ namespace Instant2D.Collision.Shapes {
         }
 
         /// <summary>
-        /// Rotation of this box. As an optimization, this value may be kept at 0 where applicable to avoid extra rotation overhead.
+        /// Box rotation. A polygon shape will be created if modified to anything other than 0.
         /// </summary>
         public float Rotation {
             get => _rotation;
@@ -59,7 +59,7 @@ namespace Instant2D.Collision.Shapes {
         }
 
         /// <summary>
-        /// Internal collision shape used for linecasts and rotated collision detection. Created lazily only when you use those features.
+        /// Polygon collision shape for when Rotation is modified or collision resolution with other polygon is requested. Will be initalized on-demand.
         /// </summary>
         public Polygon Polygon {
             get {
@@ -116,38 +116,21 @@ namespace Instant2D.Collision.Shapes {
 
         public bool CollidesWith(ICollisionShape other, out Vector2 normal, out Vector2 penetrationVector) {
             if (_rotation == 0 && other is Box box && box._rotation == 0f) {
-                return ICollisionShape.BoxToBox(this, box, out normal, out penetrationVector);
+                return ICollisionShape.AABB.ToAABB(this, box, out normal, out penetrationVector);
             }
 
             // fallback to polygon when no optimizations could be made
             return Polygon.CollidesWith(other, out normal, out penetrationVector);
         }
 
-        public bool CollidesWithLine(Vector2 start, Vector2 end, out float fraction, out float distance, out Vector2 intersectionPoint, out Vector2 normal) {
-            // use an optimized linecast for AABB colliders
+        public bool CollidesWithLine(Vector2 start, Vector2 end, out float distance, out Vector2 intersectionPoint, out Vector2 normal) {
             if (_rotation == 0) {
-                intersectionPoint = Vector2.Zero;
-                distance = 0;
-                fraction = 0; // do we even need fractions anyway?
-
-                var rayHit = ICollisionShape.LineToBox(Bounds.TopLeft, Bounds.BottomRight, start, start.DirectionTo(end), out var inDist, out var outDist, out normal);
-
-                if (!rayHit) return false;
-
-                var lengthSq = Vector2.DistanceSquared(start, end);
-
-                // check if too far away
-                if (lengthSq < inDist * inDist)
-                    return false;
-
-                intersectionPoint = start + start.DirectionTo(end) * inDist;
-                distance = inDist;
-
-                return rayHit;
+                // use an optimized linecast for AABB colliders
+                return ICollisionShape.Line.ToAABB(Bounds.TopLeft, Bounds.BottomRight, start, end, out distance, out intersectionPoint, out normal);
             }
 
             // fallback to expensive polygon check, which supports rotation and scale
-            return Polygon.CollidesWithLine(start, end, out fraction, out distance, out intersectionPoint, out normal);
+            return Polygon.CollidesWithLine(start, end, out distance, out intersectionPoint, out normal);
         }
 
         public bool ContainsPoint(Vector2 point) {
@@ -167,66 +150,6 @@ namespace Instant2D.Collision.Shapes {
 
             _polygon?.Reset();
             _polygon = null;
-        }
-    }
-
-    public partial interface ICollisionShape {
-        public static bool BoxToBox(Box a, Box b, out Vector2 normal, out Vector2 penetrationVector) {
-            var diff = MinkowskiDifference(a, b);
-            penetrationVector = default;
-            normal = default;
-
-            if (diff.Contains(Vector2.Zero)) {
-                penetrationVector = GetClosestPointOnBoundsToOrigin(diff, Vector2.Zero);
-
-                if (penetrationVector == Vector2.Zero) {
-                    return false;
-                }
-
-                normal = penetrationVector * -1;
-                normal.Normalize();
-
-                return true;
-            }
-
-            return false;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static RectangleF MinkowskiDifference(Box first, Box second) {
-            // we need the top-left of our first box but it must include our motion. Collider only modifies position with the motion so we
-            // need to figure out what the motion was using just the position.
-            var positionOffset = first.Position - (first.Bounds.Position + first.Bounds.Size / 2f);
-            var topLeft = first.Bounds.Position + positionOffset - second.Bounds.BottomRight;
-            var fullSize = first.Bounds.Size + second.Bounds.Size;
-
-            return new RectangleF(topLeft.X, topLeft.Y, fullSize.X, fullSize.Y);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static Vector2 GetClosestPointOnBoundsToOrigin(RectangleF rect, Vector2 point) {
-            var minDist = Math.Abs(point.X - rect.X);
-            var boundsPoint = new Vector2(rect.X, point.Y);
-
-            if (Math.Abs(rect.Right - point.X) < minDist) {
-                minDist = Math.Abs(rect.Right);
-                boundsPoint.X = rect.Right;
-                boundsPoint.Y = 0f;
-            }
-
-            if (Math.Abs(rect.Bottom - point.Y) < minDist) {
-                minDist = Math.Abs(rect.Bottom);
-                boundsPoint.X = 0f;
-                boundsPoint.Y = rect.Bottom;
-            }
-
-            if (Math.Abs(rect.Y - point.Y) < minDist) {
-                minDist = Math.Abs(rect.Position.Y);
-                boundsPoint.X = 0;
-                boundsPoint.Y = rect.Y;
-            }
-
-            return boundsPoint;
         }
     }
 }

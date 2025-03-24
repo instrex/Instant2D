@@ -202,8 +202,8 @@ namespace Instant2D.Collision.Shapes {
             };
         }
 
-        public bool CollidesWithLine(Vector2 start, Vector2 end, out float fraction, out float distance, out Vector2 intersectionPoint, out Vector2 normal) =>
-            ICollisionShape.LineToPolygon(start, end, this, out fraction, out distance, out intersectionPoint, out normal);
+        public bool CollidesWithLine(Vector2 start, Vector2 end, out float distance, out Vector2 intersectionPoint, out Vector2 normal) =>
+            ICollisionShape.Line.ToPolygon(this, start, end, out distance, out intersectionPoint, out normal);
 
         public bool ContainsPoint(Vector2 point) {
             point -= _position;
@@ -328,8 +328,7 @@ namespace Instant2D.Collision.Shapes {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void GetInterval(Vector2 axis, Polygon polygon, ref float min, ref float max) {
             // To project a point on an axis use the dot product
-            float dot;
-            Vector2.Dot(ref polygon._vertices[0], ref axis, out dot);
+            Vector2.Dot(ref polygon._vertices[0], ref axis, out float dot);
             min = max = dot;
 
             for (var i = 1; i < polygon._vertices.Length; i++) {
